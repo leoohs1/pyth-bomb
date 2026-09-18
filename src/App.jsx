@@ -12,42 +12,101 @@ function gerarCodigo() {
 
 export default function App() {
   const [sala, setSala] = useState(null)
+  const [eu, setEu] = useState(null)
+  const [codigoDigitado, setCodigoDigitado] = useState('')
+  const [apelido, setApelido] = useState('')
   const [erro, setErro] = useState(null)
-  const [carregando, setCarregando] = useState(false)
 
   async function criarSala() {
-    setCarregando(true)
     setErro(null)
 
-    const { data, error } = await supabase
+    if (!apelido.trim()) return setErro('Escolhe um apelido primeiro')
+
+    const { data: novaSala, error } = await supabase
       .from('rooms')
       .insert({ code: gerarCodigo() })
       .select()
       .single()
 
-    if (error) {
-      setErro(error.message)
-    } else {
-      setSala(data)
-    }
-    setCarregando(false)
+    if (error) return setErro(error.message)
+
+    const { data: jogador, error: erroJogador } = await supabase
+      .from('players')
+      .insert({ room_id: novaSala.id, nickname: apelido.trim() })
+      .select()
+      .single()
+
+    if (erroJogador) return setErro(erroJogador.message)
+
+    setSala(novaSala)
+    setEu(jogador)
+  }
+
+  async function entrarNaSala() {
+    setErro(null)
+
+    if (!apelido.trim()) return setErro('Escolhe um apelido primeiro')
+
+    const { data: salaEncontrada, error: erroSala } = await supabase
+      .from('rooms')
+      .select()
+      .eq('code', codigoDigitado.trim().toUpperCase())
+      .single()
+
+    if (erroSala) return setErro('Sala nao encontrada')
+
+    const { data: jogador, error: erroJogador } = await supabase
+      .from('players')
+      .insert({ room_id: salaEncontrada.id, nickname: apelido.trim() })
+      .select()
+      .single()
+
+    if (erroJogador) return setErro(erroJogador.message)
+
+    setSala(salaEncontrada)
+    setEu(jogador)
+  }
+
+  const campo = { padding: 10, marginRight: 8, fontSize: 16 }
+
+  if (sala) {
+    return (
+      <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }}>
+        <h1>PYTH BOMB</h1>
+        <p>Sala: <strong style={{ fontSize: 28 }}>{sala.code}</strong></p>
+        <p>Voce entrou como: <strong>{eu?.nickname}</strong></p>
+      </div>
+    )
   }
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }}>
       <h1>PYTH BOMB</h1>
 
-      <button onClick={criarSala} disabled={carregando}>
-        {carregando ? 'criando...' : 'CRIAR SALA'}
-      </button>
+      <p>
+        <input
+          placeholder="seu apelido"
+          value={apelido}
+          onChange={(e) => setApelido(e.target.value)}
+          style={campo}
+        />
+      </p>
 
-      {sala && (
-        <p>
-          Sala criada! Código: <strong>{sala.code}</strong>
-        </p>
-      )}
+      <p>
+        <button onClick={criarSala} style={campo}>CRIAR SALA</button>
+      </p>
 
-      {erro && <p style={{ color: 'salmon' }}>Erro: {erro}</p>}
+      <p>
+        <input
+          placeholder="codigo da sala"
+          value={codigoDigitado}
+          onChange={(e) => setCodigoDigitado(e.target.value)}
+          style={campo}
+        />
+        <button onClick={entrarNaSala} style={campo}>ENTRAR</button>
+      </p>
+
+      {erro && <p style={{ color: 'salmon' }}>{erro}</p>}
     </div>
   )
 }
