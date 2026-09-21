@@ -1,112 +1,143 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 
-function gerarCodigo() {
-  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let codigo = 'PYTH'
+function makeCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'PYTH'
   for (let i = 0; i < 2; i++) {
-    codigo += letras[Math.floor(Math.random() * letras.length)]
+    code += chars[Math.floor(Math.random() * chars.length)]
   }
-  return codigo
+  return code
 }
 
 export default function App() {
-  const [sala, setSala] = useState(null)
-  const [eu, setEu] = useState(null)
-  const [codigoDigitado, setCodigoDigitado] = useState('')
-  const [apelido, setApelido] = useState('')
-  const [erro, setErro] = useState(null)
+  const [room, setRoom] = useState(null)
+  const [me, setMe] = useState(null)
+  const [players, setPlayers] = useState([])
+  const [codeInput, setCodeInput] = useState('')
+  const [nickname, setNickname] = useState('')
+  const [error, setError] = useState(null)
 
-  async function criarSala() {
-    setErro(null)
+  // quando entrar numa sala: carrega os jogadores e escuta mudanças
+  useEffect(() => {
+    if (!room) return
 
-    if (!apelido.trim()) return setErro('Escolhe um apelido primeiro')
+    async function loadPlayers() {
+      const { data } = await supabase
+        .from('players')
+        .select()
+        .eq('room_id', room.id)
+        .order('joined_at')
+      setPlayers(data ?? [])
+    }
 
-    const { data: novaSala, error } = await supabase
-      .from('rooms')
-      .insert({ code: gerarCodigo() })
-      .select()
-      .single()
+    loadPlayers()
 
-    if (error) return setErro(error.message)
+    const channel = supabase
+      .channel('room-' + room.id)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${room.id}` },
+        () => loadPlayers()
+      )
+      .subscribe()
 
-    const { data: jogador, error: erroJogador } = await supabase
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [room])
+
+  async function joinRoom(targetRoom) {
+    const { data: player, error: playerError } = await supabase
       .from('players')
-      .insert({ room_id: novaSala.id, nickname: apelido.trim() })
+      .insert({ room_id: targetRoom.id, nickname: nickname.trim() })
       .select()
       .single()
 
-    if (erroJogador) return setErro(erroJogador.message)
+    if (playerError) return setError(playerError.message)
 
-    setSala(novaSala)
-    setEu(jogador)
+    setMe(player)
+    setRoom(targetRoom)
   }
 
-  async function entrarNaSala() {
-    setErro(null)
+  async function createRoom() {
+    setError(null)
+    if (!nickname.trim()) return setError('Pick a nickname first')
 
-    if (!apelido.trim()) return setErro('Escolhe um apelido primeiro')
-
-    const { data: salaEncontrada, error: erroSala } = await supabase
+    const { data: newRoom, error: roomError } = await supabase
       .from('rooms')
-      .select()
-      .eq('code', codigoDigitado.trim().toUpperCase())
-      .single()
-
-    if (erroSala) return setErro('Sala nao encontrada')
-
-    const { data: jogador, error: erroJogador } = await supabase
-      .from('players')
-      .insert({ room_id: salaEncontrada.id, nickname: apelido.trim() })
+      .insert({ code: makeCode() })
       .select()
       .single()
 
-    if (erroJogador) return setErro(erroJogador.message)
-
-    setSala(salaEncontrada)
-    setEu(jogador)
+    if (roomError) return setError(roomError.message)
+    joinRoom(newRoom)
   }
 
-  const campo = { padding: 10, marginRight: 8, fontSize: 16 }
+  async function joinByCode() {
+    setError(null)
+    if (!nickname.trim()) return setError('Pick a nickname first')
 
-  if (sala) {
+    const { data: found, error: findError } = await supabase
+      .from('rooms')
+      .select()
+      .eq('code', codeInput.trim().toUpperCase())
+      .single()
+
+    if (findError) return setError('Room not found')
+    joinRoom(found)
+  }
+
+  const input = { padding: 10, marginRight: 8, fontSize: 16 }
+  const page = { padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }
+
+  if (room) {
     return (
-      <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }}>
+      <div style={page}>
         <h1>PYTH BOMB</h1>
-        <p>Sala: <strong style={{ fontSize: 28 }}>{sala.code}</strong></p>
-        <p>Voce entrou como: <strong>{eu?.nickname}</strong></p>
+        <p>Room: <strong style={{ fontSize: 28 }}>{room.code}</strong></p>
+        <p>You are: <strong>{me?.nickname}</strong></p>
+
+        <h3>Players ({players.length}/20)</h3>
+        <ul>
+          {players.map((p) => (
+            <li key={p.id}>
+              {p.nickname} {p.id === me?.id && '(you)'}
+            </li>
+          ))}
+        </ul>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }}>
+    <div style={page}>
       <h1>PYTH BOMB</h1>
 
       <p>
         <input
-          placeholder="seu apelido"
-          value={apelido}
-          onChange={(e) => setApelido(e.target.value)}
-          style={campo}
+          placeholder="your nickname"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          style={input}
         />
       </p>
 
       <p>
-        <button onClick={criarSala} style={campo}>CRIAR SALA</button>
+        <button onClick={createRoom} style={input}>CREATE ROOM</button>
       </p>
 
       <p>
         <input
-          placeholder="codigo da sala"
-          value={codigoDigitado}
-          onChange={(e) => setCodigoDigitado(e.target.value)}
-          style={campo}
+          placeholder="room code"
+          value={codeInput}
+          onChange={(e) => setCodeInput(e.target.value)}
+          style={input}
         />
-        <button onClick={entrarNaSala} style={campo}>ENTRAR</button>
+        <button onClick={joinByCode} style={input}>JOIN</button>
       </p>
 
-      {erro && <p style={{ color: 'salmon' }}>{erro}</p>}
+      {error && <p style={{ color: 'salmon' }}>{error}</p>}
     </div>
   )
 }
