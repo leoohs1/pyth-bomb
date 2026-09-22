@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700&family=Inter:wght@500&display=swap');
+
+/* A landing ocupa a tela toda, independente do layout do resto do app */
+.pb-stage {
+  --pb-ink: #2E1F63;
+  --pb-gold: #B8871C;
+  --pb-tablet: rgba(252, 249, 242, 0.9);
+  --pb-veil-top: rgba(248, 240, 255, 0.62);
+  --pb-veil-bot: rgba(43, 22, 86, 0.55);
+
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background: #2A1850;
+  font-family: Inter, system-ui, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pb-stage {
+    --pb-veil-top: rgba(236, 224, 255, 0.55);
+    --pb-veil-bot: rgba(24, 12, 52, 0.66);
+  }
+}
+
+.pb-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/arena.webp') center 58% / cover no-repeat;
+  transform: scale(1.04);
+}
+
+.pb-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--pb-veil-top) 0%,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0) 62%,
+    var(--pb-veil-bot) 100%
+  );
+}
+
+.pb-glow {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 0;
+  width: min(80vw, 900px);
+  height: 22vh;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 100%, rgba(169, 139, 255, 0.55), rgba(169, 139, 255, 0) 70%);
+}
+
+/* faíscas roxas subindo */
+.pb-embers { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.pb-ember {
+  position: absolute;
+  bottom: -10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C9A2FF;
+  opacity: 0;
+  animation: pb-rise 7s linear infinite;
+}
+.pb-ember:nth-child(1) { left: 14%; animation-delay: 0s; }
+.pb-ember:nth-child(2) { left: 27%; animation-delay: 2.2s; width: 4px; height: 4px; }
+.pb-ember:nth-child(3) { left: 73%; animation-delay: 1.1s; }
+.pb-ember:nth-child(4) { left: 86%; animation-delay: 3.4s; width: 4px; height: 4px; }
+.pb-ember:nth-child(5) { left: 61%; animation-delay: 4.6s; width: 5px; height: 5px; }
+.pb-ember:nth-child(6) { left: 38%; animation-delay: 5.5s; width: 3px; height: 3px; }
+
+/* texto */
+.pb-header {
+  position: relative;
+  z-index: 2;
+  padding: clamp(28px, 6vh, 72px) 20px 0;
+}
+.pb-kicker {
+  margin: 0;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(11px, 1.4vw, 14px);
+  letter-spacing: 0.34em;
+  color: var(--pb-gold);
+  text-transform: uppercase;
+}
+.pb-title {
+  margin: 0.12em 0 0;
+  font-family: 'Cinzel Decorative', Cinzel, Georgia, serif;
+  font-weight: 900;
+  line-height: 0.95;
+  font-size: clamp(52px, 11vw, 148px);
+  color: var(--pb-ink);
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 0 #fff, 0 0 2px #fff, 0 10px 30px rgba(255, 255, 255, 0.75), 0 18px 40px rgba(90, 50, 170, 0.25);
+}
+.pb-laurel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: clamp(10px, 2vh, 20px);
+}
+.pb-leaf { width: clamp(28px, 4vw, 44px); height: auto; flex: none; }
+.pb-soon {
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  font-size: clamp(13px, 2vw, 20px);
+  color: var(--pb-ink);
+  background: var(--pb-tablet);
+  border: 1.5px solid var(--pb-gold);
+  border-radius: 4px;
+  padding: 0.8em 1.2em 0.8em 1.62em;
+  box-shadow: inset 0 0 0 4px rgba(233, 206, 130, 0.35), 0 10px 28px rgba(40, 20, 90, 0.18);
+}
+.pb-tag {
+  margin: clamp(12px, 2.2vh, 20px) 0 0;
+  font-size: clamp(13px, 1.6vw, 16px);
+  color: var(--pb-ink);
+  opacity: 0.82;
+  font-weight: 500;
+}
+
+/* personagens + bomba + coruja */
+.pb-cast {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  margin-bottom: clamp(6px, 3vh, 34px);
+  width: min(80vw, 920px, calc((100vh - 370px) * 1.75));
+  padding-top: 7.1%;
+}
+.pb-cast-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 18px rgba(30, 10, 70, 0.35));
+  animation: pb-bob 4.2s ease-in-out infinite;
+}
+
+.pb-bomb {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 51.9%;
+  width: 13%;
+  transform: translateX(-50%);
+  animation: pb-float 2.8s ease-in-out infinite;
+}
+.pb-bomb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 0 14px rgba(190, 120, 255, 0.85)) drop-shadow(0 10px 14px rgba(40, 10, 90, 0.4));
+  animation: pb-tick 1.1s ease-in-out infinite;
+}
+.pb-aura {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 190%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 162, 255, 0.75) 0%, rgba(169, 139, 255, 0.35) 38%, rgba(169, 139, 255, 0) 68%);
+  animation: pb-aura 1.1s ease-in-out infinite;
+}
+.pb-spark {
+  position: absolute;
+  z-index: 2;
+  left: 48%;
+  top: 2%;
+  width: 34%;
+  transform: translate(-50%, -50%);
+  animation: pb-flicker 0.18s steps(2) infinite;
+}
+
+
+/* efeitos da bomba: estilhaços, raios e chama */
+.pb-fx {
+  position: absolute;
+  z-index: 2;
+  left: -60%;
+  top: 0;
+  margin-top: -80%;
+  width: 220%;
+  height: auto;
+  overflow: visible;
+  pointer-events: none;
+}
+.pb-spark { z-index: 3; }
+.pb-shard { transform-box: fill-box; transform-origin: center; animation: pb-shard 1.1s ease-in-out infinite; }
+.pb-s1, .pb-s4, .pb-s7 { animation-delay: -0.35s; }
+.pb-s2, .pb-s5 { animation-delay: -0.7s; }
+.pb-bolt { opacity: 0; animation: pb-zap 1.7s steps(1) infinite; }
+.pb-b1 { animation-delay: -0.4s; }
+.pb-b2 { animation-delay: -0.9s; }
+.pb-b3 { animation-delay: -1.3s; }
+.pb-b4 { animation-delay: -0.6s; animation-duration: 2.1s; }
+.pb-flame { transform-box: fill-box; transform-origin: 40% 100%; animation: pb-flame 0.42s ease-in-out infinite alternate; }
+
+@keyframes pb-shard { 0%, 100% { transform: scale(1); opacity: 0.95; } 50% { transform: scale(1.2); opacity: 0.65; } }
+@keyframes pb-zap { 0% { opacity: 1; } 10% { opacity: 0; } 22% { opacity: 1; } 30% { opacity: 0; } 62% { opacity: 1; } 70% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes pb-flame { from { transform: scale(1, 1) skewX(-4deg); } to { transform: scale(0.92, 1.12) skewX(5deg); } }
+
+@keyframes pb-float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
+@keyframes pb-tick { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes pb-aura {
+  0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes pb-flicker {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.82) rotate(18deg); }
+}
+@keyframes pb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes pb-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translateY(-70vh); opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  .pb-bg { background-position: center 62%; }
+  .pb-cast { width: min(100vw, 640px, calc((100vh - 300px) * 1.75)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-cast-img, .pb-ember, .pb-bomb, .pb-bomb img, .pb-aura, .pb-spark, .pb-shard, .pb-flame { animation: none; }
+  .pb-bolt { animation: none; opacity: 1; }
+}
