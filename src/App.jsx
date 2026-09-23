@@ -110,14 +110,12 @@ export default function App() {
     if (error) setError(error.message)
   }
 
-  async function passBomb() {
+    async function passBomb() {
     setError(null)
-    const { error } = await supabase.rpc('pass_bomb', {
-      p_room_id: room.id,
-      p_player_id: me.id,
-    })
+    const { error } = await supabase.rpc('pass_bomb', { p_room_id: room.id })
     if (error) setError(error.message)
   }
+  
 
   const input = { padding: 10, marginRight: 8, fontSize: 16 }
   const page = { padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }
