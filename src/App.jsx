@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = 'PYTH'
-  for (let i = 0; i < 2; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
+  for (let i = 0; i < 2; i++) code += chars[Math.floor(Math.random() * chars.length)]
   return code
 }
 
@@ -17,61 +15,82 @@ export default function App() {
   const [codeInput, setCodeInput] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
-  
+  const [elapsed, setElapsed] = useState(0)
+
   const roomId = room?.id
+  const lastEventRef = useRef(null)
+  const [flash, setFlash] = useState(null)
 
-  // pega o crachá anônimo assim que a página abre
-  useEffect(() => {
-    ensureSession().catch((e) => setError(e.message))
-  }, [])
-  // pega o crachá anônimo assim que a página abre
   useEffect(() => {
     ensureSession().catch((e) => setError(e.message))
   }, [])
 
-  // escuta jogadores entrando e a bomba mudando de mão
+  // escuta jogadores e mudanças na sala
   useEffect(() => {
     if (!roomId) return
 
     async function loadPlayers() {
       const { data } = await supabase
-        .from('players')
-        .select()
-        .eq('room_id', roomId)
-        .order('joined_at')
+        .from('players').select().eq('room_id', roomId).order('joined_at')
       setPlayers(data ?? [])
+    }
+    async function loadRoom() {
+      const { data } = await supabase.from('rooms').select().eq('id', roomId).single()
+      if (data) setRoom(data)
     }
 
     loadPlayers()
+    loadRoom()
 
     const channel = supabase
       .channel('room-' + roomId)
-      .on(
-        'postgres_changes',
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
-        () => loadPlayers()
-      )
-      .on(
-        'postgres_changes',
+        () => loadPlayers())
+      .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        (payload) => setRoom(payload.new)
-      )
+        (payload) => setRoom(payload.new))
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [roomId])
 
-    async function joinRoom(targetRoom) {
+  // relógio local: só mede quanto tempo passou, nunca sabe quando explode
+  useEffect(() => {
+    if (!room?.round_started_at || room.status !== 'playing') return setElapsed(0)
+    const start = new Date(room.round_started_at).getTime()
+    const id = setInterval(() => setElapsed((Date.now() - start) / 1000), 200)
+    return () => clearInterval(id)
+  }, [room?.round_started_at, room?.status])
+
+  // cutuca o servidor pra ver se já explodiu
+  useEffect(() => {
+    if (!roomId || room?.status !== 'playing') return
+        const id = setInterval(async () => {
+      const { error } = await supabase.rpc('tick', { p_room_id: roomId })
+      if (error) console.log('TICK ERROR:', error.message)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [roomId, room?.status])
+
+  // avisa quem explodiu
+  useEffect(() => {
+    if (!room?.last_event_at || room.last_event_at === lastEventRef.current) return
+    lastEventRef.current = room.last_event_at
+    const victim = players.find((p) => p.id === room.last_victim_id)
+    if (victim) {
+      setFlash(`💥 ${victim.nickname} GOT RUGGED!`)
+      setTimeout(() => setFlash(null), 3000)
+    }
+  }, [room?.last_event_at, room?.last_victim_id, players])
+
+  async function joinRoom(targetRoom) {
     const user = await ensureSession()
-    const { data: player, error: playerError } = await supabase
+    const { data: player, error: e } = await supabase
       .from('players')
       .insert({ room_id: targetRoom.id, nickname: nickname.trim(), user_id: user.id })
-      .select()
-      .single()
-
-    if (playerError) return setError(playerError.message)
+      .select().single()
+    if (e) return setError(e.message)
     setMe(player)
     setRoom(targetRoom)
   }
@@ -79,117 +98,111 @@ export default function App() {
   async function createRoom() {
     setError(null)
     if (!nickname.trim()) return setError('Pick a nickname first')
-
-    const { data: newRoom, error: roomError } = await supabase
-      .from('rooms')
-      .insert({ code: makeCode() })
-      .select()
-      .single()
-
-    if (roomError) return setError(roomError.message)
-    joinRoom(newRoom)
+    const { data, error: e } = await supabase.from('rooms').insert({ code: makeCode() }).select().single()
+    if (e) return setError(e.message)
+    joinRoom(data)
   }
 
   async function joinByCode() {
     setError(null)
     if (!nickname.trim()) return setError('Pick a nickname first')
-
-    const { data: found, error: findError } = await supabase
-      .from('rooms')
-      .select()
-      .eq('code', codeInput.trim().toUpperCase())
-      .single()
-
-    if (findError) return setError('Room not found')
-    joinRoom(found)
+    const { data, error: e } = await supabase
+      .from('rooms').select().eq('code', codeInput.trim().toUpperCase()).single()
+    if (e) return setError('Room not found')
+    joinRoom(data)
   }
 
   async function startGame() {
     setError(null)
-    const { error } = await supabase.rpc('start_game', { p_room_id: room.id })
-    if (error) setError(error.message)
+    const { error: e } = await supabase.rpc('start_game', { p_room_id: room.id })
+    if (e) setError(e.message)
   }
 
-    async function passBomb() {
+  async function passBomb() {
     setError(null)
-    const { error } = await supabase.rpc('pass_bomb', { p_room_id: room.id })
-    if (error) setError(error.message)
+    const { error: e } = await supabase.rpc('pass_bomb', { p_room_id: room.id })
+    if (e) setError(e.message)
   }
-  
 
   const input = { padding: 10, marginRight: 8, fontSize: 16 }
   const page = { padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }
 
-  if (room) {
-    const holder = players.find((p) => p.id === room.bomb_holder_id)
-    const iHaveTheBomb = room.bomb_holder_id === me?.id
-
+  if (!room) {
     return (
       <div style={page}>
         <h1>PYTH BOMB</h1>
-        <p>Room: <strong style={{ fontSize: 28 }}>{room.code}</strong></p>
-        <p>You are: <strong>{me?.nickname}</strong></p>
-
-        {room.status === 'lobby' && (
-          <button onClick={startGame} style={input}>START GAME</button>
-        )}
-
-        {room.status === 'playing' && (
-          <div style={{ margin: '24px 0', fontSize: 24 }}>
-            {iHaveTheBomb ? (
-              <>
-                <p>💣 <strong>YOU HAVE THE BOMB</strong></p>
-                <button onClick={passBomb} style={{ ...input, fontSize: 22 }}>
-                  PASS THE BOMB
-                </button>
-              </>
-            ) : (
-              <p>💣 <strong>{holder?.nickname ?? '...'}</strong> has the bomb</p>
-            )}
-          </div>
-        )}
-
-        <h3>Players ({players.length}/20)</h3>
-        <ul>
-          {players.map((p) => (
-            <li key={p.id}>
-              {p.id === room.bomb_holder_id && '💣 '}
-              {p.nickname} {p.id === me?.id && '(you)'}
-            </li>
-          ))}
-        </ul>
-
+        <p><input placeholder="your nickname" value={nickname}
+          onChange={(e) => setNickname(e.target.value)} style={input} /></p>
+        <p><button onClick={createRoom} style={input}>CREATE ROOM</button></p>
+        <p>
+          <input placeholder="room code" value={codeInput}
+            onChange={(e) => setCodeInput(e.target.value)} style={input} />
+          <button onClick={joinByCode} style={input}>JOIN</button>
+        </p>
         {error && <p style={{ color: 'salmon' }}>{error}</p>}
       </div>
     )
   }
 
+  const alive = players.filter((p) => p.alive)
+  const holder = players.find((p) => p.id === room.bomb_holder_id)
+  const iAmHolder = room.bomb_holder_id === me?.id
+  const meNow = players.find((p) => p.id === me?.id)
+  const iAmOut = meNow && !meNow.alive
+  const winner = players.find((p) => p.id === room.winner_id)
+
+  // perigo cresce com o tempo decorrido (o tempo real continua secreto)
+  const danger = elapsed < 12 ? 1 : elapsed < 22 ? 2 : elapsed < 30 ? 3 : 4
+  const bombSize = [0, 34, 44, 58, 74][danger]
+  const dangerText = ['', 'safe', 'warming up', 'DANGER', 'CRITICAL'][danger]
+
   return (
     <div style={page}>
       <h1>PYTH BOMB</h1>
+      <p>Room: <strong style={{ fontSize: 28 }}>{room.code}</strong> · Round {room.round_number} · {alive.length} alive</p>
 
-      <p>
-        <input
-          placeholder="your nickname"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          style={input}
-        />
-      </p>
+      {flash && <h2 style={{ color: '#FF8AA8' }}>{flash}</h2>}
 
-      <p>
-        <button onClick={createRoom} style={input}>CREATE ROOM</button>
-      </p>
+      {room.status === 'lobby' && (
+        <button onClick={startGame} style={input}>START GAME</button>
+      )}
 
-      <p>
-        <input
-          placeholder="room code"
-          value={codeInput}
-          onChange={(e) => setCodeInput(e.target.value)}
-          style={input}
-        />
-        <button onClick={joinByCode} style={input}>JOIN</button>
-      </p>
+      {room.status === 'finished' && (
+        <h2 style={{ color: '#EBD28A' }}>
+          🏆 {winner ? `${winner.nickname} SURVIVED THE PYTH BOMB` : 'Game over'}
+          <br />
+          <button onClick={startGame} style={{ ...input, marginTop: 16 }}>PLAY AGAIN</button>
+        </h2>
+      )}
+
+      {room.status === 'playing' && (
+        <div style={{ margin: '24px 0' }}>
+          <div style={{ fontSize: bombSize, lineHeight: 1 }}>💣</div>
+          <p style={{ color: danger >= 3 ? '#FF8AA8' : '#948CBC' }}>{dangerText}</p>
+
+          {iAmOut ? (
+            <p>☠️ you are out — watching</p>
+          ) : iAmHolder ? (
+            <>
+              <p style={{ fontSize: 22 }}><strong>YOU HAVE THE BOMB</strong></p>
+              <button onClick={passBomb} style={{ ...input, fontSize: 22 }}>PASS THE BOMB</button>
+            </>
+          ) : (
+            <p style={{ fontSize: 20 }}><strong>{holder?.nickname ?? '...'}</strong> has the bomb</p>
+          )}
+        </div>
+      )}
+
+      <h3>Players ({alive.length}/{players.length} alive)</h3>
+      <ul>
+        {players.map((p) => (
+          <li key={p.id} style={{ opacity: p.alive ? 1 : 0.45 }}>
+            {p.id === room.bomb_holder_id && '💣 '}
+            {p.alive ? '' : '☠️ '}
+            {p.nickname} {p.id === me?.id && '(you)'}
+          </li>
+        ))}
+      </ul>
 
       {error && <p style={{ color: 'salmon' }}>{error}</p>}
     </div>
