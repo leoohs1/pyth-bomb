@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, ensureSession } from './supabaseClient'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -17,8 +17,17 @@ export default function App() {
   const [codeInput, setCodeInput] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
-
+  
   const roomId = room?.id
+
+  // pega o crachá anônimo assim que a página abre
+  useEffect(() => {
+    ensureSession().catch((e) => setError(e.message))
+  }, [])
+  // pega o crachá anônimo assim que a página abre
+  useEffect(() => {
+    ensureSession().catch((e) => setError(e.message))
+  }, [])
 
   // escuta jogadores entrando e a bomba mudando de mão
   useEffect(() => {
@@ -54,10 +63,11 @@ export default function App() {
     }
   }, [roomId])
 
-  async function joinRoom(targetRoom) {
+    async function joinRoom(targetRoom) {
+    const user = await ensureSession()
     const { data: player, error: playerError } = await supabase
       .from('players')
-      .insert({ room_id: targetRoom.id, nickname: nickname.trim() })
+      .insert({ room_id: targetRoom.id, nickname: nickname.trim(), user_id: user.id })
       .select()
       .single()
 
