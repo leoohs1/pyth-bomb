@@ -102,14 +102,13 @@
   animation: hm-aura 1.4s ease-in-out infinite;
 }
 
-.hm-title {
-  margin: 0;
-  font-family: 'Marcellus SC', Cinzel, Georgia, serif;
-  font-weight: 400;
-  line-height: 1;
-  font-size: clamp(38px, 7.2vw, 72px);
-  color: var(--hm-ink);
-  text-shadow: 0 2px 0 #fff, 0 6px 16px rgba(90, 50, 170, 0.25);
+/* logo em imagem (o "O" é a bomba). O texto do h1 fica no alt pra leitores de tela */
+.hm-title { margin: 0; line-height: 0; }
+.hm-title img {
+  display: block;
+  width: min(100%, 470px);
+  height: auto;
+  margin: 0 auto;
 }
 
 .hm-sub {

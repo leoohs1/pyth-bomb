@@ -43,7 +43,9 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
             <img src="/bomb-laurel.webp" alt="" />
           </div>
 
-          <h1 className="hm-title">Pyth Bomb</h1>
+          <h1 className="hm-title">
+            <img src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
+          </h1>
           <p className="hm-sub"><span>Enter the arena</span></p>
 
           <label className="hm-field">
