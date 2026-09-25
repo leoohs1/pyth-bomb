@@ -84,8 +84,10 @@
   margin: 0;
   padding: 2px 4px 4px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* evita que nome comprido alargue a lista */
   gap: 8px;
   max-height: min(34vh, 300px);
+  overflow-x: hidden;
   overflow-y: auto;
   text-align: left;
 }
