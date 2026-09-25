@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
+import Home from './Home'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -147,18 +148,11 @@ export default function App() {
 
   if (!room) {
     return (
-      <div style={page}>
-        <h1>PYTH BOMB</h1>
-        <p><input placeholder="your nickname" value={nickname}
-          onChange={(e) => setNickname(e.target.value)} style={input} /></p>
-        <p><button onClick={createRoom} style={input}>CREATE ROOM</button></p>
-        <p>
-          <input placeholder="room code" value={codeInput}
-            onChange={(e) => setCodeInput(e.target.value)} style={input} />
-          <button onClick={joinByCode} style={input}>JOIN</button>
-        </p>
-        {error && <p style={{ color: 'salmon' }}>{error}</p>}
-      </div>
+      <Home
+        nickname={nickname} setNickname={setNickname}
+        codeInput={codeInput} setCodeInput={setCodeInput}
+        onCreate={createRoom} onJoin={joinByCode} error={error}
+      />
     )
   }
 
