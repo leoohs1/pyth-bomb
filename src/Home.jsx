@@ -36,11 +36,6 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
       <div className="hm-bg" role="img" aria-label="Marble arena above a night city with the Pyth emblem on the floor" />
       <div className="hm-shade" />
 
-      <div className="hm-chars" aria-hidden="true">
-        <img className="hm-char hm-oracle" src="/oracle.webp" alt="" />
-        <img className="hm-char hm-cyclops" src="/cyclops.webp" alt="" />
-      </div>
-
       <div className="hm-scroll">
         <section className="hm-panel">
           <div className="hm-bomb" aria-hidden="true">
@@ -87,6 +82,12 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
 
           {error && <p className="hm-error" role="alert">{error}</p>}
         </section>
+
+        {/* desktop: fixos nos cantos. celular: logo abaixo do painel */}
+        <div className="hm-chars" aria-hidden="true">
+          <img className="hm-char hm-oracle" src="/oracle.webp" alt="" />
+          <img className="hm-char hm-cyclops" src="/cyclops.webp" alt="" />
+        </div>
       </div>
     </main>
   )

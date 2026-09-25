@@ -30,7 +30,7 @@
 }
 
 /* personagens: ficam fixos nos cantos, atrás do painel */
-.hm-chars { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+.hm-chars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .hm-char {
   position: absolute;
   bottom: 9vh;
@@ -55,6 +55,7 @@
 
 .hm-panel {
   position: relative;
+  z-index: 1;
   width: min(100%, clamp(340px, 42vw, 640px));
   box-sizing: border-box;
   padding: clamp(84px, 13vw, 118px) clamp(18px, 4vw, 44px) clamp(22px, 3.4vw, 34px);
@@ -251,18 +252,33 @@
 
 /* celular e telas estreitas: painel usa a largura toda, personagens ficam pequenos embaixo */
 @media (max-width: 860px) {
-  .hm-char { height: min(26vh, 220px); bottom: 0; }
-  .hm-oracle { left: -2vw; }
-  .hm-cyclops { right: -2vw; }
-  .hm-scroll { padding: clamp(96px, 16vh, 130px) 14px calc(min(26vh, 220px) + 12px); }
-  .hm-panel { width: min(100%, 520px); padding-top: clamp(78px, 22vw, 108px); }
+  .hm-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(92px, 14vh, 120px) 14px 0;
+  }
+  .hm-panel { width: min(100%, 520px); padding-top: clamp(74px, 20vw, 100px); }
   .hm-bomb { width: clamp(130px, 46%, 200px); }
+
+  /* personagens deixam de ser fixos: ficam no fluxo, logo abaixo do painel */
+  .hm-chars {
+    position: relative;
+    inset: auto;
+    width: min(100%, 520px);
+    height: clamp(150px, 24vh, 210px);
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .hm-char { position: static; height: 100%; width: auto; }
 }
 
-/* celular deitado / telas baixas: menos espaço vertical */
-@media (max-height: 640px) {
+/* telas muito baixas (celular deitado): esconde os personagens */
+@media (max-height: 520px) {
   .hm-chars { display: none; }
-  .hm-scroll { padding-bottom: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
