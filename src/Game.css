@@ -168,11 +168,17 @@
 }
 
 /* jogadores */
+/* colunas largas o bastante pro nome + "YOU" + 💣 caberem sem cortar o nome */
 .gm-players {
   margin-top: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   max-height: min(24vh, 230px);
 }
+.gm-players .lb-plate { gap: 9px; padding: 6px 10px 6px 6px; }
+.gm-players .lb-avatar { width: 32px; height: 32px; font-size: 16px; }
+.gm-players .lb-name { font-size: 17px; }
+.gm-players .lb-you { padding: 1px 7px; font-size: 11px; }
+.gm-players .lb-crown { font-size: 18px; }
 .lb-plate.is-holder {
   border-color: #d9a93c;
   background: linear-gradient(180deg, #fff6d8, #f6e4a8);
