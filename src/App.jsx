@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
 import Home from './Home'
+import Lobby from './Lobby'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -163,6 +164,10 @@ export default function App() {
   const iAmOut = meNow && !meNow.alive
   const winner = players.find((p) => p.id === room.winner_id)
   const iAmHost = !!me && room.host_user_id === me.user_id
+
+  if (room.status === 'lobby') {
+    return <Lobby room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} error={error} />
+  }
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto)
   const danger = elapsed < 12 ? 1 : elapsed < 22 ? 2 : elapsed < 30 ? 3 : 4

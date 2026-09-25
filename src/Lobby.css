@@ -1,0 +1,189 @@
+/* Sala de espera. Usa as classes hm-* (Home.css) para fundo, painel e personagens. */
+
+/* sem o emblema em cima, não precisa do espaço extra no topo */
+.hm-scroll.lb-scroll { padding-top: 28px; padding-bottom: 28px; }
+
+.hm-panel.lb-panel {
+  width: min(100%, clamp(340px, 40vw, 580px));
+  padding: clamp(18px, 3vw, 28px) clamp(18px, 4vw, 40px) clamp(22px, 3vw, 30px);
+}
+
+.lb-logo img { width: min(62%, 240px); }
+
+.lb-label {
+  margin: clamp(10px, 2vw, 16px) 0 8px;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(11px, 1.6vw, 14px);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--hm-ink);
+}
+.lb-label span { display: inline-flex; align-items: center; gap: 12px; }
+.lb-label span::before, .lb-label span::after { content: '✦'; color: var(--hm-gold); font-size: 0.8em; }
+
+/* código da sala: bem grande, alto contraste */
+.lb-code-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lb-code {
+  padding: 6px clamp(14px, 3vw, 26px);
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: clamp(38px, 9vw, 60px);
+  line-height: 1.15;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em; /* compensa o espaçamento da última letra, pra ficar centralizado */
+  color: #ffe9a8;
+  background: linear-gradient(180deg, #3d3160, #2a2048);
+  border: 2px solid var(--hm-gold);
+  border-radius: 12px;
+  box-shadow: inset 0 3px 10px rgba(10, 4, 30, 0.5), 0 6px 16px rgba(40, 15, 100, 0.3);
+  user-select: all;
+}
+.lb-copy {
+  min-width: 112px; /* não muda de largura quando vira "Copied!" */
+  padding: 0 18px;
+  cursor: pointer;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(180deg, #8f62e6, #5c33b4);
+  border: 2px solid var(--hm-gold);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 6px 14px rgba(40, 15, 100, 0.4);
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.lb-copy { min-height: 52px; }
+.lb-copy:hover { filter: brightness(1.08); }
+.lb-copy:active { transform: translateY(1px); }
+.lb-copy:focus-visible { outline: 3px solid rgba(169, 139, 255, 0.85); outline-offset: 2px; }
+.lb-copy.is-copied {
+  color: #2c1a06;
+  background: linear-gradient(180deg, #f8de8e, #dcae40 55%, #c08d25);
+  border-color: #a9771a;
+}
+
+.lb-hint {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(46, 31, 99, 0.7);
+}
+
+/* lista de jogadores (ordem de entrada) */
+.lb-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 4px 4px;
+  display: grid;
+  gap: 8px;
+  max-height: min(34vh, 300px);
+  overflow-y: auto;
+  text-align: left;
+}
+.lb-plate {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid rgba(201, 162, 74, 0.65);
+  box-shadow: 0 3px 8px rgba(60, 30, 120, 0.12);
+  animation: lb-pop 0.25s ease-out;
+}
+.lb-plate.is-me {
+  background: linear-gradient(180deg, #fff6d8, #f6e4a8);
+  border-color: var(--hm-gold);
+}
+.lb-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+  background: linear-gradient(180deg, #8f62e6, #4b2a9a);
+  border: 2px solid var(--hm-gold);
+}
+.lb-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--hm-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lb-you {
+  flex: none;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b4a08;
+  background: rgba(201, 162, 74, 0.28);
+  border-radius: 999px;
+}
+.lb-crown { flex: none; font-size: 22px; line-height: 1; }
+
+/* botão de começar / espera */
+.lb-start { margin-top: 18px; }
+.lb-start:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55) brightness(0.95);
+  opacity: 0.7;
+  transform: none;
+}
+.lb-wait {
+  margin: 20px 0 0;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(17px, 2.6vw, 21px);
+  color: var(--hm-ink);
+}
+.lb-dots::after {
+  content: '';
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  animation: lb-dots 1.4s steps(4, end) infinite;
+}
+
+@keyframes lb-pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes lb-dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75%, 100% { content: '...'; }
+}
+
+/* celular: prioriza leitura e espaço */
+@media (max-width: 860px) {
+  .hm-scroll.lb-scroll { padding: 20px 14px 0; }
+  .hm-panel.lb-panel { width: min(100%, 520px); padding-top: 20px; }
+  .lb-list { max-height: min(30vh, 260px); }
+}
+@media (max-width: 520px) {
+  .hm-scroll.lb-scroll { padding-top: 14px; }
+  .lb-code { font-size: clamp(34px, 11vw, 46px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-plate { animation: none; }
+  .lb-dots::after { animation: none; content: '...'; }
+}
