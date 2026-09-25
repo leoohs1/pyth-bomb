@@ -20,6 +20,7 @@ export function Boom({ flash, full = false }) {
   return (
     <div className={`gm-boom${flash.mine ? ' is-mine' : ''}${full ? ' is-full' : ''}`} role="status">
       <span className="gm-boom-burst" aria-hidden="true">💥</span>
+      <img className="gm-boom-mino" src="/minotaur.webp" alt="" width="1254" height="1254" />
       <p className="gm-boom-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
     </div>
   )
