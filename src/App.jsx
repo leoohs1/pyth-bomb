@@ -182,8 +182,9 @@ export default function App() {
     return <Lobby room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} error={error} />
   }
 
-  // perigo cresce com o tempo decorrido (o tempo real continua secreto)
-  const danger = elapsed < 12 ? 1 : elapsed < 22 ? 2 : elapsed < 30 ? 3 : 4
+  // perigo cresce com o tempo decorrido (o tempo real continua secreto).
+  // Marcos pensados para uma bomba de 80 a 90s: "critical" só nos últimos ~5-15s.
+  const danger = elapsed < 35 ? 1 : elapsed < 60 ? 2 : elapsed < 75 ? 3 : 4
 
   // milissegundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
   const questionMs = room.question_expires_at

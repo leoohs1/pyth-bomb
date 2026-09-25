@@ -3,9 +3,10 @@
 --
 -- Rules implemented:
 --  * Two independent timers: hidden bomb timer (room_secrets.bomb_explode_at, never reset)
---    and a 10s question timer (rooms.question_expires_at).
---  * Wrong answer  -> same question, holder can retry until the 10s run out.
---  * Question timeout (10s) -> NEW question, same holder, fresh 10s. Bomb timer untouched.
+--    and a 12s question timer (rooms.question_expires_at).
+--  * Wrong answer  -> same question, holder can retry until the 12s run out.
+--  * Question timeout (12s) -> NEW question, same holder, fresh 12s. Bomb timer untouched.
+--  (timers changed from 10s / 20-40s to 12s / 80-90s: see 004_timers.sql)
 --  * Correct answer -> bomb passes immediately to another alive player, who gets a new question.
 --  * Answers are compared exact-match after normalization (no substring matching).
 --  * Correct answers / source never leave the server: `questions` has RLS on and NO policies.
@@ -72,7 +73,7 @@ end;
 $function$;
 
 -- ============================================================
--- 5) Helper: give the room its next question (10s), from a shuffled deck
+-- 5) Helper: give the room its next question (12s), from a shuffled deck
 -- ============================================================
 create or replace function public.deal_question(p_room_id uuid)
  returns void
@@ -112,7 +113,7 @@ begin
 
   update rooms
   set current_question_text = v_text,
-      question_expires_at = now() + interval '10 seconds'
+      question_expires_at = now() + interval '12 seconds'
   where id = p_room_id;
 end;
 $function$;
@@ -159,9 +160,9 @@ begin
       round_started_at = now()
   where id = p_room_id;
 
-  -- o horário secreto: entre 20 e 40 segundos
+  -- o horário secreto: entre 80 e 90 segundos
   insert into room_secrets (room_id, bomb_explode_at)
-  values (p_room_id, now() + make_interval(secs => 20 + random() * 20))
+  values (p_room_id, now() + make_interval(secs => 80 + random() * 10))
   on conflict (room_id) do update set bomb_explode_at = excluded.bomb_explode_at;
 
   perform deal_question(p_room_id);

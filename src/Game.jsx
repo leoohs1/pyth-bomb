@@ -3,7 +3,7 @@ import './Lobby.css'   // placas de jogador
 import './Game.css'
 
 const DANGER_LABEL = ['', 'safe', 'warming up', 'danger!', 'critical!']
-const QUESTION_MS = 10000
+const QUESTION_MS = 12000 // tem que ser igual ao intervalo em deal_question (supabase/004_timers.sql)
 
 const PencilIcon = () => (
   <svg className="hm-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -68,7 +68,7 @@ export default function Game({
               <p className="gm-qtext">{room.current_question_text}</p>
               <div className="gm-time">
                 <div className="gm-track" role="progressbar" aria-label="Time left for this question"
-                  aria-valuemin={0} aria-valuemax={10} aria-valuenow={secs}>
+                  aria-valuemin={0} aria-valuemax={QUESTION_MS / 1000} aria-valuenow={secs}>
                   <div className={`gm-fill${urgent ? ' is-urgent' : ''}`} style={{ width: `${pct}%` }} />
                 </div>
                 <span className={`gm-secs${urgent ? ' is-urgent' : ''}`}>{secs}s</span>
