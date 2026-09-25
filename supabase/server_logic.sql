@@ -1,3 +1,7 @@
+-- !! OUTDATED PARTS: 002_questions.sql (run later) REPLACES new_round, start_game and tick,
+-- !! and DELETES pass_bomb (now submit_answer). The live database follows 002.
+-- !! Order to rebuild from scratch: this file, then 002_questions.sql, then 003_seed_questions.sql.
+--
 -- PYTH BOMB: server logic (Supabase / Postgres)
 -- Backup of what is currently live in the Supabase project.
 -- NOTE: table definitions (rooms, players, room_secrets) are NOT in this file yet.

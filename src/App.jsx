@@ -20,6 +20,14 @@ export default function App() {
   const roomId = room?.id
   const lastEventRef = useRef(null)
   const [flash, setFlash] = useState(null)
+  const [answer, setAnswer] = useState('')
+  const [feedback, setFeedback] = useState(null)
+  const answerRef = useRef(null)
+
+  // pergunta nova (ou sala nova): limpa o campo de resposta
+  useEffect(() => {
+    setAnswer('')
+  }, [room?.question_expires_at])
 
   useEffect(() => {
     ensureSession().catch((e) => setError(e.message))
@@ -118,10 +126,20 @@ export default function App() {
     if (e) setError(e.message)
   }
 
-  async function passBomb() {
+  // manda a resposta pro servidor: 'correct' passa a bomba, 'wrong' tenta de novo
+  async function submitAnswer(ev) {
+    ev.preventDefault()
+    const text = answer.trim()
+    if (!text) return
     setError(null)
-    const { error: e } = await supabase.rpc('pass_bomb', { p_room_id: room.id })
-    if (e) setError(e.message)
+    const { data, error: e } = await supabase.rpc('submit_answer', { p_room_id: room.id, p_answer: text })
+    if (e) return setError(e.message)
+    if (data === 'wrong') setFeedback('❌ wrong, try again!')
+    else if (data === 'timeout') setFeedback('⏱ too slow!')
+    else setFeedback(null)
+    if (data !== 'correct') setTimeout(() => setFeedback(null), 1200)
+    setAnswer('')
+    answerRef.current?.focus()
   }
 
   const input = { padding: 10, marginRight: 8, fontSize: 16 }
@@ -157,6 +175,11 @@ export default function App() {
   const bombSize = [0, 34, 44, 58, 74][danger]
   const dangerText = ['', 'safe', 'warming up', 'DANGER', 'CRITICAL'][danger]
 
+  // segundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
+  const questionLeft = room.question_expires_at
+    ? Math.max(0, Math.ceil((new Date(room.question_expires_at).getTime() - Date.now()) / 1000))
+    : 0
+
   return (
     <div style={page}>
       <h1>PYTH BOMB</h1>
@@ -188,13 +211,26 @@ export default function App() {
           {iAmOut ? (
             <p>☠️ you are out — watching</p>
           ) : iAmHolder ? (
-            <>
-              <p style={{ fontSize: 22 }}><strong>YOU HAVE THE BOMB</strong></p>
-              <button onClick={passBomb} style={{ ...input, fontSize: 22 }}>PASS THE BOMB</button>
-            </>
+            <p style={{ fontSize: 22 }}><strong>YOU HAVE THE BOMB — answer to pass it!</strong></p>
           ) : (
             <p style={{ fontSize: 20 }}><strong>{holder?.nickname ?? '...'}</strong> has the bomb</p>
           )}
+
+          {room.current_question_text && (
+            <div style={{ margin: '16px 0' }}>
+              <p style={{ fontSize: 24, margin: 0 }}>{room.current_question_text}</p>
+              <p style={{ color: questionLeft <= 3 ? '#FF8AA8' : '#948CBC' }}>⏱ {questionLeft}s</p>
+            </div>
+          )}
+
+          {iAmHolder && !iAmOut && (
+            <form onSubmit={submitAnswer}>
+              <input ref={answerRef} autoFocus value={answer} placeholder="type your answer"
+                onChange={(e) => setAnswer(e.target.value)} style={{ ...input, fontSize: 20 }} />
+              <button type="submit" style={{ ...input, fontSize: 20 }}>ANSWER</button>
+            </form>
+          )}
+          {feedback && <p style={{ fontSize: 20, color: '#FF8AA8' }}>{feedback}</p>}
         </div>
       )}
 

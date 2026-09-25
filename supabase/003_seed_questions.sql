@@ -1,0 +1,55 @@
+-- PYTH BOMB: question bank, batch 1 (46 questions)
+-- Run AFTER 002_questions.sql. Safe to run twice (duplicates are skipped by question text).
+-- pyth/community questions are inserted as verified = false until checked by hand.
+-- To approve them later:  update public.questions set verified = true where category in ('pyth','community');
+
+create unique index if not exists questions_text_unique on public.questions (lower(text));
+
+insert into public.questions (category, difficulty, text, accepted_answers, source_reference, verified) values
+  ('pyth', 'easy', 'What type of network is Pyth?', array['oracle', 'oracle network', 'financial oracle', 'financial oracle network'], 'Pyth official documentation', false),
+  ('pyth', 'easy', 'What kind of data is Pyth best known for providing?', array['price data', 'prices', 'market data', 'financial market data'], 'Pyth official documentation', false),
+  ('pyth', 'easy', 'What is the token of Pyth Network called?', array['PYTH', '$PYTH'], 'Pyth official documentation', false),
+  ('pyth', 'easy', 'What color is most associated with Pyth''s branding?', array['purple'], 'Pyth community/brand association', false),
+  ('pyth', 'easy', 'What do we call the data providers that contribute market data to Pyth?', array['publishers', 'publisher', 'data publishers'], 'Pyth official documentation', false),
+  ('pyth', 'medium', 'What oracle model does Pyth primarily use for price updates?', array['pull', 'pull oracle', 'pull model'], 'Pyth official documentation', false),
+  ('pyth', 'medium', 'What service is used to fetch Pyth Core price updates?', array['Hermes', 'Hermes API'], 'Pyth official documentation', false),
+  ('community', 'easy', 'What kind of ancestor does Planck come from?', array['dinosaur', 'dino'], 'Confirmed Pyth community lore', false),
+  ('general', 'easy', 'What is the largest planet in our Solar System?', array['Jupiter'], 'General knowledge', true),
+  ('general', 'easy', 'What is the capital of Japan?', array['Tokyo'], 'General knowledge', true),
+  ('general', 'easy', 'Which animal is known as the King of the Jungle?', array['lion', 'a lion'], 'General knowledge', true),
+  ('general', 'easy', 'What is H2O commonly called?', array['water'], 'General knowledge', true),
+  ('general', 'medium', 'Which country gifted the Statue of Liberty to the United States?', array['France'], 'General knowledge', true),
+  ('general', 'medium', 'What is the smallest country in the world?', array['Vatican City', 'Vatican'], 'General knowledge', true),
+  ('general', 'medium', 'What is the chemical symbol for gold?', array['Au'], 'General knowledge', true),
+  ('general', 'medium', 'Which planet is known as the Red Planet?', array['Mars'], 'General knowledge', true),
+  ('general', 'hard', 'What is the largest organ in the human body?', array['skin', 'the skin'], 'General knowledge', true),
+  ('sports', 'easy', 'How many players does a soccer team have on the field at the start of a match?', array['11', 'eleven'], 'General sports knowledge', true),
+  ('sports', 'easy', 'How many points is a free throw worth in basketball?', array['1', 'one', 'one point'], 'General sports knowledge', true),
+  ('sports', 'easy', 'Which sport comes to mind when you hear "Wimbledon"?', array['tennis'], 'General sports knowledge', true),
+  ('sports', 'easy', 'Which country won the 2022 FIFA World Cup?', array['Argentina'], 'General sports knowledge', true),
+  ('sports', 'medium', 'How many rings are on the Olympic symbol?', array['5', 'five'], 'General sports knowledge', true),
+  ('sports', 'medium', 'How many points is a touchdown worth before the extra point?', array['6', 'six'], 'General sports knowledge', true),
+  ('sports', 'medium', 'Which NBA team plays its home games at Madison Square Garden?', array['New York Knicks', 'Knicks', 'NY Knicks'], 'General sports knowledge', true),
+  ('sports', 'medium', 'Which country has won the most men''s FIFA World Cups?', array['Brazil', 'Brasil'], 'General sports knowledge', true),
+  ('sports', 'hard', 'How long is an Olympic swimming pool?', array['50 meters', '50 metres', '50m', '50'], 'General sports knowledge', true),
+  ('movies', 'easy', 'What is the name of the cowboy in Toy Story?', array['Woody'], 'TV/Movies', true),
+  ('movies', 'easy', 'Which superhero is also known as Bruce Wayne?', array['Batman'], 'TV/Movies', true),
+  ('movies', 'easy', 'What is the name of Harry Potter''s school?', array['Hogwarts'], 'TV/Movies', true),
+  ('movies', 'easy', 'Which movie franchise features a character named Darth Vader?', array['Star Wars'], 'TV/Movies', true),
+  ('movies', 'easy', 'What color pill does Neo take in The Matrix?', array['red', 'red pill'], 'TV/Movies', true),
+  ('movies', 'easy', 'Which TV series features the characters Eleven and Vecna?', array['Stranger Things'], 'TV/Movies', true),
+  ('movies', 'medium', 'What is the name of the kingdom where most of The Lion King takes place?', array['Pride Lands', 'the Pride Lands'], 'TV/Movies', true),
+  ('movies', 'medium', 'Who is the captain of the Black Pearl in Pirates of the Caribbean?', array['Jack Sparrow', 'Captain Jack Sparrow'], 'TV/Movies', true),
+  ('movies', 'medium', 'What is the name of the coffee shop in Friends?', array['Central Perk'], 'TV/Movies', true),
+  ('movies', 'hard', 'In Breaking Bad, what alias does Walter White use?', array['Heisenberg'], 'TV/Movies', true),
+  ('fun', 'easy', 'What animal says "meow"?', array['cat', 'a cat'], 'Fun', true),
+  ('fun', 'easy', 'What color is a typical banana when ripe?', array['yellow'], 'Fun', true),
+  ('fun', 'easy', 'How many legs does a spider have?', array['8', 'eight'], 'Fun', true),
+  ('fun', 'easy', 'What animal is famous for having a very long neck?', array['giraffe'], 'Fun', true),
+  ('fun', 'easy', 'What do bees make?', array['honey'], 'Fun', true),
+  ('fun', 'easy', 'What do you call frozen water?', array['ice'], 'Fun', true),
+  ('fun', 'easy', 'What is the fastest land animal?', array['cheetah', 'a cheetah'], 'Fun', true),
+  ('fun', 'easy', 'How many days are in a week?', array['7', 'seven'], 'Fun', true),
+  ('fun', 'easy', 'What color do you get by mixing blue and yellow?', array['green'], 'Fun', true),
+  ('fun', 'easy', 'If you have 3 apples and eat 1, how many are left?', array['2', 'two'], 'Fun', true)
+on conflict do nothing;
