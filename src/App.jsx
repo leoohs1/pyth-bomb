@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
 import Home from './Home'
 import Lobby from './Lobby'
+import Game from './Game'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -171,13 +172,22 @@ export default function App() {
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto)
   const danger = elapsed < 12 ? 1 : elapsed < 22 ? 2 : elapsed < 30 ? 3 : 4
-  const bombSize = [0, 34, 44, 58, 74][danger]
-  const dangerText = ['', 'safe', 'warming up', 'DANGER', 'CRITICAL'][danger]
 
-  // segundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
-  const questionLeft = room.question_expires_at
-    ? Math.max(0, Math.ceil((new Date(room.question_expires_at).getTime() - Date.now()) / 1000))
+  // milissegundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
+  const questionMs = room.question_expires_at
+    ? Math.max(0, new Date(room.question_expires_at).getTime() - Date.now())
     : 0
+
+  if (room.status === 'playing') {
+    return (
+      <Game
+        room={room} players={players} me={me} holder={holder} alive={alive}
+        iAmHolder={iAmHolder} iAmOut={iAmOut} danger={danger} questionMs={questionMs}
+        flash={flash} feedback={feedback} answer={answer} setAnswer={setAnswer}
+        answerRef={answerRef} onSubmit={submitAnswer} error={error}
+      />
+    )
+  }
 
   return (
     <div style={page}>
@@ -185,12 +195,6 @@ export default function App() {
       <p>Room: <strong style={{ fontSize: 28 }}>{room.code}</strong> · Round {room.round_number} · {alive.length} alive</p>
 
       {flash && <h2 style={{ color: '#FF8AA8' }}>{flash}</h2>}
-
-      {room.status === 'lobby' && (
-        iAmHost
-          ? <button onClick={startGame} style={input}>START GAME</button>
-          : <p style={{ color: '#948CBC' }}>Waiting for the host to start...</p>
-      )}
 
       {room.status === 'finished' && (
         <h2 style={{ color: '#EBD28A' }}>
@@ -200,37 +204,6 @@ export default function App() {
             ? <button onClick={startGame} style={{ ...input, marginTop: 16 }}>PLAY AGAIN</button>
             : <span style={{ fontSize: 16, color: '#948CBC' }}>Waiting for the host to play again...</span>}
         </h2>
-      )}
-
-      {room.status === 'playing' && (
-        <div style={{ margin: '24px 0' }}>
-          <div style={{ fontSize: bombSize, lineHeight: 1 }}>💣</div>
-          <p style={{ color: danger >= 3 ? '#FF8AA8' : '#948CBC' }}>{dangerText}</p>
-
-          {iAmOut ? (
-            <p>☠️ you are out — watching</p>
-          ) : iAmHolder ? (
-            <p style={{ fontSize: 22 }}><strong>YOU HAVE THE BOMB — answer to pass it!</strong></p>
-          ) : (
-            <p style={{ fontSize: 20 }}><strong>{holder?.nickname ?? '...'}</strong> has the bomb</p>
-          )}
-
-          {room.current_question_text && (
-            <div style={{ margin: '16px 0' }}>
-              <p style={{ fontSize: 24, margin: 0 }}>{room.current_question_text}</p>
-              <p style={{ color: questionLeft <= 3 ? '#FF8AA8' : '#948CBC' }}>⏱ {questionLeft}s</p>
-            </div>
-          )}
-
-          {iAmHolder && !iAmOut && (
-            <form onSubmit={submitAnswer}>
-              <input ref={answerRef} autoFocus value={answer} placeholder="type your answer"
-                onChange={(e) => setAnswer(e.target.value)} style={{ ...input, fontSize: 20 }} />
-              <button type="submit" style={{ ...input, fontSize: 20 }}>ANSWER</button>
-            </form>
-          )}
-          {feedback && <p style={{ fontSize: 20, color: '#FF8AA8' }}>{feedback}</p>}
-        </div>
       )}
 
       <h3>Players ({alive.length}/{players.length} alive)</h3>
