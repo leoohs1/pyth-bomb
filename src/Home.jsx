@@ -40,7 +40,7 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
         <section className="hm-panel">
           <div className="hm-bomb" aria-hidden="true">
             <div className="hm-aura" />
-            <img src="/bomb-laurel.webp" alt="" />
+            <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
           </div>
 
           <h1 className="hm-title">

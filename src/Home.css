@@ -74,12 +74,18 @@
   text-align: center;
 }
 
+/* A subida (metade pra fora do painel) usa só a LARGURA, que é definida aqui no CSS.
+   Antes usava % da altura, que depende da imagem já ter carregado: às vezes a bomba
+   ficava presa no lugar errado. */
 .hm-bomb {
+  --hm-bomb-w: clamp(150px, 44%, 260px);
   position: absolute;
   left: 50%;
   top: 0;
-  width: clamp(150px, 44%, 260px);
-  transform: translate(-50%, -58%);
+  width: var(--hm-bomb-w);
+  aspect-ratio: 1;
+  margin-top: calc(var(--hm-bomb-w) * -0.58);
+  transform: translateX(-50%);
   animation: hm-float 3s ease-in-out infinite;
 }
 .hm-bomb img {
@@ -243,7 +249,7 @@
 }
 
 @keyframes hm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-@keyframes hm-float { 0%, 100% { transform: translate(-50%, -58%); } 50% { transform: translate(-50%, -61%); } }
+@keyframes hm-float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -8px); } }
 @keyframes hm-aura {
   0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
@@ -259,7 +265,7 @@
     padding: clamp(92px, 14vh, 120px) 14px 0;
   }
   .hm-panel { width: min(100%, 520px); padding-top: clamp(74px, 20vw, 100px); }
-  .hm-bomb { width: clamp(130px, 46%, 200px); }
+  .hm-bomb { --hm-bomb-w: clamp(130px, 46%, 200px); }
 
   /* personagens deixam de ser fixos: ficam no fluxo, logo abaixo do painel */
   .hm-chars {
