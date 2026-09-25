@@ -150,6 +150,7 @@ export default function App() {
   const meNow = players.find((p) => p.id === me?.id)
   const iAmOut = meNow && !meNow.alive
   const winner = players.find((p) => p.id === room.winner_id)
+  const iAmHost = !!me && room.host_user_id === me.user_id
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto)
   const danger = elapsed < 12 ? 1 : elapsed < 22 ? 2 : elapsed < 30 ? 3 : 4
@@ -164,14 +165,18 @@ export default function App() {
       {flash && <h2 style={{ color: '#FF8AA8' }}>{flash}</h2>}
 
       {room.status === 'lobby' && (
-        <button onClick={startGame} style={input}>START GAME</button>
+        iAmHost
+          ? <button onClick={startGame} style={input}>START GAME</button>
+          : <p style={{ color: '#948CBC' }}>Waiting for the host to start...</p>
       )}
 
       {room.status === 'finished' && (
         <h2 style={{ color: '#EBD28A' }}>
           🏆 {winner ? `${winner.nickname} SURVIVED THE PYTH BOMB` : 'Game over'}
           <br />
-          <button onClick={startGame} style={{ ...input, marginTop: 16 }}>PLAY AGAIN</button>
+          {iAmHost
+            ? <button onClick={startGame} style={{ ...input, marginTop: 16 }}>PLAY AGAIN</button>
+            : <span style={{ fontSize: 16, color: '#948CBC' }}>Waiting for the host to play again...</span>}
         </h2>
       )}
 
