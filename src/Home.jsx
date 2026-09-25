@@ -48,17 +48,20 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
           </h1>
           <p className="hm-sub"><span>Enter the arena</span></p>
 
-          <label className="hm-field">
-            <PersonIcon />
-            <input
-              placeholder="your nickname"
-              aria-label="Your nickname"
-              maxLength={20}
-              autoComplete="off"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-            />
-          </label>
+          <div className="hm-group">
+            <label className="hm-flabel" htmlFor="hm-nick">Nickname</label>
+            <div className="hm-field">
+              <PersonIcon />
+              <input
+                id="hm-nick"
+                placeholder="your nickname"
+                maxLength={20}
+                autoComplete="off"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+              />
+            </div>
+          </div>
 
           <button type="button" className="hm-btn hm-create" onClick={onCreate}>
             <Leaf /> <span>Create room</span> <Leaf flip />
@@ -67,18 +70,21 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
           <p className="hm-or"><span>or</span></p>
 
           <form className="hm-join" onSubmit={(e) => { e.preventDefault(); onJoin() }}>
-            <label className="hm-field">
-              <HashIcon />
-              <input
-                placeholder="room code"
-                aria-label="Room code"
-                maxLength={8}
-                autoComplete="off"
-                autoCapitalize="characters"
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value)}
-              />
-            </label>
+            <div className="hm-group">
+              <label className="hm-flabel" htmlFor="hm-code">Room code</label>
+              <div className="hm-field">
+                <HashIcon />
+                <input
+                  id="hm-code"
+                  placeholder="room code"
+                  maxLength={8}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                />
+              </div>
+            </div>
             <button type="submit" className="hm-btn hm-joinbtn">Join</button>
           </form>
 

@@ -12,6 +12,19 @@ const PencilIcon = () => (
   </svg>
 )
 
+// Clarão da explosão: cobre só a parte de cima do painel e deixa clicar/digitar embaixo
+// (o próximo portador da bomba não pode esperar). `flash` = { name, mine } ou null.
+// `full`: cobre o painel todo (usado no fim de jogo, pra não misturar com o vencedor).
+export function Boom({ flash, full = false }) {
+  if (!flash) return null
+  return (
+    <div className={`gm-boom${flash.mine ? ' is-mine' : ''}${full ? ' is-full' : ''}`} role="status">
+      <span className="gm-boom-burst" aria-hidden="true">💥</span>
+      <p className="gm-boom-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
+    </div>
+  )
+}
+
 // Tela da partida: bomba, pergunta, resposta e jogadores.
 // Só visual: toda a lógica (respostas, tempo, perigo) continua no App.jsx e chega por props.
 export default function Game({
@@ -28,13 +41,13 @@ export default function Game({
       <div className="hm-shade" />
 
       <div className="hm-scroll lb-scroll gm-scroll">
-        <section className={`hm-panel lb-panel gm-panel dl-${danger}`}>
+        <section className={`hm-panel lb-panel gm-panel dl-${danger}${flash ? ' is-boom' : ''}`}>
           <div className="gm-top">
             <img className="gm-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
             <p className="gm-chip">Round {room.round_number} · {alive.length} alive</p>
           </div>
 
-          {flash && <p className="gm-flash" role="status">{flash}</p>}
+          <Boom flash={flash} />
 
           <div className="gm-bomb-wrap" aria-hidden="true">
             <div className="gm-aura" />
@@ -75,7 +88,7 @@ export default function Game({
                   autoCapitalize="none"
                   spellCheck={false}
                   aria-label="Your answer"
-                  placeholder="your answer"
+                  placeholder="answer…"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}

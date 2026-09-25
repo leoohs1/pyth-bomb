@@ -3,6 +3,7 @@ import { supabase, ensureSession } from './supabaseClient'
 import Home from './Home'
 import Lobby from './Lobby'
 import Game from './Game'
+import Finished from './Finished'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -63,7 +64,21 @@ export default function App() {
         (payload) => setRoom(payload.new))
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // celular bloqueou a tela / trocou de app / ficou sem internet: pode ter perdido
+    // atualizações em tempo real. Ao voltar, recarrega tudo pra não mostrar tela velha.
+    function refresh() {
+      if (document.visibilityState !== 'visible') return
+      loadPlayers()
+      loadRoom()
+    }
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('online', refresh)
+
+    return () => {
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('online', refresh)
+      supabase.removeChannel(channel)
+    }
   }, [roomId])
 
   // relógio local: só mede quanto tempo passou, nunca sabe quando explode
@@ -90,10 +105,10 @@ export default function App() {
     lastEventRef.current = room.last_event_at
     const victim = players.find((p) => p.id === room.last_victim_id)
     if (victim) {
-      setFlash(`💥 ${victim.nickname} GOT RUGGED!`)
+      setFlash({ name: victim.nickname, mine: victim.id === me?.id })
       setTimeout(() => setFlash(null), 3000)
     }
-  }, [room?.last_event_at, room?.last_victim_id, players])
+  }, [room?.last_event_at, room?.last_victim_id, players, me?.id])
 
   async function joinRoom(targetRoom) {
     const user = await ensureSession()
@@ -145,9 +160,6 @@ export default function App() {
     answerRef.current?.focus()
   }
 
-  const input = { padding: 10, marginRight: 8, fontSize: 16 }
-  const page = { padding: 40, fontFamily: 'sans-serif', color: '#EDEAF8' }
-
   if (!room) {
     return (
       <Home
@@ -189,35 +201,12 @@ export default function App() {
     )
   }
 
+  // status 'finished'
+  const lastVictim = players.find((p) => p.id === room.last_victim_id)
   return (
-    <div style={page}>
-      <h1>PYTH BOMB</h1>
-      <p>Room: <strong style={{ fontSize: 28 }}>{room.code}</strong> · Round {room.round_number} · {alive.length} alive</p>
-
-      {flash && <h2 style={{ color: '#FF8AA8' }}>{flash}</h2>}
-
-      {room.status === 'finished' && (
-        <h2 style={{ color: '#EBD28A' }}>
-          🏆 {winner ? `${winner.nickname} SURVIVED THE PYTH BOMB` : 'Game over'}
-          <br />
-          {iAmHost
-            ? <button onClick={startGame} style={{ ...input, marginTop: 16 }}>PLAY AGAIN</button>
-            : <span style={{ fontSize: 16, color: '#948CBC' }}>Waiting for the host to play again...</span>}
-        </h2>
-      )}
-
-      <h3>Players ({alive.length}/{players.length} alive)</h3>
-      <ul>
-        {players.map((p) => (
-          <li key={p.id} style={{ opacity: p.alive ? 1 : 0.45 }}>
-            {p.id === room.bomb_holder_id && '💣 '}
-            {p.alive ? '' : '☠️ '}
-            {p.nickname} {p.id === me?.id && '(you)'}
-          </li>
-        ))}
-      </ul>
-
-      {error && <p style={{ color: 'salmon' }}>{error}</p>}
-    </div>
+    <Finished
+      room={room} players={players} me={me} winner={winner} lastVictim={lastVictim}
+      iAmHost={iAmHost} onStart={startGame} flash={flash} error={error}
+    />
   )
 }

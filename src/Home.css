@@ -138,6 +138,19 @@
   font-size: 0.8em;
 }
 
+/* rótulo em cima de cada campo */
+.hm-group { text-align: left; min-width: 0; }
+.hm-flabel {
+  display: block;
+  margin: 0 0 5px 4px;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hm-ink);
+}
+
 /* campos */
 .hm-field {
   position: relative;
@@ -224,6 +237,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
+  align-items: end; /* o botão Join alinha com o campo, não com o rótulo */
 }
 .hm-joinbtn {
   width: auto;
