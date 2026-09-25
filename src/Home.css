@@ -275,6 +275,14 @@
   .hm-char { position: static; height: 100%; width: auto; }
 }
 
+/* celular pequeno: some o emblema de cima (o logo já tem uma bomba) e ganha espaço */
+@media (max-width: 520px) {
+  .hm-bomb { display: none; }
+  .hm-scroll { padding-top: 22px; }
+  .hm-panel { padding-top: 26px; }
+  .hm-sub { margin-top: 10px; }
+}
+
 /* telas muito baixas (celular deitado): esconde os personagens */
 @media (max-height: 520px) {
   .hm-chars { display: none; }
