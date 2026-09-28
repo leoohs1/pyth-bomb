@@ -14,7 +14,7 @@ const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
 
 // Tela de fim de jogo: vencedor, lista final e jogar de novo (só o dono).
 // Só visual: a lógica (iniciar outra partida) chega por props do App.jsx.
-export default function Finished({ room, players, me, winner, iAmHost, onStart, flash, error }) {
+export default function Finished({ room, players, me, winner, iAmHost, onStart, onLeave, flash, error }) {
   const iWon = !!winner && winner.id === me?.id
   const meNow = players.find((p) => p.id === me?.id)
   const iAmOut = !!meNow && !meNow.alive
@@ -80,6 +80,11 @@ export default function Finished({ room, players, me, winner, iAmHost, onStart, 
             <p className="lb-hint">Room {room.code}</p>
 
             {error && <p className="hm-error" role="alert">{error}</p>}
+
+            <button type="button" className="lb-leave"
+              onClick={() => window.confirm('Leave this room?') && onLeave()}>
+              Leave room
+            </button>
           </div>
         </section>
 

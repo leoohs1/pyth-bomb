@@ -6,7 +6,7 @@ const MIN_PLAYERS = 2
 
 // Sala de espera: código da sala, jogadores e botão de começar (só o dono).
 // Só visual: a lógica (iniciar o jogo, lista de jogadores) chega por props do App.jsx.
-export default function Lobby({ room, players, me, iAmHost, onStart, error }) {
+export default function Lobby({ room, players, me, iAmHost, onStart, onLeave, error }) {
   const [copied, setCopied] = useState(false)
   const timerRef = useRef(null)
 
@@ -77,6 +77,11 @@ export default function Lobby({ room, players, me, iAmHost, onStart, error }) {
           )}
 
           {error && <p className="hm-error" role="alert">{error}</p>}
+
+          <button type="button" className="lb-leave"
+            onClick={() => window.confirm('Leave this room?') && onLeave()}>
+            Leave room
+          </button>
         </section>
 
         <div className="hm-chars" aria-hidden="true">

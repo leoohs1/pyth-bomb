@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
+import { saveRoomCode, loadRoomCode, clearRoomCode, saveNickname, loadNickname } from './roomStorage'
 import Home from './Home'
 import Lobby from './Lobby'
 import Game from './Game'
@@ -17,7 +18,7 @@ export default function App() {
   const [me, setMe] = useState(null)
   const [players, setPlayers] = useState([])
   const [codeInput, setCodeInput] = useState('')
-  const [nickname, setNickname] = useState('')
+  const [nickname, setNickname] = useState(() => loadNickname())
   const [error, setError] = useState(null)
   const [elapsed, setElapsed] = useState(0)
 
@@ -33,8 +34,31 @@ export default function App() {
     setAnswer('')
   }, [room?.question_expires_at])
 
+  // entra com o crachá anônimo e, se o navegador lembra de uma sala, volta direto pra
+  // ela (reconexão depois de fechar a aba, recarregar a página ou trocar de app)
   useEffect(() => {
-    ensureSession().catch((e) => setError(e.message))
+    (async () => {
+      let user
+      try {
+        user = await ensureSession()
+      } catch (e) {
+        return setError(e.message)
+      }
+
+      const code = loadRoomCode()
+      if (!code) return
+
+      const { data: targetRoom } = await supabase.from('rooms').select().eq('code', code).maybeSingle()
+      if (!targetRoom) return clearRoomCode()
+
+      const { data: player } = await supabase
+        .from('players').select()
+        .eq('room_id', targetRoom.id).eq('user_id', user.id).maybeSingle()
+      if (!player) return clearRoomCode()
+
+      setRoom(targetRoom)
+      setMe(player)
+    })()
   }, [])
 
   // escuta jogadores e mudanças na sala
@@ -112,18 +136,49 @@ export default function App() {
 
   async function joinRoom(targetRoom) {
     const user = await ensureSession()
+
+    // já tem uma cadeira nessa sala? (recarregou a página, ou digitou o código de
+    // novo) reaproveita a mesma pessoa em vez de criar um jogador fantasma duplicado
+    const { data: existing } = await supabase
+      .from('players').select()
+      .eq('room_id', targetRoom.id).eq('user_id', user.id).maybeSingle()
+    if (existing) {
+      setMe(existing)
+      setRoom(targetRoom)
+      saveRoomCode(targetRoom.code)
+      return
+    }
+
     const { data: player, error: e } = await supabase
       .from('players')
       .insert({ room_id: targetRoom.id, nickname: nickname.trim(), user_id: user.id })
       .select().single()
-    if (e) return setError(e.message)
+
+    if (e) {
+      // corrida rara: a mesma pessoa entrou quase ao mesmo tempo (ex: dois cliques)
+      if (e.code === '23505') {
+        const { data: retry } = await supabase.from('players').select()
+          .eq('room_id', targetRoom.id).eq('user_id', user.id).maybeSingle()
+        if (retry) {
+          setMe(retry)
+          setRoom(targetRoom)
+          saveRoomCode(targetRoom.code)
+          return
+        }
+      }
+      return setError(e.message)
+    }
+
     setMe(player)
     setRoom(targetRoom)
+    saveRoomCode(targetRoom.code)
   }
 
   async function createRoom() {
     setError(null)
-    if (!nickname.trim()) return setError('Pick a nickname first')
+    const nick = nickname.trim()
+    if (!nick) return setError('Pick a nickname first')
+    saveNickname(nick)
     const { data, error: e } = await supabase.from('rooms').insert({ code: makeCode() }).select().single()
     if (e) return setError(e.message)
     joinRoom(data)
@@ -131,11 +186,22 @@ export default function App() {
 
   async function joinByCode() {
     setError(null)
-    if (!nickname.trim()) return setError('Pick a nickname first')
+    const nick = nickname.trim()
+    if (!nick) return setError('Pick a nickname first')
+    saveNickname(nick)
     const { data, error: e } = await supabase
       .from('rooms').select().eq('code', codeInput.trim().toUpperCase()).single()
     if (e) return setError('Room not found')
     joinRoom(data)
+  }
+
+  // sai da sala guardada no navegador; não mexe no jogo em si nem apaga o jogador
+  function leaveRoom() {
+    clearRoomCode()
+    setRoom(null)
+    setMe(null)
+    setPlayers([])
+    setError(null)
   }
 
   async function startGame() {
@@ -179,7 +245,7 @@ export default function App() {
   const iAmHost = !!me && room.host_user_id === me.user_id
 
   if (room.status === 'lobby') {
-    return <Lobby room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} error={error} />
+    return <Lobby room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} error={error} />
   }
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto).
@@ -207,7 +273,7 @@ export default function App() {
   return (
     <Finished
       room={room} players={players} me={me} winner={winner} lastVictim={lastVictim}
-      iAmHost={iAmHost} onStart={startGame} flash={flash} error={error}
+      iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} flash={flash} error={error}
     />
   )
 }

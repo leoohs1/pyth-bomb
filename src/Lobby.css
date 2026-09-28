@@ -166,6 +166,23 @@
   animation: lb-dots 1.4s steps(4, end) infinite;
 }
 
+/* link discreto pra sair da sala guardada no navegador (lobby / fim de jogo, nunca em jogo) */
+.lb-leave {
+  display: block;
+  margin: 16px auto 0;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(46, 31, 99, 0.55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lb-leave:hover { color: rgba(46, 31, 99, 0.85); }
+.lb-leave:focus-visible { outline: 2px solid rgba(169, 139, 255, 0.7); outline-offset: 2px; border-radius: 4px; }
+
 @keyframes lb-pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes lb-dots {
   0% { content: ''; }
