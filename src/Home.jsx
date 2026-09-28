@@ -30,7 +30,7 @@ const HashIcon = () => (
 
 // Tela de entrada: criar sala ou entrar por código.
 // Só visual: a lógica (criar/entrar) continua no App.jsx e chega por props.
-export default function Home({ nickname, setNickname, codeInput, setCodeInput, onCreate, onJoin, error }) {
+export default function Home({ nickname, setNickname, codeInput, setCodeInput, onCreate, onJoin, onBack, error }) {
   return (
     <main className="hm-stage">
       <div className="hm-bg" role="img" aria-label="Marble arena above a night city with the Pyth emblem on the floor" />
@@ -47,6 +47,9 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
             <img src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
           </h1>
           <p className="hm-sub"><span>Enter the arena</span></p>
+          {onBack && (
+            <button type="button" className="hm-back" onClick={onBack}>← All modes</button>
+          )}
 
           <div className="hm-group">
             <label className="hm-flabel" htmlFor="hm-nick">Nickname</label>

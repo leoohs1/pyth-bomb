@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase, ensureSession } from './supabaseClient'
 import { saveRoomCode, loadRoomCode, clearRoomCode, saveNickname, loadNickname } from './roomStorage'
+import Modes from './Modes'
 import Home from './Home'
 import Lobby from './Lobby'
 import Game from './Game'
@@ -19,6 +20,9 @@ export default function App() {
   const [players, setPlayers] = useState([])
   const [codeInput, setCodeInput] = useState('')
   const [nickname, setNickname] = useState(() => loadNickname())
+  // tela de modos: hoje só existe o Classic, mas a "porta de entrada" já está pronta
+  // pro Solo e a Arena, que chegam mais pra frente
+  const [mode, setMode] = useState(null)
   const [error, setError] = useState(null)
   const [elapsed, setElapsed] = useState(0)
 
@@ -227,11 +231,14 @@ export default function App() {
   }
 
   if (!room) {
+    if (mode !== 'classic') {
+      return <Modes onSelectClassic={() => setMode('classic')} />
+    }
     return (
       <Home
         nickname={nickname} setNickname={setNickname}
         codeInput={codeInput} setCodeInput={setCodeInput}
-        onCreate={createRoom} onJoin={joinByCode} error={error}
+        onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error}
       />
     )
   }

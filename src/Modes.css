@@ -1,0 +1,93 @@
+/* Tela de modos. Usa as classes hm-* (Home.css) pra fundo, painel e personagens. */
+
+.hm-panel.md-panel {
+  width: min(100%, clamp(340px, 42vw, 620px));
+}
+
+.md-modes {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.md-mode {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #4e4560, #3b3350);
+  border: 2px solid var(--hm-gold);
+  border-radius: 12px;
+  box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45), 0 2px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.md-mode:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.md-mode:active { transform: translateY(1px); }
+.md-mode:focus-visible { outline: 3px solid rgba(169, 139, 255, 0.85); outline-offset: 2px; }
+
+.md-mode.is-locked {
+  cursor: not-allowed;
+  background: linear-gradient(180deg, #47415a, #3a3448);
+  opacity: 0.72;
+}
+.md-mode.is-locked:hover { filter: none; transform: none; }
+
+.md-mode-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  font-size: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(201, 162, 74, 0.6);
+}
+
+.md-mode-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.md-mode-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: #f6eeff;
+}
+.md-mode-sub {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(246, 238, 255, 0.65);
+}
+.md-mode-badge {
+  padding: 2px 9px;
+  font-family: Cinzel, Georgia, serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b4a08;
+  background: rgba(201, 162, 74, 0.55);
+  border-radius: 999px;
+}
+
+@media (max-width: 860px) {
+  .hm-panel.md-panel { width: min(100%, 520px); }
+}
+@media (max-width: 520px) {
+  .md-mode { padding: 12px 14px; gap: 12px; }
+  .md-mode-icon { width: 40px; height: 40px; font-size: 20px; }
+  .md-mode-title { font-size: 16px; }
+}

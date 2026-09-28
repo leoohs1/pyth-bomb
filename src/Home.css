@@ -138,6 +138,23 @@
   font-size: 0.8em;
 }
 
+/* link discreto pra voltar à escolha de modo */
+.hm-back {
+  display: block;
+  margin: 2px auto 0;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(46, 31, 99, 0.55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.hm-back:hover { color: rgba(46, 31, 99, 0.85); }
+.hm-back:focus-visible { outline: 2px solid rgba(169, 139, 255, 0.7); outline-offset: 2px; border-radius: 4px; }
+
 /* rótulo em cima de cada campo */
 .hm-group { text-align: left; min-width: 0; }
 .hm-flabel {
