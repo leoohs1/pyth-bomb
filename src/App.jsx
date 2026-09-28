@@ -256,8 +256,8 @@ export default function App() {
   }
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto).
-  // Marcos pensados para uma bomba de 80 a 90s: "critical" só nos últimos ~5-15s.
-  const danger = elapsed < 35 ? 1 : elapsed < 60 ? 2 : elapsed < 75 ? 3 : 4
+  // Marcos pensados para uma bomba de 55 a 65s: "critical" só nos últimos ~5-15s.
+  const danger = elapsed < 20 ? 1 : elapsed < 35 ? 2 : elapsed < 50 ? 3 : 4
 
   // milissegundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
   const questionMs = room.question_expires_at

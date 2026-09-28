@@ -3,7 +3,7 @@ import './Lobby.css'   // placas de jogador
 import './Game.css'
 
 const DANGER_LABEL = ['', 'safe', 'warming up', 'danger!', 'critical!']
-const QUESTION_MS = 12000 // tem que ser igual ao intervalo em deal_question (supabase/004_timers.sql)
+const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
 
 const PencilIcon = () => (
   <svg className="hm-icon" viewBox="0 0 24 24" aria-hidden="true">
