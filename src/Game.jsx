@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import './Home.css'    // fundo, painel de mármore, personagens
 import './Lobby.css'   // placas de jogador
 import './Game.css'
@@ -36,10 +37,71 @@ export default function Game({
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
 
+  // bomba "pulando" de placa em placa: mede onde estava quem tinha a bomba e onde está
+  // quem recebeu, e anima um ícone voando em arco entre as duas. Só decoração —
+  // se algo não bater (lista rolada, elemento sumiu), simplesmente não anima nada.
+  const avatarRefs = useRef({})
+  const prevHolderRef = useRef(null)
+  const flightSeqRef = useRef(0)
+  const [flight, setFlight] = useState(null)
+
+  useEffect(() => {
+    const prevId = prevHolderRef.current
+    const nextId = room.bomb_holder_id
+    prevHolderRef.current = nextId
+
+    if (!prevId || !nextId || prevId === nextId) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    // explosão + rodada nova (bomba renasce em outra pessoa) não é um "passe":
+    // isso já tem o próprio efeito dramático (o clarão da explosão)
+    const prevPlayer = players.find((p) => p.id === prevId)
+    if (!prevPlayer || !prevPlayer.alive) return
+
+    const fromEl = avatarRefs.current[prevId]
+    const toEl = avatarRefs.current[nextId]
+    if (!fromEl || !toEl) return
+
+    // se algum dos dois estiver rolado pra fora da lista (sala cheia), não anima
+    const listEl = fromEl.closest('.gm-players')
+    const a = fromEl.getBoundingClientRect()
+    const b = toEl.getBoundingClientRect()
+    if (listEl) {
+      const box = listEl.getBoundingClientRect()
+      const visible = (r) => r.top >= box.top - 4 && r.bottom <= box.bottom + 4
+      if (!visible(a) || !visible(b)) return
+    }
+
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2
+    const x1 = b.left + b.width / 2, y1 = b.top + b.height / 2
+
+    // chave única por voo: se duas passagens acontecerem rápido (menos de 550ms
+    // entre elas), força um elemento NOVO na tela em vez de reaproveitar o
+    // anterior — assim a animação CSS sempre reinicia do zero, mesmo em sequência
+    const seq = ++flightSeqRef.current
+    setFlight({
+      seq,
+      id: nextId,
+      vars: {
+        '--x0': `${x0}px`, '--y0': `${y0}px`,
+        '--x1': `${x1}px`, '--y1': `${y1}px`,
+        '--xm': `${(x0 + x1) / 2}px`, '--ym': `${Math.min(y0, y1) - 60}px`,
+      },
+    })
+    const t = setTimeout(() => {
+      setFlight((f) => (f && f.seq === seq ? null : f))
+    }, 550)
+    return () => clearTimeout(t)
+  }, [room.bomb_holder_id, players])
+
   return (
     <main className="hm-stage">
       <div className="hm-bg" role="img" aria-label="Marble arena above a night city" />
       <div className="hm-shade" />
+
+      {flight && (
+        <span key={flight.seq} className="gm-flying-bomb" aria-hidden="true" style={flight.vars}>💣</span>
+      )}
 
       <div className="hm-scroll lb-scroll gm-scroll">
         <section className={`hm-panel lb-panel gm-panel dl-${danger}${flash ? ' is-boom' : ''}`}>
@@ -104,13 +166,18 @@ export default function Game({
             {players.map((p) => (
               <li key={p.id}
                 className={`lb-plate${p.id === me?.id ? ' is-me' : ''}${p.id === room.bomb_holder_id ? ' is-holder' : ''}${p.alive ? '' : ' is-out'}`}>
-                <span className="lb-avatar" aria-hidden="true">
+                <span className="lb-avatar" aria-hidden="true"
+                  ref={(el) => {
+                    if (el) avatarRefs.current[p.id] = el
+                    else delete avatarRefs.current[p.id]
+                  }}>
                   {p.alive ? (p.nickname.trim().charAt(0).toUpperCase() || '?') : '☠️'}
                 </span>
                 <span className="lb-name">{p.nickname}</span>
                 {p.id === me?.id && <span className="lb-you">you</span>}
                 {p.id === room.bomb_holder_id && (
-                  <span className="lb-crown" role="img" aria-label="Has the bomb">💣</span>
+                  <span className={`lb-crown${flight?.id === p.id ? ' is-landing' : ''}`}
+                    role="img" aria-label="Has the bomb">💣</span>
                 )}
               </li>
             ))}

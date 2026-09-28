@@ -236,6 +236,35 @@
   box-shadow: 0 0 0 2px rgba(217, 169, 60, 0.55), 0 3px 8px rgba(60, 30, 120, 0.15);
 }
 .lb-plate.is-out { opacity: 0.5; filter: grayscale(0.6); }
+
+/* a bomba "pulando" de uma placa pra outra: ícone fixo na tela, animado por
+   translate3d com as coordenadas calculadas em Game.jsx (--x0/--y0 até --x1/--y1,
+   passando por --xm/--ym no meio do arco) */
+.gm-flying-bomb {
+  position: fixed;
+  z-index: 20;
+  left: 0;
+  top: 0;
+  font-size: 26px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(20, 6, 50, 0.5));
+  animation: gm-fly 0.55s cubic-bezier(0.32, 0, 0.2, 1) forwards;
+}
+@keyframes gm-fly {
+  0% { transform: translate3d(var(--x0), var(--y0), 0) translate(-50%, -50%) scale(0.9) rotate(0deg); }
+  55% { transform: translate3d(var(--xm), var(--ym), 0) translate(-50%, -50%) scale(1.25) rotate(190deg); }
+  100% { transform: translate3d(var(--x1), var(--y1), 0) translate(-50%, -50%) scale(0.95) rotate(340deg); }
+}
+
+/* o emblema 💣 só "pousa" com um saltinho quando a bomba de fato pulou até ali;
+   o delay bate com a duração do voo acima, pra parecer que chegou junto */
+.lb-crown.is-landing { animation: gm-land 0.3s ease-out 0.5s backwards; }
+@keyframes gm-land {
+  0% { transform: scale(0.2); opacity: 0; }
+  70% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
 .lb-plate.is-out .lb-name { text-decoration: line-through; }
 .lb-plate.is-out .lb-avatar { background: #7c7391; }
 
@@ -284,6 +313,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gm-bomb, .gm-aura, .gm-banner.is-me, .gm-feedback { animation: none; }
   .gm-boom, .gm-boom-burst, .gm-boom-mino, .gm-panel.is-boom { animation: none; }
+  .gm-flying-bomb, .lb-crown.is-landing { animation: none; }
   .dl-4 .gm-bomb-wrap { animation: none; }
   .gm-fill { transition: none; }
 }
