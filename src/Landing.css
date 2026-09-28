@@ -93,15 +93,19 @@
   color: var(--pb-gold);
   text-transform: uppercase;
 }
-.pb-title {
-  margin: 0.12em 0 0;
-  font-family: 'Marcellus SC', Cinzel, Georgia, serif;
-  font-weight: 400;
-  line-height: 0.95;
-  font-size: clamp(52px, 11vw, 148px);
-  color: var(--pb-ink);
-  letter-spacing: 0.01em;
-  text-shadow: 0 2px 0 #fff, 0 0 2px #fff, 0 10px 30px rgba(255, 255, 255, 0.75), 0 18px 40px rgba(90, 50, 170, 0.25);
+/* o logo é a imagem oficial (a bomba faz as vezes do "O"); o halo branco em volta é o
+   mesmo truque do título antigo em texto, só que via drop-shadow (respeita a transparência) */
+.pb-title { margin: 0.12em 0 0; line-height: 0; }
+.pb-logo {
+  display: block;
+  width: clamp(230px, 50vw, 600px);
+  height: auto;
+  margin: 0 auto;
+  filter:
+    drop-shadow(0 2px 0 #fff)
+    drop-shadow(0 0 2px #fff)
+    drop-shadow(0 8px 22px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 16px 34px rgba(90, 50, 170, 0.3));
 }
 .pb-laurel {
   display: flex;

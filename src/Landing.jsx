@@ -33,7 +33,9 @@ export default function Landing() {
 
       <header className="pb-header">
         <p className="pb-kicker">Myths ✦ Friends ✦ Mayhem</p>
-        <h1 className="pb-title">Pyth Bomb</h1>
+        <h1 className="pb-title">
+          <img className="pb-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
+        </h1>
         <div className="pb-laurel">
           <Laurel />
           <div className="pb-soon">Coming soon</div>
