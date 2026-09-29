@@ -56,17 +56,23 @@
 .pov-scene {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   opacity: 0;
   transform: scale(0.96);
   transition: opacity 0.25s ease, transform 0.3s ease;
 }
 .pov-flash.pov-impact .pov-scene { opacity: 1; transform: scale(1); }
 
+/* posições explícitas (em vez de empilhar com flex) pra garantir que a bomba
+   e as mãos nunca se sobreponham no cabelo/rosto dela — como as unidades cqw
+   (largura) valem bem mais em % de ALTURA numa arena larga feito essa, um
+   flex-stack "natural" colidia os dois sem avisar. */
 .pov-title {
-  margin: 4.2% 0 0;
+  position: absolute;
+  top: 3%;
+  left: 50%;
+  width: 88%;
+  transform: translateX(-50%);
+  text-align: center;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
   font-size: 3.6cqw;
@@ -80,17 +86,19 @@
 }
 
 .pov-bombwrap {
-  position: relative;
-  margin-top: 6%;
-  width: 26cqw;
-  height: 26cqw;
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 17cqw;
+  height: 17cqw;
 }
 .pov-glow {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 30cqw;
-  height: 30cqw;
+  width: 21cqw;
+  height: 21cqw;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
@@ -102,8 +110,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 17cqw;
-  height: 17cqw;
+  width: 12cqw;
+  height: 12cqw;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 0.3cqw solid rgba(255, 150, 90, 0.85);
@@ -145,20 +153,20 @@
   bottom: -2%;
   left: 50%;
   width: 62cqw;
-  height: 30cqw;
+  /* janela mais justa (era 30cqw) — mira só peito+mãos, sem entrar no
+     cabelo/rosto (que colidia com a bomba lá em cima) */
+  height: 20cqw;
   transform: translateX(-50%);
   overflow: hidden;
-  /* sem isso a borda de cima do recorte vira uma linha reta bem dura no meio
-     do peito dela — com o degradê, ela "nasce" do borrão de fundo em vez de
-     parecer um adesivo colado por cima */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%);
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%);
+  /* fade bem mais fino que antes: só a beiradinha de cima, sem comer as mãos */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 15%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 15%);
 }
 .pov-hands img {
   position: absolute;
   /* empurra a imagem pra baixo do contentor (que corta o excesso) até a janela
-     visível cair no colo/mãos da Oracle, não nos pés/banquinho dela */
-  bottom: -13cqw;
+     visível cair nas mãos/peito da Oracle — nem no cabelo, nem nos pés */
+  bottom: -18cqw;
   left: 50%;
   width: 62cqw;
   height: auto;

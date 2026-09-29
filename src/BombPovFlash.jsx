@@ -47,9 +47,9 @@ export default function BombPovFlash({ playKey, onDone }) {
         <div className="pov-bombwrap">
           <div className="pov-glow" />
           <div className="pov-ring" />
-          <span className="pov-spark" style={{ '--sx': '-3.5cqw', '--sy': '-6cqw' }} />
-          <span className="pov-spark" style={{ '--sx': '4cqw', '--sy': '-6.5cqw', animationDelay: '0.22s' }} />
-          <span className="pov-spark" style={{ '--sx': '0.5cqw', '--sy': '-7.5cqw', animationDelay: '0.44s' }} />
+          <span className="pov-spark" style={{ '--sx': '-2.2cqw', '--sy': '-3.8cqw' }} />
+          <span className="pov-spark" style={{ '--sx': '2.5cqw', '--sy': '-4.2cqw', animationDelay: '0.22s' }} />
+          <span className="pov-spark" style={{ '--sx': '0.3cqw', '--sy': '-4.8cqw', animationDelay: '0.44s' }} />
           <img className="pov-bomb" src="/bomb-laurel.webp" alt="" />
         </div>
 
