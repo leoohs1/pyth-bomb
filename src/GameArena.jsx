@@ -3,6 +3,45 @@ import './GameArena.css'
 const DANGER_LABEL = ['', 'safe', 'warming up', 'danger!', 'critical!']
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
 
+// elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso, repete
+const AVATARS = [
+  '/seat-oracle.webp', '/seat-athena.webp', '/seat-cyclops2.webp', '/seat-spartan.webp',
+  '/seat-minotaur2.webp', '/seat-owl.webp', '/seat-amphora.webp', '/seat-boy.webp',
+  '/seat-nymph.webp', '/seat-blossom.webp', '/seat-faun.webp', '/seat-statue.webp',
+  '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
+]
+
+// 20 "cadeiras" fixas: 3 fileiras (0 = mais perto/maior ... 2 = mais longe/menor,
+// que divide a altura com o cartão e por isso só usa as laterais). Posição
+// horizontal em % da arena — não é calculado, é mobília fixa, como combinado.
+const SEATS = [
+  // fileira 0 (frente) — 7 lugares, largura toda
+  { row: 0, col: 2 }, { row: 0, col: 18.3 }, { row: 0, col: 34.6 }, { row: 0, col: 50 },
+  { row: 0, col: 65.3 }, { row: 0, col: 81.6 }, { row: 0, col: 98 },
+  // fileira 1 (meio) — 7 lugares, largura toda
+  { row: 1, col: 2 }, { row: 1, col: 18.3 }, { row: 1, col: 34.6 }, { row: 1, col: 50 },
+  { row: 1, col: 65.3 }, { row: 1, col: 81.6 }, { row: 1, col: 98 },
+  // fileira 2 (fundo) — 6 lugares, só nas laterais (o cartão ocupa o centro aqui)
+  { row: 2, col: 3 }, { row: 2, col: 15 }, { row: 2, col: 27 },
+  { row: 2, col: 73 }, { row: 2, col: 85 }, { row: 2, col: 97 },
+]
+
+// ORDEM DE PREENCHIMENTO: índices em SEATS, do centro pra fora, alternando
+// esquerda/direita, espalhando entre as fileiras — não é "primeiro N da
+// fileira 0". Com poucos jogadores (6-8), isso preenche frente+meio de forma
+// equilibrada antes de tocar na fileira de trás. Índices: 0-6 = fileira 0
+// (centro=3), 7-13 = fileira 1 (centro=10), 14-19 = fileira 2 (sem centro
+// único, começa pelos dois mais próximos do cartão).
+const SEAT_ORDER = [
+  3, 10,           // frente-centro, meio-centro
+  4, 2, 11, 9,      // frente-dir, frente-esq, meio-dir, meio-esq (1 passo)
+  5, 1, 12, 8,      // (2 passos)
+  6, 0, 13, 7,      // (bordas)
+  17, 16,          // fundo: mais perto do cartão (dir, esq)
+  18, 15,          // fundo: meio
+  19, 14,          // fundo: mais longe (cantos)
+]
+
 const PencilIcon = () => (
   <svg className="ga-icon" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" stroke="currentColor" strokeWidth="2.2"
@@ -10,9 +49,10 @@ const PencilIcon = () => (
   </svg>
 )
 
-// STEP 1 — painel central + HUD, ainda sem os jogadores (isso é o Step 2).
 // Mesma "forma" de props que o Game.jsx real recebe de App.jsx, pra plugar
-// direto quando chegar a hora (Step 3) sem precisar reescrever nada.
+// direto quando chegar a hora (Step 3) sem precisar reescrever nada. Por
+// enquanto (Step 2) os jogadores aparecem sentados, parados — sem brilho de
+// quem tem a bomba nem estado de eliminado ainda (isso é o Step 3).
 export default function GameArena({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
@@ -20,6 +60,9 @@ export default function GameArena({
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
+
+  // cada jogador (até 20) ganha uma cadeira, na ordem de preenchimento acima
+  const seated = players.slice(0, 20).map((p, i) => ({ player: p, seat: SEATS[SEAT_ORDER[i]] }))
 
   return (
     <main className="ga-stage">
@@ -32,7 +75,14 @@ export default function GameArena({
           <span className="ga-chip">Round {room.round_number} · Classic</span>
         </div>
 
-        {/* Step 2 entra aqui: os assentos com os jogadores */}
+        <div className="ga-seats">
+          {seated.map(({ player: p, seat: s }, i) => (
+            <div key={p.id} className={`ga-seat ga-row-${s.row}`} style={{ left: `${s.col}%` }}>
+              <img className="ga-avatar" src={AVATARS[i % AVATARS.length]} alt="" />
+              <span className="ga-name">{p.nickname}</span>
+            </div>
+          ))}
+        </div>
 
         <section className={`ga-card dl-${danger}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
