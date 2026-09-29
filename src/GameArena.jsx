@@ -54,6 +54,30 @@ const PencilIcon = () => (
   </svg>
 )
 
+// troca pra uma segunda arte (expressão de pânico) quando o personagem está com
+// a bomba. Convenção: "seat-oracle.webp" -> "seat-oracle-panic.webp". Se esse
+// arquivo ainda não existir, cai sozinho de volta pro padrão, sem quebrar nada
+// (mesmo mecanismo já testado no ArenaPreview.jsx) — assim que Halls entregar a
+// versão "-panic" de alguém, já funciona sozinho, sem mexer em mais nada aqui.
+function SeatAvatar({ src, isHolder, imgRef }) {
+  const panicSrc = src.replace('.webp', '-panic.webp')
+  const [shown, setShown] = useState(isHolder ? panicSrc : src)
+
+  useEffect(() => {
+    setShown(isHolder ? panicSrc : src)
+  }, [isHolder, src, panicSrc])
+
+  return (
+    <img
+      className="ga-avatar"
+      src={shown}
+      alt=""
+      ref={imgRef}
+      onError={() => setShown(src)}
+    />
+  )
+}
+
 // Mesma "forma" de props que o Game.jsx real recebe de App.jsx, pra plugar
 // direto quando chegar a hora (Step 3) sem precisar reescrever nada. Por
 // enquanto (Step 2) os jogadores aparecem sentados, parados — sem brilho de
@@ -166,11 +190,10 @@ export default function GameArena({
                     </div>
                   </>
                 )}
-                <img
-                  className="ga-avatar"
+                <SeatAvatar
                   src={AVATARS[i % AVATARS.length]}
-                  alt=""
-                  ref={(el) => {
+                  isHolder={isHolder}
+                  imgRef={(el) => {
                     if (el) avatarRefs.current[p.id] = el
                     else delete avatarRefs.current[p.id]
                   }}
