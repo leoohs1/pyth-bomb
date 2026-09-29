@@ -12,6 +12,10 @@ const NICKNAMES = [
 ]
 const ALL_MOCK_PLAYERS = NICKNAMES.map((nickname, i) => ({ id: 'p' + i, nickname, alive: true }))
 
+// no jogo real isso seria `me.id` (quem está de fato olhando a tela). Aqui,
+// pro teste, "eu" sou sempre a Halls (primeiro assento = Oracle).
+const MY_ID = ALL_MOCK_PLAYERS[0].id
+
 export default function GameArenaHarness() {
   const [answer, setAnswer] = useState('')
   const [danger, setDanger] = useState(1)
@@ -33,6 +37,16 @@ export default function GameArenaHarness() {
     if (!alive.length) return
     const next = alive[Math.floor(Math.random() * alive.length)]
     setHolderIdx(players.findIndex((p) => p.id === next.id))
+  }
+
+  // dispara a MESMA transição de estado que passToRandom, só que mirando
+  // sempre em "mim" — é assim que o Step 2 prova que o flash dispara sozinho
+  // a partir da lógica real (comparar bomb_holder_id com myPlayerId), e não
+  // de um botão que só chama a animação direto.
+  function passToMe() {
+    const me = players.find((p) => p.id === MY_ID)
+    if (!me || !me.alive || room.bomb_holder_id === MY_ID) return
+    setHolderIdx(players.findIndex((p) => p.id === MY_ID))
   }
 
   // no jogo real, quando quem tem a bomba explode o servidor SEMPRE realoca ela
@@ -63,10 +77,12 @@ export default function GameArenaHarness() {
         answerRef={answerRef}
         onSubmit={(e) => e.preventDefault()}
         error={null}
+        myPlayerId={MY_ID}
         povFlash={povSeq || null}
       />
       {/* controles de teste, só nesse harness — não existem no jogo real */}
       <div style={{ position: 'fixed', top: 46, left: 8, zIndex: 50, display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
+        <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8 }}>🫵 "eu" sou: Halls (Oracle)</span>
         {[1, 2, 3, 4].map((d) => (
           <button key={d} onClick={() => setDanger(d)}
             style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
@@ -80,13 +96,16 @@ export default function GameArenaHarness() {
           </button>
         ))}
         <button onClick={passToRandom} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#dcae40' }}>
-          💣 passar bomba
+          💣 passar bomba (aleatório)
+        </button>
+        <button onClick={passToMe} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#22c55e' }}>
+          🎯 bomba vem até mim
         </button>
         <button onClick={eliminateHolder} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#d92f5b', color: '#fff' }}>
           ☠️ eliminar quem tem a bomba
         </button>
         <button onClick={() => setPovSeq((n) => n + 1)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#8b5cf6', color: '#fff' }}>
-          🎥 POV flash (sou eu)
+          🎥 forçar flash (teste visual)
         </button>
       </div>
     </>

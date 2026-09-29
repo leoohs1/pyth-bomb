@@ -61,9 +61,10 @@ const PencilIcon = () => (
 export default function GameArena({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
-  // opcional, só pro Step 1 do teste (harness manda um valor novo pra tocar
-  // o flash "você tem a bomba"; o gatilho automático de verdade é o Step 2)
-  povFlash, onPovFlashDone,
+  // `myPlayerId` é o id de "quem sou eu" (no jogo real: me.id) — quando a
+  // bomba passa a ser minha, o flash em 1ª pessoa dispara sozinho (Step 2).
+  // `povFlash` continua existindo só como gatilho manual pra teste visual.
+  myPlayerId, povFlash, onPovFlashDone,
 }) {
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
@@ -79,6 +80,13 @@ export default function GameArena({
   const prevHolderRef = useRef(null)
   const flightSeqRef = useRef(0)
   const [flight, setFlight] = useState(null)
+  const [povSeq, setPovSeq] = useState(0)
+
+  // gatilho manual (botão de teste no harness): qualquer valor novo em
+  // `povFlash` também conta como "tocar o flash", junto do automático abaixo.
+  useEffect(() => {
+    if (povFlash != null) setPovSeq((n) => n + 1)
+  }, [povFlash])
 
   useEffect(() => {
     const prevId = prevHolderRef.current
@@ -86,11 +94,20 @@ export default function GameArena({
     prevHolderRef.current = nextId
 
     if (!prevId || !nextId || prevId === nextId) return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
 
     // explosão + rodada nova (bomba renasce em outra pessoa) não é um "passe"
     const prevPlayer = players.find((p) => p.id === prevId)
     if (!prevPlayer || !prevPlayer.alive) return
+
+    // a bomba acabou de virar minha: dispara o flash em 1ª pessoa. Isso só
+    // acontece numa transição "não-eu -> eu" de verdade (bomba renascendo,
+    // ou eu errando e continuando com ela, nunca entram aqui, pelas mesmas
+    // checagens acima) — por isso não repete toda vez que eu erro.
+    if (myPlayerId && nextId === myPlayerId) {
+      setPovSeq((n) => n + 1)
+    }
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
 
     const fromEl = avatarRefs.current[prevId]
     const toEl = avatarRefs.current[nextId]
@@ -115,7 +132,7 @@ export default function GameArena({
       setFlight((f) => (f && f.seq === seq ? null : f))
     }, 550)
     return () => clearTimeout(t)
-  }, [room.bomb_holder_id, players])
+  }, [room.bomb_holder_id, players, myPlayerId])
 
   return (
     <main className="ga-stage">
@@ -203,7 +220,7 @@ export default function GameArena({
           {error && <p className="ga-error" role="alert">{error}</p>}
         </section>
 
-        {povFlash != null && <BombPovFlash playKey={povFlash} onDone={onPovFlashDone} />}
+        {povSeq > 0 && <BombPovFlash playKey={povSeq} onDone={onPovFlashDone} />}
       </div>
     </main>
   )
