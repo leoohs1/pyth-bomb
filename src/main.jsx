@@ -4,11 +4,13 @@ import './index.css'
 import App from './App.jsx'
 import Landing from './Landing.jsx'
 import ArenaPreview from './ArenaPreview.jsx'
+import GameArenaHarness from './GameArenaHarness.jsx'
 
 const path = window.location.pathname
-// rota separada, só pra testar a ideia da arquibancada visualmente — não faz parte
-// do jogo de verdade, ninguém chega nela sem saber o link exato
+// rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
+// de verdade, ninguém chega nelas sem saber o link exato
 const page = path.startsWith('/arena-preview') ? <ArenaPreview />
+  : path.startsWith('/game-arena-preview') ? <GameArenaHarness />
   : path.startsWith('/play') ? <App />
   : <Landing />
 
