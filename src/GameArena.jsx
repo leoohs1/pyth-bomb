@@ -16,15 +16,18 @@ const AVATARS = [
 // que divide a altura com o cartão e por isso só usa as laterais). Posição
 // horizontal em % da arena — não é calculado, é mobília fixa, como combinado.
 const SEATS = [
-  // fileira 0 (frente) — 7 lugares, largura toda
-  { row: 0, col: 2 }, { row: 0, col: 18.3 }, { row: 0, col: 34.6 }, { row: 0, col: 50 },
-  { row: 0, col: 65.3 }, { row: 0, col: 81.6 }, { row: 0, col: 98 },
+  // fileira 0 (frente) — 7 lugares, largura toda. Colunas começam em 6% e
+  // terminam em 94% (não em 0%/100%) pra sobrar margem: o assento é centrado
+  // no ponto, e a plaquinha do nome é um pouco mais larga que o personagem —
+  // sem essa margem, a ponta esquerda/direita fica cortada pela arena.
+  { row: 0, col: 6 }, { row: 0, col: 20.7 }, { row: 0, col: 35.3 }, { row: 0, col: 50 },
+  { row: 0, col: 64.7 }, { row: 0, col: 79.3 }, { row: 0, col: 94 },
   // fileira 1 (meio) — 7 lugares, largura toda
-  { row: 1, col: 2 }, { row: 1, col: 18.3 }, { row: 1, col: 34.6 }, { row: 1, col: 50 },
-  { row: 1, col: 65.3 }, { row: 1, col: 81.6 }, { row: 1, col: 98 },
+  { row: 1, col: 6 }, { row: 1, col: 20.7 }, { row: 1, col: 35.3 }, { row: 1, col: 50 },
+  { row: 1, col: 64.7 }, { row: 1, col: 79.3 }, { row: 1, col: 94 },
   // fileira 2 (fundo) — 6 lugares, só nas laterais (o cartão ocupa o centro aqui)
-  { row: 2, col: 3 }, { row: 2, col: 15 }, { row: 2, col: 27 },
-  { row: 2, col: 73 }, { row: 2, col: 85 }, { row: 2, col: 97 },
+  { row: 2, col: 6 }, { row: 2, col: 17 }, { row: 2, col: 28 },
+  { row: 2, col: 72 }, { row: 2, col: 83 }, { row: 2, col: 94 },
 ]
 
 // ORDEM DE PREENCHIMENTO: índices em SEATS, do centro pra fora, alternando

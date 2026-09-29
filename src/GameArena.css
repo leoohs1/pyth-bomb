@@ -104,7 +104,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 12cqw;
+  max-width: 10cqw;
 }
 
 /* eliminado: continua sentado, mas visivelmente apagado */
