@@ -134,7 +134,7 @@ export default function GameArena({
             const isOut = !p.alive
             return (
               <div key={p.id}
-                className={`ga-seat ga-row-${s.row}${isHolder ? ' is-holder' : ''}${isOut ? ' is-out' : ''}`}
+                className={`ga-seat ga-row-${s.row}${isHolder ? ` is-holder dl-${danger}` : ''}${isOut ? ' is-out' : ''}`}
                 style={{ left: `${s.col}%` }}>
                 {isHolder && <div className="ga-glow" />}
                 <img
