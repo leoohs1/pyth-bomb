@@ -34,12 +34,19 @@ export default function GameArenaHarness() {
     setHolderIdx(players.findIndex((p) => p.id === next.id))
   }
 
-  function toggleOut(id) {
-    setOutIds((s) => {
-      const n = new Set(s)
-      n.has(id) ? n.delete(id) : n.add(id)
-      return n
-    })
+  // no jogo real, quando quem tem a bomba explode o servidor SEMPRE realoca ela
+  // pra outra pessoa viva na mesma hora — nunca sobra ninguém eliminado ainda
+  // "segurando" a bomba. O botão de teste precisa imitar isso, senão fica um
+  // estado que nunca existiria de verdade (eliminado + brilhando ao mesmo tempo).
+  function eliminateHolder() {
+    const id = room.bomb_holder_id
+    if (!id) return
+    setOutIds((s) => new Set(s).add(id))
+    const alive = players.filter((p) => p.id !== id && p.alive)
+    if (alive.length) {
+      const next = alive[Math.floor(Math.random() * alive.length)]
+      setHolderIdx(players.findIndex((p) => p.id === next.id))
+    }
   }
 
   return (
@@ -73,7 +80,7 @@ export default function GameArenaHarness() {
         <button onClick={passToRandom} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#dcae40' }}>
           💣 passar bomba
         </button>
-        <button onClick={() => toggleOut(room.bomb_holder_id)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#d92f5b', color: '#fff' }}>
+        <button onClick={eliminateHolder} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#d92f5b', color: '#fff' }}>
           ☠️ eliminar quem tem a bomba
         </button>
       </div>
