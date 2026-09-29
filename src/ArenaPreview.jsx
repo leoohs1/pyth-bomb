@@ -13,24 +13,22 @@ const AVATARS = [
   '/seat-nymph.webp', '/seat-blossom.webp',
 ]
 
-// linha (0 = mais perto/maior, 2 = mais longe/menor), posição horizontal (%), nick.
-// o cartão da pergunta ocupa o meio-baixo da tela: as linhas 0 e 1 (mais perto,
-// maiores) não podem ter ninguém entre ~26%-74%, senão fica escondido atrás dele.
-// só a linha 2 (mais longe, no alto) pode ocupar o centro com segurança.
+// linha (0 = de baixo, mais perto/maior; 1 = de cima, mais longe/menor), posição
+// horizontal (%), nick. O cartão agora fica no MEIO da tela — cada fileira tem
+// espaço livre de sobra acima/abaixo dele, então pode ocupar a largura toda.
 const SEATS = [
-  { row: 0, left: 2, name: 'Dion' },
-  { row: 0, left: 14, name: 'Nico', holder: true },
-  { row: 0, left: 86, name: 'Selene' },
-  { row: 0, left: 98, name: 'Vale' },
+  { row: 0, left: 4, name: 'Dion' },
+  { row: 0, left: 20, name: 'Nico', holder: true },
+  { row: 0, left: 50, name: 'Aria' },
+  { row: 0, left: 80, name: 'Selene' },
+  { row: 0, left: 96, name: 'Vale' },
   { row: 1, left: 6, name: 'Luna' },
-  { row: 1, left: 20, name: 'Midas', out: true },
-  { row: 1, left: 80, name: 'Athenaaa' },
+  { row: 1, left: 24, name: 'Midas', out: true },
+  { row: 1, left: 40, name: 'Brotaur' },
+  { row: 1, left: 60, name: 'Zephyra' },
+  { row: 1, left: 76, name: 'Athenaaa' },
   { row: 1, left: 94, name: 'Neridus' },
-  { row: 2, left: 15, name: 'Brotaur' },
-  { row: 2, left: 32, name: 'Zephyra' },
-  { row: 2, left: 50, name: 'Aria' },
-  { row: 2, left: 68, name: 'Kai' },
-  { row: 2, left: 85, name: 'Rhea' },
+  { row: 1, left: 50, name: 'Kai' },
 ]
 
 export default function ArenaPreview() {

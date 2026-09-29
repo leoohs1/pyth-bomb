@@ -55,9 +55,10 @@
   margin-left: -75px;
   text-align: center;
 }
-.ar-row-0 { top: 54%; transform: scale(1); z-index: 3; }
-.ar-row-1 { top: 34%; transform: scale(0.8); z-index: 2; }
-.ar-row-2 { top: 17%; transform: scale(0.62); z-index: 1; }
+/* o cartão agora fica no meio (~37%-66%); linha 0 = fileira de baixo, mais perto
+   da câmera, e linha 1 = fileira de cima, mais longe — uma de cada lado do cartão */
+.ar-row-0 { top: 74%; transform: scale(1); z-index: 3; }
+.ar-row-1 { top: 8%; transform: scale(0.66); z-index: 1; }
 
 .ar-avatar {
   width: 108px;   /* personagens sentados são mais altos que largos (1145x1374) */
@@ -103,16 +104,17 @@
 @keyframes ar-pulse { 0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(0.94); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
 @keyframes ar-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-/* cartão da pergunta, flutuando no meio (mesma linguagem visual do resto do jogo) */
+/* cartão da pergunta, flutuando perto da sacada de mármore no meio da tela
+   (mesma linguagem visual do resto do jogo) */
 .ar-card {
   position: absolute;
   z-index: 4;
   left: 50%;
-  bottom: 8%;
+  top: 37%;
   transform: translateX(-50%);
-  width: min(90vw, 420px);
+  width: min(90vw, 400px);
   box-sizing: border-box;
-  padding: 18px 24px 20px;
+  padding: 16px 22px 18px;
   text-align: center;
   background: linear-gradient(135deg, #f8f3ea 0%, #eee6f4 52%, #f6efe3 100%);
   border: 3px solid var(--ar-gold);
