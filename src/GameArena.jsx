@@ -141,7 +141,7 @@ export default function GameArena({
                     <div className="ga-glow" />
                     <div className="ga-ring" />
                     <div className="ga-sparks" aria-hidden="true">
-                      <span /><span /><span /><span /><span /><span />
+                      <span /><span /><span /><span />
                     </div>
                   </>
                 )}
@@ -154,7 +154,11 @@ export default function GameArena({
                     else delete avatarRefs.current[p.id]
                   }}
                 />
-                {isHolder && <span className="ga-bomb-badge" aria-hidden="true">💣</span>}
+                {isHolder && (
+                  <div className="ga-bomb-float" aria-hidden="true">
+                    <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
+                  </div>
+                )}
                 <span className="ga-name">{p.nickname}</span>
               </div>
             )
