@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import './ArenaPreview.css'
 
 // PROTÓTIPO — não é o jogo de verdade, é só um teste visual da ideia da
@@ -32,6 +33,28 @@ const SEATS = [
   { row: 2, left: 88, name: 'Athenaaa' },
 ]
 
+// troca pra uma segunda arte (expressão de pânico) quando o personagem está com a
+// bomba. Convenção de nome: "seat-oracle.webp" -> "seat-oracle-panic.webp". Se
+// esse arquivo ainda não existir, cai sozinho de volta pro padrão — sem quebrar
+// nada. Assim que Halls entregar a versão "-panic" de alguém, já funciona sozinho.
+function SeatAvatar({ src, isHolder }) {
+  const panicSrc = src.replace('.webp', '-panic.webp')
+  const [shown, setShown] = useState(isHolder ? panicSrc : src)
+
+  useEffect(() => {
+    setShown(isHolder ? panicSrc : src)
+  }, [isHolder, src, panicSrc])
+
+  return (
+    <img
+      className="ar-avatar"
+      src={shown}
+      alt=""
+      onError={() => setShown(src)}  // "-panic" não existe ainda: usa a padrão
+    />
+  )
+}
+
 export default function ArenaPreview() {
   const alive = SEATS.filter((s) => !s.out).length
 
@@ -53,7 +76,7 @@ export default function ArenaPreview() {
             style={{ left: `${s.left}%` }}
           >
             {s.holder && <div className="ar-glow" />}
-            <img className="ar-avatar" src={AVATARS[i % AVATARS.length]} alt="" />
+            <SeatAvatar src={AVATARS[i % AVATARS.length]} isHolder={!!s.holder} />
             {s.holder && <span className="ar-bomb" aria-hidden="true">💣</span>}
             <span className="ar-name">{s.name}</span>
           </div>
