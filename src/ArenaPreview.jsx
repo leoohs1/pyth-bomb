@@ -13,22 +13,24 @@ const AVATARS = [
   '/seat-nymph.webp', '/seat-blossom.webp',
 ]
 
-// linha (0 = de baixo, mais perto/maior; 1 = de cima, mais longe/menor), posição
-// horizontal (%), nick. O cartão agora fica no MEIO da tela — cada fileira tem
-// espaço livre de sobra acima/abaixo dele, então pode ocupar a largura toda.
+// linha (0 = degrau de baixo, mais perto/maior; 1 = degrau de cima, mais longe/
+// menor), posição horizontal (%). Os degraus DE VERDADE no desenho só existem
+// dos dois lados (colunas pra fora); o centro embaixo é chão liso, sem degrau —
+// por isso ninguém fica no meio, só nos grupos da esquerda (2%-32%) e direita
+// (68%-98%). Isso também deixa o cartão livre, já que ele fica bem no centro.
 const SEATS = [
-  { row: 0, left: 4, name: 'Dion' },
-  { row: 0, left: 20, name: 'Nico', holder: true },
-  { row: 0, left: 50, name: 'Aria' },
-  { row: 0, left: 80, name: 'Selene' },
-  { row: 0, left: 96, name: 'Vale' },
-  { row: 1, left: 6, name: 'Luna' },
-  { row: 1, left: 24, name: 'Midas', out: true },
-  { row: 1, left: 40, name: 'Brotaur' },
-  { row: 1, left: 60, name: 'Zephyra' },
-  { row: 1, left: 76, name: 'Athenaaa' },
-  { row: 1, left: 94, name: 'Neridus' },
-  { row: 1, left: 50, name: 'Kai' },
+  { row: 0, left: 3, name: 'Dion' },
+  { row: 0, left: 17, name: 'Nico', holder: true },
+  { row: 0, left: 31, name: 'Aria' },
+  { row: 0, left: 69, name: 'Selene' },
+  { row: 0, left: 83, name: 'Vale' },
+  { row: 0, left: 97, name: 'Kai' },
+  { row: 1, left: 3, name: 'Luna' },
+  { row: 1, left: 17, name: 'Midas', out: true },
+  { row: 1, left: 31, name: 'Brotaur' },
+  { row: 1, left: 69, name: 'Zephyra' },
+  { row: 1, left: 83, name: 'Athenaaa' },
+  { row: 1, left: 97, name: 'Neridus' },
 ]
 
 export default function ArenaPreview() {

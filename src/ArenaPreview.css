@@ -55,10 +55,9 @@
   margin-left: -75px;
   text-align: center;
 }
-/* o cartão agora fica no meio (~37%-66%); linha 0 = fileira de baixo, mais perto
-   da câmera, e linha 1 = fileira de cima, mais longe — uma de cada lado do cartão */
-.ar-row-0 { top: 74%; transform: scale(1); z-index: 3; }
-.ar-row-1 { top: 8%; transform: scale(0.66); z-index: 1; }
+/* alinhado com os degraus DE VERDADE do desenho (só existem dos dois lados) */
+.ar-row-0 { top: 57%; transform: scale(1); z-index: 3; }
+.ar-row-1 { top: 41%; transform: scale(0.74); z-index: 2; }
 
 .ar-avatar {
   width: 108px;   /* personagens sentados são mais altos que largos (1145x1374) */
