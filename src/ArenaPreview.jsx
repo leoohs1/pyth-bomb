@@ -11,7 +11,8 @@ import './ArenaPreview.css'
 const AVATARS = [
   '/seat-oracle.webp', '/seat-athena.webp', '/seat-cyclops2.webp', '/seat-spartan.webp',
   '/seat-minotaur2.webp', '/seat-owl.webp', '/seat-amphora.webp', '/seat-boy.webp',
-  '/seat-nymph.webp', '/seat-blossom.webp',
+  '/seat-nymph.webp', '/seat-blossom.webp', '/seat-faun.webp', '/seat-statue.webp',
+  '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
 ]
 
 // linha (0 = banco de baixo, mais perto/maior ... 2 = banco de cima, mais longe/
@@ -19,18 +20,22 @@ const AVATARS = [
 // ponta, então as linhas 0 e 1 usam a largura toda. Só a linha 2 divide a altura
 // com o cartão (que fica lá no alto), por isso ela evita o centro (~30%-70%).
 const SEATS = [
-  { row: 0, left: 4, name: 'Dion' },
-  { row: 0, left: 26, name: 'Nico', holder: true },
-  { row: 0, left: 50, name: 'Aria' },
-  { row: 0, left: 74, name: 'Selene' },
-  { row: 0, left: 96, name: 'Vale' },
-  { row: 1, left: 12, name: 'Kai' },
-  { row: 1, left: 38, name: 'Luna' },
-  { row: 1, left: 62, name: 'Midas', out: true },
-  { row: 1, left: 88, name: 'Brotaur' },
-  { row: 2, left: 10, name: 'Zephyra' },
+  { row: 0, left: 2, name: 'Dion' },
+  { row: 0, left: 19, name: 'Nico', holder: true },
+  { row: 0, left: 36, name: 'Aria' },
+  { row: 0, left: 64, name: 'Selene' },
+  { row: 0, left: 81, name: 'Vale' },
+  { row: 0, left: 98, name: 'Pippa' },
+  { row: 1, left: 6, name: 'Kai' },
+  { row: 1, left: 22, name: 'Luna' },
+  { row: 1, left: 38, name: 'Midas', out: true },
+  { row: 1, left: 62, name: 'Brotaur' },
+  { row: 1, left: 78, name: 'Rhea' },
+  { row: 1, left: 94, name: 'Talos' },
+  { row: 2, left: 8, name: 'Zephyra' },
   { row: 2, left: 24, name: 'Neridus' },
-  { row: 2, left: 88, name: 'Athenaaa' },
+  { row: 2, left: 76, name: 'Athenaaa' },
+  { row: 2, left: 92, name: 'Ophira' },
 ]
 
 // troca pra uma segunda arte (expressão de pânico) quando o personagem está com a
