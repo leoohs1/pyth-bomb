@@ -15,27 +15,28 @@ const AVATARS = [
   '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
 ]
 
-// linha (0 = banco de baixo, mais perto/maior ... 2 = banco de cima, mais longe/
-// menor), posição horizontal (%). O novo fundo tem bancos retos de ponta a
-// ponta, então as linhas 0 e 1 usam a largura toda. Só a linha 2 divide a altura
-// com o cartão (que fica lá no alto), por isso ela evita o centro (~30%-70%).
+// 6 "colunas" fixas, compartilhadas pelas 3 fileiras — isso é o que faz virar
+// um grid de verdade (tudo alinhado verticalmente), em vez de espalhado. A
+// linha 2 (mais alta, divide espaço com o cartão) pula as 2 colunas do meio.
+const COLS = [3, 20, 38, 62, 80, 97]
+
 const SEATS = [
-  { row: 0, left: 2, name: 'Dion' },
-  { row: 0, left: 19, name: 'Nico', holder: true },
-  { row: 0, left: 36, name: 'Aria' },
-  { row: 0, left: 64, name: 'Selene' },
-  { row: 0, left: 81, name: 'Vale' },
-  { row: 0, left: 98, name: 'Pippa' },
-  { row: 1, left: 6, name: 'Kai' },
-  { row: 1, left: 22, name: 'Luna' },
-  { row: 1, left: 38, name: 'Midas', out: true },
-  { row: 1, left: 62, name: 'Brotaur' },
-  { row: 1, left: 78, name: 'Rhea' },
-  { row: 1, left: 94, name: 'Talos' },
-  { row: 2, left: 8, name: 'Zephyra' },
-  { row: 2, left: 24, name: 'Neridus' },
-  { row: 2, left: 76, name: 'Athenaaa' },
-  { row: 2, left: 92, name: 'Ophira' },
+  { row: 0, col: 0, name: 'Dion' },
+  { row: 0, col: 1, name: 'Nico', holder: true },
+  { row: 0, col: 2, name: 'Aria' },
+  { row: 0, col: 3, name: 'Selene' },
+  { row: 0, col: 4, name: 'Vale' },
+  { row: 0, col: 5, name: 'Pippa' },
+  { row: 1, col: 0, name: 'Kai' },
+  { row: 1, col: 1, name: 'Luna' },
+  { row: 1, col: 2, name: 'Midas', out: true },
+  { row: 1, col: 3, name: 'Brotaur' },
+  { row: 1, col: 4, name: 'Rhea' },
+  { row: 1, col: 5, name: 'Talos' },
+  { row: 2, col: 0, name: 'Zephyra' },
+  { row: 2, col: 1, name: 'Neridus' },
+  { row: 2, col: 4, name: 'Athenaaa' },
+  { row: 2, col: 5, name: 'Ophira' },
 ]
 
 // troca pra uma segunda arte (expressão de pânico) quando o personagem está com a
@@ -78,7 +79,7 @@ export default function ArenaPreview() {
           <div
             key={i}
             className={`ar-seat ar-row-${s.row}${s.holder ? ' is-holder' : ''}${s.out ? ' is-out' : ''}`}
-            style={{ left: `${s.left}%` }}
+            style={{ left: `${COLS[s.col]}%` }}
           >
             {s.holder && <div className="ar-glow" />}
             <SeatAvatar src={AVATARS[i % AVATARS.length]} isHolder={!!s.holder} />
@@ -89,6 +90,7 @@ export default function ArenaPreview() {
       </div>
 
       <section className="ar-card">
+        <img className="ar-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
         <p className="ar-qnum">Question 3</p>
         <p className="ar-qtext">Which ancient wonder was located in the city of Rhodes?</p>
         <div className="ar-time">
