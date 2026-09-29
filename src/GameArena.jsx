@@ -139,8 +139,9 @@ export default function GameArena({
                 {isHolder && (
                   <>
                     <div className="ga-glow" />
+                    <div className="ga-ring" />
                     <div className="ga-sparks" aria-hidden="true">
-                      <span /><span /><span /><span />
+                      <span /><span /><span /><span /><span /><span />
                     </div>
                   </>
                 )}
