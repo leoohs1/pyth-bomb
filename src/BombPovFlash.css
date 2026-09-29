@@ -1,0 +1,175 @@
+/* Cobre a arena inteira (é filha de .ga-arena, que já tem container-type,
+   por isso os cqw aqui acompanham o tamanho da arena, igual ao resto). Não
+   bloqueia clique nenhum — é só um impacto visual passageiro. */
+.pov-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.26s ease;
+}
+.pov-flash.pov-out { opacity: 0; }
+
+.pov-flash.pov-incoming { animation: pov-shake 0.42s linear; }
+
+.pov-backdrop {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(6px) brightness(0.55) saturate(1.05);
+  -webkit-backdrop-filter: blur(6px) brightness(0.55) saturate(1.05);
+  background:
+    radial-gradient(ellipse 70% 62% at 50% 58%, rgba(90, 20, 120, 0.1) 30%, rgba(10, 4, 26, 0.55) 78%, rgba(6, 2, 16, 0.9) 100%),
+    linear-gradient(180deg, rgba(18, 6, 38, 0.5) 0%, rgba(18, 6, 38, 0.05) 22%, rgba(7, 3, 18, 0.85) 100%);
+}
+.pov-flash.pov-incoming .pov-backdrop,
+.pov-flash.pov-impact .pov-backdrop { opacity: 1; }
+
+/* fase 1: a bomba vem crescendo em direção à câmera, tipo um zoom rápido */
+.pov-approach {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14cqw;
+  transform: translate(-50%, -50%) scale(0.25);
+  opacity: 0;
+}
+.pov-flash.pov-incoming .pov-approach {
+  animation: pov-approach-anim 0.42s cubic-bezier(0.3, 0.1, 0.3, 1) forwards;
+}
+.pov-approach img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 3cqw rgba(190, 110, 255, 0.75));
+}
+@keyframes pov-approach-anim {
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(6.2) rotate(18deg); opacity: 0; }
+}
+
+/* fase 2: o flash em si — cena parada, foco na bomba enorme + mãos */
+.pov-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.3s ease;
+}
+.pov-flash.pov-impact .pov-scene { opacity: 1; transform: scale(1); }
+
+.pov-title {
+  margin: 4.2% 0 0;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: 3.6cqw;
+  letter-spacing: 0.05em;
+  color: #ffe9a8;
+  animation: pov-title-pulse 1.1s ease-in-out infinite;
+}
+@keyframes pov-title-pulse {
+  0%, 100% { text-shadow: 0 0 1.2cqw rgba(255, 180, 90, 0.85), 0 0 3cqw rgba(190, 110, 255, 0.55), 0 0.2cqw 0.4cqw rgba(10, 4, 26, 0.85); }
+  50% { text-shadow: 0 0 2cqw rgba(255, 180, 90, 1), 0 0 4.2cqw rgba(190, 110, 255, 0.8), 0 0.2cqw 0.4cqw rgba(10, 4, 26, 0.85); }
+}
+
+.pov-bombwrap {
+  position: relative;
+  margin-top: 6%;
+  width: 26cqw;
+  height: 26cqw;
+}
+.pov-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30cqw;
+  height: 30cqw;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 210, 90, 0.5) 0%, transparent 55%),
+    radial-gradient(circle, rgba(190, 60, 255, 0.45) 24%, transparent 70%);
+  animation: pov-glow-pulse 1.1s ease-in-out infinite;
+}
+.pov-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 17cqw;
+  height: 17cqw;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 0.3cqw solid rgba(255, 150, 90, 0.85);
+  animation: pov-ring-pulse 1.1s ease-out infinite;
+}
+.pov-bomb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 1.6cqw rgba(255, 150, 90, 0.95)) drop-shadow(0 1cqw 1.6cqw rgba(10, 4, 26, 0.6));
+  animation: pov-bomb-bob 1.9s ease-in-out infinite;
+}
+@keyframes pov-glow-pulse { 0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
+@keyframes pov-ring-pulse { 0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.7); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); } }
+@keyframes pov-bomb-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-1.4cqw) rotate(3deg); } }
+
+.pov-spark {
+  position: absolute;
+  top: 6%;
+  left: 54%;
+  width: 0.8cqw;
+  height: 0.8cqw;
+  border-radius: 50%;
+  background: #ffe9a8;
+  box-shadow: 0 0 1.2cqw 0.3cqw rgba(255, 180, 90, 0.95);
+  animation: pov-spark-anim 0.85s ease-out infinite;
+}
+@keyframes pov-spark-anim {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1); }
+}
+
+/* mãos/colo em primeiro plano — mesma técnica do mockup: só a fatia de baixo
+   da arte já sentada, "vazando" pra fora da tela embaixo */
+.pov-hands {
+  position: absolute;
+  bottom: -2%;
+  left: 50%;
+  width: 62cqw;
+  height: 30cqw;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+.pov-hands img {
+  position: absolute;
+  /* empurra a imagem pra baixo do contentor (que corta o excesso) até a janela
+     visível cair no colo/mãos da Oracle, não nos pés/banquinho dela */
+  bottom: -13cqw;
+  left: 50%;
+  width: 62cqw;
+  height: auto;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 -1cqw 2.4cqw rgba(10, 4, 26, 0.5));
+}
+
+@keyframes pov-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-0.4cqw, 0.2cqw); }
+  40% { transform: translate(0.3cqw, -0.3cqw); }
+  60% { transform: translate(-0.2cqw, -0.2cqw); }
+  80% { transform: translate(0.3cqw, 0.2cqw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pov-flash.pov-incoming { animation: none; }
+  .pov-approach, .pov-title, .pov-glow, .pov-ring, .pov-spark, .pov-bomb { animation: none; }
+}

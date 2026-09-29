@@ -18,6 +18,7 @@ export default function GameArenaHarness() {
   const [count, setCount] = useState(8)
   const [holderIdx, setHolderIdx] = useState(0)
   const [outIds, setOutIds] = useState(() => new Set())
+  const [povSeq, setPovSeq] = useState(0)
   const answerRef = useRef(null)
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p) => ({ ...p, alive: !outIds.has(p.id) }))
@@ -62,6 +63,7 @@ export default function GameArenaHarness() {
         answerRef={answerRef}
         onSubmit={(e) => e.preventDefault()}
         error={null}
+        povFlash={povSeq || null}
       />
       {/* controles de teste, só nesse harness — não existem no jogo real */}
       <div style={{ position: 'fixed', top: 46, left: 8, zIndex: 50, display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
@@ -82,6 +84,9 @@ export default function GameArenaHarness() {
         </button>
         <button onClick={eliminateHolder} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#d92f5b', color: '#fff' }}>
           ☠️ eliminar quem tem a bomba
+        </button>
+        <button onClick={() => setPovSeq((n) => n + 1)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#8b5cf6', color: '#fff' }}>
+          🎥 POV flash (sou eu)
         </button>
       </div>
     </>

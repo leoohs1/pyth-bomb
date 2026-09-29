@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './GameArena.css'
+import BombPovFlash from './BombPovFlash.jsx'
 
 const DANGER_LABEL = ['', 'safe', 'warming up', 'danger!', 'critical!']
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
@@ -60,6 +61,9 @@ const PencilIcon = () => (
 export default function GameArena({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
+  // opcional, só pro Step 1 do teste (harness manda um valor novo pra tocar
+  // o flash "você tem a bomba"; o gatilho automático de verdade é o Step 2)
+  povFlash, onPovFlashDone,
 }) {
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
@@ -198,6 +202,8 @@ export default function GameArena({
 
           {error && <p className="ga-error" role="alert">{error}</p>}
         </section>
+
+        {povFlash != null && <BombPovFlash playKey={povFlash} onDone={onPovFlashDone} />}
       </div>
     </main>
   )
