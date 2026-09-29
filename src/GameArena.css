@@ -107,6 +107,53 @@
   max-width: 12cqw;
 }
 
+/* eliminado: continua sentado, mas visivelmente apagado */
+.ga-seat.is-out .ga-avatar { filter: grayscale(1) brightness(0.5) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
+.ga-seat.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
+
+/* quem tem a bomba: brilho pulsando + selinho */
+.ga-seat.is-holder { z-index: 5; }
+.ga-seat.is-holder .ga-avatar { filter: drop-shadow(0 0 1.4cqw rgba(255, 210, 90, 0.85)) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
+.ga-glow {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  width: 17cqw;
+  height: 17cqw;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 210, 90, 0.55) 0%, rgba(255, 210, 90, 0) 68%);
+  animation: ga-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.ga-bomb-badge {
+  position: absolute;
+  top: -0.4cqw;
+  right: 0.6cqw;
+  font-size: 1.8cqw;
+  animation: ga-bob 1s ease-in-out infinite;
+}
+@keyframes ga-pulse { 0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(0.94); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
+@keyframes ga-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.3cqw); } }
+
+/* a bomba "pulando" de um assento pro outro (arco), igual ao jogo real */
+.ga-flying-bomb {
+  position: fixed;
+  z-index: 20;
+  left: 0;
+  top: 0;
+  font-size: 26px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(20, 6, 50, 0.5));
+  animation: ga-fly 0.55s cubic-bezier(0.32, 0, 0.2, 1) forwards;
+}
+@keyframes ga-fly {
+  0% { transform: translate3d(var(--x0), var(--y0), 0) translate(-50%, -50%) scale(0.9) rotate(0deg); }
+  55% { transform: translate3d(var(--xm), var(--ym), 0) translate(-50%, -50%) scale(1.25) rotate(190deg); }
+  100% { transform: translate3d(var(--x1), var(--y1), 0) translate(-50%, -50%) scale(0.95) rotate(340deg); }
+}
+
 /* painel central: o elemento principal da tela agora (era o oposto antes) */
 .ga-card {
   position: absolute;
@@ -210,4 +257,8 @@
   color: #8f1d36;
   background: rgba(255, 214, 224, 0.85);
   border: 1px solid rgba(143, 29, 54, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-glow, .ga-bomb-badge, .ga-flying-bomb { animation: none; }
 }

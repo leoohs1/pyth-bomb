@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import './GameArena.css'
 
 const DANGER_LABEL = ['', 'safe', 'warming up', 'danger!', 'critical!']
@@ -64,6 +65,51 @@ export default function GameArena({
   // cada jogador (até 20) ganha uma cadeira, na ordem de preenchimento acima
   const seated = players.slice(0, 20).map((p, i) => ({ player: p, seat: SEATS[SEAT_ORDER[i]] }))
 
+  // bomba "pulando" de assento em assento — mesmo mecanismo já testado no
+  // jogo real (Game.jsx): mede onde estava e pra onde foi, anima um ícone
+  // voando em arco. Só decoração — se algo não bater, simplesmente não anima.
+  const avatarRefs = useRef({})
+  const prevHolderRef = useRef(null)
+  const flightSeqRef = useRef(0)
+  const [flight, setFlight] = useState(null)
+
+  useEffect(() => {
+    const prevId = prevHolderRef.current
+    const nextId = room.bomb_holder_id
+    prevHolderRef.current = nextId
+
+    if (!prevId || !nextId || prevId === nextId) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    // explosão + rodada nova (bomba renasce em outra pessoa) não é um "passe"
+    const prevPlayer = players.find((p) => p.id === prevId)
+    if (!prevPlayer || !prevPlayer.alive) return
+
+    const fromEl = avatarRefs.current[prevId]
+    const toEl = avatarRefs.current[nextId]
+    if (!fromEl || !toEl) return
+
+    const a = fromEl.getBoundingClientRect()
+    const b = toEl.getBoundingClientRect()
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2
+    const x1 = b.left + b.width / 2, y1 = b.top + b.height / 2
+
+    const seq = ++flightSeqRef.current
+    setFlight({
+      seq,
+      id: nextId,
+      vars: {
+        '--x0': `${x0}px`, '--y0': `${y0}px`,
+        '--x1': `${x1}px`, '--y1': `${y1}px`,
+        '--xm': `${(x0 + x1) / 2}px`, '--ym': `${Math.min(y0, y1) - 60}px`,
+      },
+    })
+    const t = setTimeout(() => {
+      setFlight((f) => (f && f.seq === seq ? null : f))
+    }, 550)
+    return () => clearTimeout(t)
+  }, [room.bomb_holder_id, players])
+
   return (
     <main className="ga-stage">
       <div className="ga-arena">
@@ -75,13 +121,33 @@ export default function GameArena({
           <span className="ga-chip">Round {room.round_number} · Classic</span>
         </div>
 
+        {flight && (
+          <span key={flight.seq} className="ga-flying-bomb" aria-hidden="true" style={flight.vars}>💣</span>
+        )}
+
         <div className="ga-seats">
-          {seated.map(({ player: p, seat: s }, i) => (
-            <div key={p.id} className={`ga-seat ga-row-${s.row}`} style={{ left: `${s.col}%` }}>
-              <img className="ga-avatar" src={AVATARS[i % AVATARS.length]} alt="" />
-              <span className="ga-name">{p.nickname}</span>
-            </div>
-          ))}
+          {seated.map(({ player: p, seat: s }, i) => {
+            const isHolder = p.id === room.bomb_holder_id
+            const isOut = !p.alive
+            return (
+              <div key={p.id}
+                className={`ga-seat ga-row-${s.row}${isHolder ? ' is-holder' : ''}${isOut ? ' is-out' : ''}`}
+                style={{ left: `${s.col}%` }}>
+                {isHolder && <div className="ga-glow" />}
+                <img
+                  className="ga-avatar"
+                  src={AVATARS[i % AVATARS.length]}
+                  alt=""
+                  ref={(el) => {
+                    if (el) avatarRefs.current[p.id] = el
+                    else delete avatarRefs.current[p.id]
+                  }}
+                />
+                {isHolder && <span className="ga-bomb-badge" aria-hidden="true">💣</span>}
+                <span className="ga-name">{p.nickname}</span>
+              </div>
+            )
+          })}
         </div>
 
         <section className={`ga-card dl-${danger}`}>
