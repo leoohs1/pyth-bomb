@@ -136,7 +136,14 @@ export default function GameArena({
               <div key={p.id}
                 className={`ga-seat ga-row-${s.row}${isHolder ? ` is-holder dl-${danger}` : ''}${isOut ? ' is-out' : ''}`}
                 style={{ left: `${s.col}%` }}>
-                {isHolder && <div className="ga-glow" />}
+                {isHolder && (
+                  <>
+                    <div className="ga-glow" />
+                    <div className="ga-sparks" aria-hidden="true">
+                      <span /><span /><span /><span />
+                    </div>
+                  </>
+                )}
                 <img
                   className="ga-avatar"
                   src={AVATARS[i % AVATARS.length]}
