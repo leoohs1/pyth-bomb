@@ -58,12 +58,14 @@
 /* alinhado com as 4 fileiras de banco retas do novo fundo (de baixo pra cima:
    mais perto/maior -> mais longe/menor). Só a linha 2 (mais alta) divide a
    altura com o cartão, por isso ela evita o centro; as outras usam a tela toda. */
-.ar-row-0 { top: 75%; transform: scale(1); z-index: 3; }
-.ar-row-1 { top: 59%; transform: scale(0.8); z-index: 2; }
-.ar-row-2 { top: 44%; transform: scale(0.62); z-index: 1; }
+/* diferença de tamanho mais sutil entre fileiras (mais perto da referência do
+   Halls, que não achata tanto quem está atrás) */
+.ar-row-0 { top: 82%; transform: scale(1); z-index: 3; }
+.ar-row-1 { top: 61%; transform: scale(0.9); z-index: 2; }
+.ar-row-2 { top: 43%; transform: scale(0.8); z-index: 1; }
 
 .ar-avatar {
-  width: 108px;   /* personagens sentados são mais altos que largos (1145x1374) */
+  width: 98px;   /* personagens sentados são mais altos que largos (1145x1374) */
   height: auto;
   filter: drop-shadow(0 10px 12px rgba(10, 4, 30, 0.6));
 }
@@ -116,16 +118,18 @@
   transform: translateX(-50%);
   width: min(86vw, 360px);
   box-sizing: border-box;
-  padding: 12px 18px 14px;
+  padding: 30px 18px 14px;
   text-align: center;
   background: linear-gradient(135deg, #f8f3ea 0%, #eee6f4 52%, #f6efe3 100%);
   border: 3px solid var(--ar-gold);
-  border-radius: 16px;
+  /* topo em arco (tipo placa/tabuleta), igual à referência — cantos de cima
+     bem arredondados, de baixo quase retos */
+  border-radius: 50% 50% 16px 16px / 70px 70px 16px 16px;
   box-shadow: inset 0 0 0 3px #f3e3b0, 0 26px 60px rgba(14, 4, 40, 0.6), 0 0 40px rgba(169, 139, 255, 0.35);
 }
 .ar-logo {
   display: block;
-  width: min(50%, 190px);
+  width: min(46%, 175px);
   height: auto;
   margin: 0 auto 4px;
 }
