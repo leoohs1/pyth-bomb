@@ -91,7 +91,15 @@ export default function GameArenaV2({
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
 
-  const seated = players.slice(0, SEATS.length).map((p, i) => ({ player: p, seat: SEATS[SEAT_ORDER[i]] }))
+  // "eu" (myPlayerId) não senta na plateia — fico sozinho no centro vazio
+  // (visão em 1ª pessoa: cada jogador se vê ali, e vê todo mundo sentado).
+  // Sem myPlayerId (ex.: usos futuros sem "quem sou eu" definido), ninguém
+  // é tirado da plateia — comportamento igual ao V1.
+  const myIndex = myPlayerId ? players.findIndex((p) => p.id === myPlayerId) : -1
+  const me = myIndex >= 0 ? players[myIndex] : null
+  const crowd = myPlayerId ? players.filter((p) => p.id !== myPlayerId) : players
+  const seated = crowd.slice(0, SEATS.length).map((p, i) => ({ player: p, seat: SEATS[SEAT_ORDER[i]] }))
+  const iAmHolder = !!me && me.id === room.bomb_holder_id
 
   const avatarRefs = useRef({})
   const prevHolderRef = useRef(null)
@@ -194,6 +202,35 @@ export default function GameArenaV2({
             )
           })}
         </div>
+
+        {me && (
+          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}`}>
+            {iAmHolder && <p className="ga-me-banner">YOU HAVE THE BOMB!</p>}
+            {iAmHolder && (
+              <>
+                <div className="ga-glow" />
+                <div className="ga-ring" />
+                <div className="ga-sparks" aria-hidden="true">
+                  <span /><span /><span /><span />
+                </div>
+              </>
+            )}
+            <SeatAvatar
+              src={AVATARS[myIndex % AVATARS.length]}
+              isHolder={iAmHolder}
+              imgRef={(el) => {
+                if (el) avatarRefs.current[me.id] = el
+                else delete avatarRefs.current[me.id]
+              }}
+            />
+            {iAmHolder && (
+              <div className="ga-bomb-float" aria-hidden="true">
+                <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
+              </div>
+            )}
+            <span className="ga-name">{me.nickname}</span>
+          </div>
+        )}
 
         <section className={`ga-card dl-${danger}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
