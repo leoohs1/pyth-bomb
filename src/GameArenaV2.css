@@ -138,9 +138,9 @@
    folga vertical pra ela crescer tanto quanto no assento normal (1.9x
    encostava no selo). Cresce mais discreto aqui; cor/tremida continuam
    escalando igual, então a urgência ainda fica óbvia. */
-.ga-me-stage.is-holder.dl-2 { --ga-badge-scale: 1.05; }
-.ga-me-stage.is-holder.dl-3 { --ga-badge-scale: 1.1; }
-.ga-me-stage.is-holder.dl-4 { --ga-badge-scale: 1.15; }
+.ga-me-stage.is-holder.dl-2 { --ga-badge-scale: 1.03; }
+.ga-me-stage.is-holder.dl-3 { --ga-badge-scale: 1.05; }
+.ga-me-stage.is-holder.dl-4 { --ga-badge-scale: 1.08; }
 .ga-seat.is-holder .ga-avatar, .ga-me-stage.is-holder .ga-avatar {
   transform: scale(1.1);
   transform-origin: center bottom;
@@ -190,7 +190,7 @@
 /* no centro, mais separação da cabeça do que no assento normal (pedido da
    Halls: "sobe mais a bomba") — offset fixo em cqw, não em % da própria
    caixa (que encolheu e reduzia a distância de novo) */
-.ga-me-stage .ga-bomb-float { top: 1cqw; width: 6.5cqw; }
+.ga-me-stage .ga-bomb-float { top: -2.8cqw; width: 5.5cqw; }
 .ga-bomb-float img {
   display: block;
   width: 100%;
@@ -280,11 +280,11 @@
   /* precisa limpar a bomba flutuando (que sobe bem mais que a barriguinha
      do brilho normal) — medido na tela: sem essa margem grande, o selo
      fica bem em cima da bomba, competindo com o texto */
-  margin: 0 0 5.3cqw;
+  margin: 0 0 6.1cqw;
   white-space: nowrap;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
-  font-size: 2.1cqw;
+  font-size: 1.7cqw;
   letter-spacing: 0.04em;
   color: #ffe9a8;
   text-shadow: 0 0 0.8cqw rgba(255, 180, 90, 0.85), 0 0 2cqw rgba(190, 110, 255, 0.6), 0 0.15cqw 0.3cqw rgba(10, 4, 26, 0.85);

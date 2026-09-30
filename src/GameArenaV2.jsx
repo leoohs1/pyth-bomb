@@ -23,27 +23,27 @@ const AVATARS = [
 // precisar de um 4º nível nem encavalar ninguém.
 const SEATS = [
   // --- cluster esquerdo (10) ---
-  { row: 0, top: 50, col: 3 },    // banco da frente
-  { row: 0, top: 50, col: 12 },
-  { row: 0, top: 50, col: 21 },
-  { row: 0, top: 50, col: 27 },
-  { row: 1, top: 40, col: 2 },    // segundo banco
-  { row: 1, top: 40, col: 11 },
-  { row: 1, top: 40, col: 20 },
-  { row: 2, top: 27, col: 2 },    // escada do fundo
-  { row: 2, top: 27, col: 8 },
-  { row: 2, top: 27, col: 14 },
+  { row: 0, top: 58, col: 3 },    // banco da frente
+  { row: 0, top: 58, col: 12 },
+  { row: 0, top: 58, col: 21 },
+  { row: 0, top: 58, col: 27 },
+  { row: 1, top: 48, col: 2 },    // segundo banco
+  { row: 1, top: 48, col: 11 },
+  { row: 1, top: 48, col: 20 },
+  { row: 2, top: 35, col: 2 },    // escada do fundo
+  { row: 2, top: 35, col: 8 },
+  { row: 2, top: 35, col: 14 },
   // --- cluster direito (espelhado, 10) ---
-  { row: 0, top: 50, col: 97 },
-  { row: 0, top: 50, col: 88 },
-  { row: 0, top: 50, col: 79 },
-  { row: 0, top: 50, col: 73 },
-  { row: 1, top: 40, col: 98 },
-  { row: 1, top: 40, col: 89 },
-  { row: 1, top: 40, col: 80 },
-  { row: 2, top: 27, col: 98 },
-  { row: 2, top: 27, col: 92 },
-  { row: 2, top: 27, col: 86 },
+  { row: 0, top: 58, col: 97 },
+  { row: 0, top: 58, col: 88 },
+  { row: 0, top: 58, col: 79 },
+  { row: 0, top: 58, col: 73 },
+  { row: 1, top: 48, col: 98 },
+  { row: 1, top: 48, col: 89 },
+  { row: 1, top: 48, col: 80 },
+  { row: 2, top: 35, col: 98 },
+  { row: 2, top: 35, col: 92 },
+  { row: 2, top: 35, col: 86 },
 ]
 
 // ordem de preenchimento: mais perto do cartão primeiro, alternando lado,
