@@ -115,6 +115,14 @@
   --ga-glow-color: rgba(255, 60, 80, 0.75); --ga-badge-scale: 1.9; --ga-pulse-speed: 0.35s;
   animation: ga-holder-shake 0.3s linear infinite;
 }
+/* no centro a bomba já nasce grande (mesmo tamanho do assento, mas com o
+   selo "YOU HAVE THE BOMB!" disputando o mesmo espaço em cima) — não tem
+   folga vertical pra ela crescer tanto quanto no assento normal (1.9x
+   encostava no selo). Cresce mais discreto aqui; cor/tremida continuam
+   escalando igual, então a urgência ainda fica óbvia. */
+.ga-me-stage.is-holder.dl-2 { --ga-badge-scale: 1.08; }
+.ga-me-stage.is-holder.dl-3 { --ga-badge-scale: 1.15; }
+.ga-me-stage.is-holder.dl-4 { --ga-badge-scale: 1.22; }
 .ga-seat.is-holder .ga-avatar, .ga-me-stage.is-holder .ga-avatar {
   transform: scale(1.1);
   transform-origin: center bottom;
@@ -232,10 +240,10 @@
 .ga-me-stage {
   position: absolute;
   z-index: 3;
-  top: 74%;
+  top: 76.5%;
   left: 50%;
-  width: 15cqw;
-  margin-left: -7.5cqw;
+  width: 9cqw;
+  margin-left: -4.5cqw;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -247,7 +255,10 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin: 0 0 1.4cqw;
+  /* precisa limpar a bomba flutuando (que sobe bem mais que a barriguinha
+     do brilho normal) — medido na tela: sem essa margem grande, o selo
+     fica bem em cima da bomba, competindo com o texto */
+  margin: 0 0 9.5cqw;
   white-space: nowrap;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
