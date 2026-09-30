@@ -1,0 +1,23 @@
+This is a REVISION of an existing character asset — the panicked/scared version of "Oracle". Keep the character, pose, expression, colors, proportions, and art style EXACTLY the same as before — the only thing that changes is removing the furniture.
+
+Character: "Oracle" in her PANIC expression — same cute chibi girl with long flowing white/silver hair, purple hooded cloak with gold laurel-leaf trim, crescent moon mark on her forehead, gold bracelets and belt with a circular "P" emblem — but scared: eyebrows raised, mouth open and gasping, a tear drop on her cheek, both hands raised near her chin/chest with fingers curled in fright, small lightning-bolt "shock" marks near her head.
+
+Style: cute stylized chibi fantasy, Ancient Greece inspired, Pyth-themed palette (purple, white, gold), same polished painterly rendering as the rest of this character set — matching the existing panicked "seat-oracle-panic" card exactly, expression and pose included.
+
+What changes in this revision — IMPORTANT:
+Remove the small marble bench / pedestal / stool she is sitting on. Do NOT draw any bench, stool, pedestal, platform, cushion, or piece of furniture under or around her.
+
+Instead:
+* Keep her in the exact same cross-legged seated pose and panicked expression (legs, robe folds, and hand/arm positions stay the same).
+* Her legs, robe hem, and feet (with sandals) should simply be the bottom edge of the illustration — as if she were lifted straight off the bench with nothing drawn underneath her.
+* The bottom of the image should end naturally at her lowest seated point (knees/feet/robe hem), with a soft contact-shadow only if needed for grounding — no bench geometry, no separate marble slab, no stool legs.
+
+Why: this character will be placed directly on top of a separately-illustrated marble step in a game background, matching the already-delivered benchless "calm" Oracle. Any bench or pedestal baked into her own art creates a visual conflict ("bench on top of bench"), and the feet need to land at roughly the same height within the canvas as the benchless calm version so both expressions line up when swapped in-game.
+
+Technical requirements:
+* Transparent background (PNG/WebP with alpha), no background scenery, no ground, no shadow blob.
+* Same canvas proportions as the original asset: roughly 1145 x 1374 px (taller than wide).
+* Same character scale/framing within the canvas as the original panic asset (do not zoom in or out).
+* No text, no watermark, no UI elements.
+
+Output: a single image, transparent background, same panicked character in the same seated pose and expression, just without any bench/pedestal/furniture underneath her.
