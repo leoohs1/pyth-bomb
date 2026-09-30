@@ -2,11 +2,12 @@ import { useRef, useState } from 'react'
 import GameArenaV2 from './GameArenaV2.jsx'
 
 // mesmo chicote de testes do GameArenaHarness.jsx, só que pro layout V2
-// (composição em clusters, fundo novo). Pensado pra testar primeiro com
-// ~14 jogadores, antes de estender pra 20.
+// (composição em clusters, fundo novo). Já testado com ~14, agora
+// estendido pra 20.
 const NICKNAMES = [
   'Halls', 'Ricardo', 'Adrian', 'Samurai', 'Crown', 'Cakky', 'Hinkah', 'Planck',
-  'Kirito', 'Noname', 'Borys', 'Eukodal', 'Zeph', 'Mira',
+  'Kirito', 'Noname', 'Borys', 'Eukodal', 'Zeph', 'Mira', 'Otto', 'Juno',
+  'Vex', 'Tala', 'Remy', 'Kaia',
 ]
 const ALL_MOCK_PLAYERS = NICKNAMES.map((nickname, i) => ({ id: 'p' + i, nickname, alive: true }))
 const MY_ID = ALL_MOCK_PLAYERS[0].id
@@ -75,7 +76,7 @@ export default function GameArenaV2Harness() {
             perigo {d}
           </button>
         ))}
-        {[1, 2, 4, 6, 8, 10, 12, 14].map((n) => (
+        {[1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20].map((n) => (
           <button key={n} onClick={() => setCount(n)}
             style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: count === n ? 800 : 400 }}>
             {n} jog.

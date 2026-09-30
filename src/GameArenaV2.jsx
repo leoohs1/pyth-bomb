@@ -13,42 +13,45 @@ const AVATARS = [
 ]
 
 // V2: NÃO é mais uma grade de fileiras retas. São posições desenhadas à mão em
-// cima dos degraus curvos de verdade do novo fundo (arena-seats-bg-v2.webp) —
+// cima dos degraus curvos de verdade do novo fundo (arena-seats-bg-v3.webp) —
 // dois "clusters" (esquerda/direita) com alturas variadas, deixando o centro
 // livre pro cartão. `row` aqui é só pra escala (0=banco da frente/maior,
 // 1=segundo banco, 2=escada do fundo/menor), não define mais o "top".
-// Calibrado com uma grade de referência sobre o fundo (ver histórico) —
-// primeira leva pensada pra ~14 jogadores, antes de estender pra 20.
+// Estendido de 14 pra 20: mais um lugar em cada um dos 3 níveis de cada
+// lado (4+3+3 por lado), mesma técnica de calibração com grade sobre o fundo.
 const SEATS = [
-  // --- cluster esquerdo ---
-  { row: 0, top: 49, col: 23 },  // banco da frente, mais perto do cartão
-  { row: 0, top: 51, col: 14 },
-  { row: 0, top: 50, col: 5 },
-  { row: 1, top: 40, col: 13 },  // segundo banco
-  { row: 1, top: 39, col: 4 },
-  { row: 2, top: 27, col: 12 },  // escada do fundo
-  { row: 2, top: 26, col: 5 },
-  // --- cluster direito (espelhado) ---
-  { row: 0, top: 49, col: 77 },
-  { row: 0, top: 51, col: 86 },
-  { row: 0, top: 50, col: 95 },
-  { row: 1, top: 40, col: 87 },
-  { row: 1, top: 39, col: 96 },
-  { row: 2, top: 27, col: 88 },
-  { row: 2, top: 26, col: 95 },
+  // --- cluster esquerdo (10) ---
+  { row: 0, top: 49, col: 24 },  // banco da frente, do mais perto do cartão pro mais longe
+  { row: 0, top: 50, col: 17 },
+  { row: 0, top: 51, col: 10 },
+  { row: 0, top: 50, col: 3 },
+  { row: 1, top: 39, col: 16 },  // segundo banco
+  { row: 1, top: 40, col: 9 },
+  { row: 1, top: 39, col: 2 },
+  { row: 2, top: 26, col: 13 },  // escada do fundo
+  { row: 2, top: 27, col: 7.5 },
+  { row: 2, top: 26, col: 2 },
+  // --- cluster direito (espelhado, 10) ---
+  { row: 0, top: 49, col: 76 },
+  { row: 0, top: 50, col: 83 },
+  { row: 0, top: 51, col: 90 },
+  { row: 0, top: 50, col: 97 },
+  { row: 1, top: 39, col: 84 },
+  { row: 1, top: 40, col: 91 },
+  { row: 1, top: 39, col: 98 },
+  { row: 2, top: 26, col: 87 },
+  { row: 2, top: 27, col: 92.5 },
+  { row: 2, top: 26, col: 98 },
 ]
 
 // ordem de preenchimento: mais perto do cartão primeiro, alternando lado,
 // depois sobe pros bancos de trás — com poucos jogadores fica só a frente
-// dos dois lados, equilibrado.
+// dos dois lados, equilibrado. Índices: 0-3/10-13 = banco da frente,
+// 4-6/14-16 = segundo banco, 7-9/17-19 = escada do fundo.
 const SEAT_ORDER = [
-  0, 7,    // frente, mais perto do cartão (esq, dir)
-  1, 8,    // frente, meio
-  2, 9,    // frente, borda
-  4, 11,   // segundo banco (esq, dir)
-  3, 10,
-  6, 13,   // escada do fundo
-  5, 12,
+  0, 10, 1, 11, 2, 12, 3, 13,   // banco da frente (esq/dir alternando)
+  4, 14, 5, 15, 6, 16,           // segundo banco
+  7, 17, 8, 18, 9, 19,           // escada do fundo
 ]
 
 const PencilIcon = () => (
