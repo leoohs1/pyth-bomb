@@ -6,11 +6,21 @@ const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (su
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso, repete
 const AVATARS = [
-  '/seat-oracle.webp', '/seat-athena.webp', '/seat-cyclops2.webp', '/seat-spartan.webp',
+  '/seat-oracle-nobench.webp', '/seat-athena.webp', '/seat-cyclops2.webp', '/seat-spartan.webp',
   '/seat-minotaur2.webp', '/seat-owl.webp', '/seat-amphora.webp', '/seat-boy.webp',
   '/seat-nymph.webp', '/seat-blossom.webp', '/seat-faun.webp', '/seat-statue.webp',
   '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
 ]
+
+// ANCORAGEM POR PERSONAGEM (spec da Halls, item 3: "per-avatar offsets if
+// necessary"). A maioria ainda tem um banquinho embutido na própria arte
+// (mesma proporção, por isso o padrão serve pra quase todo mundo) — mas as
+// versões "-nobench" têm os pés bem mais perto do fim da imagem (medido:
+// ~0.89 em vez de ~0.74), porque não sobra banco nenhum abaixo deles.
+const DEFAULT_SEAT_ANCHOR = 0.74
+const SEAT_ANCHOR = {
+  '/seat-oracle-nobench.webp': 0.89,
+}
 
 // V2: NÃO é mais uma grade de fileiras retas. São posições desenhadas à mão em
 // cima dos degraus curvos de verdade do novo fundo (arena-seats-bg-v3.webp) —
@@ -181,10 +191,12 @@ export default function GameArenaV2({
           {seated.map(({ player: p, seat: s }, i) => {
             const isHolder = p.id === room.bomb_holder_id
             const isOut = !p.alive
+            const src = AVATARS[i % AVATARS.length]
+            const anchor = SEAT_ANCHOR[src] ?? DEFAULT_SEAT_ANCHOR
             return (
               <div key={p.id}
                 className={`ga-seat ga-row-${s.row}${isHolder ? ` is-holder dl-${danger}` : ''}${isOut ? ' is-out' : ''}`}
-                style={{ left: `${s.col}%`, top: `${s.top}%` }}>
+                style={{ left: `${s.col}%`, top: `${s.top}%`, '--ga-seat-anchor': anchor }}>
                 {isHolder && (
                   <>
                     <div className="ga-glow" />
@@ -195,7 +207,7 @@ export default function GameArenaV2({
                   </>
                 )}
                 <SeatAvatar
-                  src={AVATARS[i % AVATARS.length]}
+                  src={src}
                   isHolder={isHolder}
                   imgRef={(el) => {
                     if (el) avatarRefs.current[p.id] = el
@@ -218,13 +230,16 @@ export default function GameArenaV2({
             coluna diferente, a silhueta do personagem da frente é alta o
             bastante pra cobrir a fileira de trás) */}
         <div className="ga-seats">
-          {seated.map(({ player: p, seat: s }) => (
-            <div key={p.id}
-              className={`ga-seat-name ga-row-${s.row}${!p.alive ? ' is-out' : ''}`}
-              style={{ left: `${s.col}%`, top: `${s.top}%` }}>
-              <span className="ga-name">{p.nickname}</span>
-            </div>
-          ))}
+          {seated.map(({ player: p, seat: s }, i) => {
+            const anchor = SEAT_ANCHOR[AVATARS[i % AVATARS.length]] ?? DEFAULT_SEAT_ANCHOR
+            return (
+              <div key={p.id}
+                className={`ga-seat-name ga-row-${s.row}${!p.alive ? ' is-out' : ''}`}
+                style={{ left: `${s.col}%`, top: `${s.top}%`, '--ga-seat-anchor': anchor }}>
+                <span className="ga-name">{p.nickname}</span>
+              </div>
+            )
+          })}
         </div>
 
         {me && (

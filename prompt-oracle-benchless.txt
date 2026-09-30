@@ -1,0 +1,23 @@
+This is a REVISION of an existing character asset. Keep the character, pose, colors, proportions, and art style EXACTLY the same as before — the only thing that changes is removing the furniture.
+
+Character: "Oracle" — a cute chibi girl with long flowing white/silver hair, a purple hooded cloak with gold laurel-leaf trim, a crescent moon mark on her forehead, gold bracelets and belt with a circular emblem, sitting cross-legged in a gentle, calm pose (mouth closed, friendly smile, hands resting near her lap).
+
+Style: cute stylized chibi fantasy, Ancient Greece inspired, Pyth-themed palette (purple, white, gold), same polished painterly rendering as a mobile game mascot — matching the existing "seat-oracle" character card exactly.
+
+What changes in this revision — IMPORTANT:
+Remove the small marble bench / pedestal / stool that the character is normally sitting on. Do NOT draw any bench, stool, pedestal, platform, cushion, or piece of furniture under or around her.
+
+Instead:
+* Keep her in the same cross-legged seated POSE (the position of her body, legs, and robe folds stays the same).
+* Her legs, robe hem, and feet should simply be the bottom edge of the illustration — as if she were cut out and lifted off whatever she was sitting on, with nothing drawn underneath her.
+* The bottom of the image should end naturally at her lowest seated point (knees/feet/robe hem), with soft contact-shadow only if needed for grounding — no bench geometry, no separate marble slab, no stool legs.
+
+Why: this character will be placed directly on top of a separately-illustrated marble step in a game background. Any bench or pedestal baked into her own art creates a visual conflict ("bench on top of bench"). This version must be able to sit directly on an external marble surface with nothing of her own underneath her.
+
+Technical requirements:
+* Transparent background (PNG/WebP with alpha), no background scenery, no ground, no shadow blob.
+* Same canvas proportions as the original asset: roughly 1145 x 1374 px (taller than wide).
+* Same character scale/framing within the canvas as the original (do not zoom in or out).
+* No text, no watermark, no UI elements.
+
+Output: a single image, transparent background, same character in the same seated pose, just without any bench/pedestal/furniture underneath her.
