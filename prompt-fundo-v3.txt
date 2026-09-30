@@ -1,0 +1,92 @@
+Create an empty Ancient Greece fantasy amphitheater background for "Pyth Bomb," designed as the main gameplay screen for a party game.
+
+This is a REVISION of a previous version. Keep everything that worked well: the curved amphitheater / oval "U-shaped" composition, viewed from a slightly elevated front angle (not straight-on, not top-down bird's-eye), wrapping around a large open center. The only thing that needs to change is how the seating tiers themselves are rendered — see "Seating surface" below, this is the most important part of this revision.
+
+Core composition
+The amphitheater should feel like it wraps around the center, like a stage or "palanque" the characters will stand/sit directly on top of.
+
+* Several curved marble tiers / steps should rise around the scene in a gentle bowl / "U" shape.
+* The tiers should visually frame a large central open gameplay area.
+* The center-bottom / middle area should remain clear so a large gameplay card can be overlaid there.
+* The side and upper tiers should provide multiple natural platforms at different heights where chibi characters will be placed later.
+
+Seating surface — IMPORTANT, this is the fix from last time
+Do NOT add separate bench furniture, cushions, padded seats, or upholstery on top of the marble tiers. No purple cushions, no padded rails, no bench-like objects sitting on the steps.
+
+Why: the chibi characters that will be placed on these tiers already come with their own small marble pedestal/bench built into their own artwork. If the background tiers also have their own separate bench/cushion drawn on them, the two benches stack awkwardly on top of each other and look wrong.
+
+Instead:
+* Each tier should be a plain, flat marble step/platform surface — the same materials as the rest of the architecture (white marble with gold trim edges), not a distinct "furniture" object.
+* Keep the marble surface on TOP of each tier relatively smooth, clean, and uncluttered — avoid busy veining, patterns, or small details directly on the flat step surfaces where characters will sit. This is so small chibi characters stay easy to read when placed there later.
+* Save the rich texture and detail for the vertical faces of the steps, the columns, railings, and the surrounding architecture — not the flat tops.
+* A thin gold trim line along the front edge of each tier is welcome (matches the rest of the game's style), but nothing three-dimensional or padded on top of the step.
+
+Architecture and environment
+Use a cute stylized Ancient Greece fantasy style matching a Pyth-inspired game world:
+
+* white marble architecture
+* soft purple and lavender lighting
+* gold decorative accents
+* elegant amphitheater steps and platforms
+* Greek columns on both sides
+* purple silk banners hanging from the columns, each with a gold laurel wreath and a circular "P" emblem
+* purple flame braziers on marble pedestals
+* carved marble railings and decorative trim on the side walls and stairs (not on the seating surfaces themselves)
+
+The environment should feel magical, polished, inviting, and game-like.
+
+Background scenery
+In the distance, visible behind the amphitheater:
+
+* ancient Greek temples on cliffs / hilltops, on both left and right sides
+* cascading waterfalls
+* moonlit fantasy landscape with the ocean
+* a large glowing full moon
+* twinkling night sky in soft purple and pink-lavender tones
+
+Keep the scenery beautiful and rich, but not so dominant that it competes with the seating tiers or the center.
+
+Center gameplay area
+The central lower-middle area should feel like the natural place for the game UI.
+
+* a broad open marble floor in the center
+* a subtle circular floor design / laurel emblem in the middle of that floor
+* enough clean visual room for a large question card overlay
+
+Seating design requirements
+This is the most important structural requirement, together with the "Seating surface" section above:
+
+* several tiers should be clearly readable as flat, walkable/sittable platforms
+* these tiers should appear at different heights, curving around the center
+* the composition should naturally allow clusters of characters on the left and right
+* avoid a rigid "3 perfectly straight rows" look
+* avoid making the seating too narrow or too steep
+* avoid any separate bench, cushion, or padded seat object on the flat tops
+
+It should feel like: a curved amphitheater / stage that hugs the gameplay area, where characters stand or sit directly on the plain marble platforms.
+
+Mood and style
+The scene should feel: magical, cute, polished, fantasy party game, Ancient Greece inspired, Pyth-themed in palette.
+
+Color palette: purple, gold, white marble, warm torchlight, lavender moonlight.
+
+Important exclusions
+Do not include:
+
+* characters
+* benches, cushions, or any padded/upholstered seating object
+* UI, text, score panels, chat boxes
+* extra logos besides the small "P" emblem on the banners
+
+This must be an empty background only.
+
+Output format
+* Wide landscape composition
+* Designed for desktop gameplay screen
+* Around 1800x1000 px (or similar aspect ratio)
+* Opaque normal background (no transparency needed)
+
+Final goal
+This image will be used as the main gameplay background of a multiplayer party game. It should support a large central question card, chibi player characters placed directly on the plain marble tiers around it (each character brings its own tiny built-in pedestal/bench, so the tier itself must stay plain), and bomb transfer effects moving between players.
+
+The overall feeling should be: "an elegant fantasy Greek arena/stage, wrapping around the gameplay, with clean plain platforms ready to be filled with cute player characters — not furniture waiting to be sat on."
