@@ -73,9 +73,10 @@
   margin-left: -5.5cqw;
   text-align: center;
 }
-.ga-row-0 { z-index: 3; }
-.ga-row-1 { transform: scale(0.87); z-index: 2; }
-.ga-row-2 { transform: scale(0.74); z-index: 1; }
+.ga-row-0 { z-index: 4; }
+.ga-row-1 { transform: scale(0.87); z-index: 3; }
+.ga-row-2 { transform: scale(0.74); z-index: 2; }
+.ga-row-3 { transform: scale(0.62); z-index: 1; }
 
 .ga-avatar {
   width: 100%;
@@ -84,6 +85,23 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 92%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 92%);
 }
+/* camada separada só das plaquinhas — sempre por cima de todo mundo (ver
+   comentário no .jsx). Mesma largura/escala por fileira do .ga-seat, só
+   que sem o avatar: um espaçador do tamanho dele empurra o nome pro
+   mesmo lugar visual de antes. */
+.ga-seat-name {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 11cqw;
+  margin-left: -5.5cqw;
+  text-align: center;
+  pointer-events: none;
+}
+.ga-seat-name-spacer { width: 100%; height: 12.6cqw; }
+.ga-seat-name.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
+
 .ga-name {
   margin-top: -0.6cqw;
   padding: 0.25cqw 1.2cqw;

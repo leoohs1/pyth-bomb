@@ -16,42 +16,47 @@ const AVATARS = [
 // cima dos degraus curvos de verdade do novo fundo (arena-seats-bg-v3.webp) —
 // dois "clusters" (esquerda/direita) com alturas variadas, deixando o centro
 // livre pro cartão. `row` aqui é só pra escala (0=banco da frente/maior,
-// 1=segundo banco, 2=escada do fundo/menor), não define mais o "top".
-// Estendido de 14 pra 20: mais um lugar em cada um dos 3 níveis de cada
-// lado (4+3+3 por lado), mesma técnica de calibração com grade sobre o fundo.
+// 1=segundo banco, 2=escada, 3=patamar perto das colunas/menor), não
+// define mais o "top".
+// Tentativa de 4+3+3 por lado (20 jogadores) ficou "amontoado" (nomes de
+// trás sumindo atrás dos da frente) — voltou pro espaçamento original de
+// 3 por banco (que já funcionava bem) e abriu um 4º nível mais pro fundo,
+// perto da base das colunas, em vez de espremer mais gente nos 3 bancos
+// de sempre.
 const SEATS = [
   // --- cluster esquerdo (10) ---
-  { row: 0, top: 49, col: 24 },  // banco da frente, do mais perto do cartão pro mais longe
-  { row: 0, top: 50, col: 17 },
-  { row: 0, top: 51, col: 10 },
-  { row: 0, top: 50, col: 3 },
-  { row: 1, top: 39, col: 16 },  // segundo banco
-  { row: 1, top: 40, col: 9 },
+  { row: 0, top: 49, col: 23 },   // banco da frente
+  { row: 0, top: 50, col: 14 },
+  { row: 0, top: 51, col: 5 },
+  { row: 1, top: 39, col: 18 },   // segundo banco
+  { row: 1, top: 40, col: 10 },
   { row: 1, top: 39, col: 2 },
-  { row: 2, top: 26, col: 13 },  // escada do fundo
-  { row: 2, top: 27, col: 7.5 },
-  { row: 2, top: 26, col: 2 },
+  { row: 2, top: 27, col: 12 },   // escada do fundo
+  { row: 2, top: 26, col: 5 },
+  { row: 3, top: 16, col: 10 },   // patamar perto da base das colunas
+  { row: 3, top: 15, col: 3 },
   // --- cluster direito (espelhado, 10) ---
-  { row: 0, top: 49, col: 76 },
-  { row: 0, top: 50, col: 83 },
-  { row: 0, top: 51, col: 90 },
-  { row: 0, top: 50, col: 97 },
-  { row: 1, top: 39, col: 84 },
-  { row: 1, top: 40, col: 91 },
+  { row: 0, top: 49, col: 77 },
+  { row: 0, top: 50, col: 86 },
+  { row: 0, top: 51, col: 95 },
+  { row: 1, top: 39, col: 82 },
+  { row: 1, top: 40, col: 90 },
   { row: 1, top: 39, col: 98 },
-  { row: 2, top: 26, col: 87 },
-  { row: 2, top: 27, col: 92.5 },
-  { row: 2, top: 26, col: 98 },
+  { row: 2, top: 27, col: 88 },
+  { row: 2, top: 26, col: 95 },
+  { row: 3, top: 16, col: 90 },
+  { row: 3, top: 15, col: 97 },
 ]
 
 // ordem de preenchimento: mais perto do cartão primeiro, alternando lado,
-// depois sobe pros bancos de trás — com poucos jogadores fica só a frente
-// dos dois lados, equilibrado. Índices: 0-3/10-13 = banco da frente,
-// 4-6/14-16 = segundo banco, 7-9/17-19 = escada do fundo.
+// depois sobe pros níveis de trás — com poucos jogadores fica só a frente
+// dos dois lados, equilibrado. Índices: 0-2/10-12 = banco da frente,
+// 3-5/13-15 = segundo banco, 6-7/16-17 = escada, 8-9/18-19 = patamar.
 const SEAT_ORDER = [
-  0, 10, 1, 11, 2, 12, 3, 13,   // banco da frente (esq/dir alternando)
-  4, 14, 5, 15, 6, 16,           // segundo banco
-  7, 17, 8, 18, 9, 19,           // escada do fundo
+  0, 10, 1, 11, 2, 12,            // banco da frente (esq/dir alternando)
+  3, 13, 4, 14, 5, 15,            // segundo banco
+  6, 16, 7, 17,                   // escada do fundo
+  8, 18, 9, 19,                   // patamar perto das colunas
 ]
 
 const PencilIcon = () => (
@@ -200,10 +205,25 @@ export default function GameArenaV2({
                     <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
                   </div>
                 )}
-                <span className="ga-name">{p.nickname}</span>
               </div>
             )
           })}
+        </div>
+
+        {/* plaquinhas de nome numa camada própria, sempre por cima de
+            QUALQUER avatar — sem isso, quem senta na frente (maior, com
+            z-index mais alto) tampa o nome de quem senta atrás (mesmo em
+            coluna diferente, a silhueta do personagem da frente é alta o
+            bastante pra cobrir a fileira de trás) */}
+        <div className="ga-seats">
+          {seated.map(({ player: p, seat: s }) => (
+            <div key={p.id}
+              className={`ga-seat-name ga-row-${s.row}${!p.alive ? ' is-out' : ''}`}
+              style={{ left: `${s.col}%`, top: `${s.top}%` }}>
+              <div className="ga-seat-name-spacer" aria-hidden="true" />
+              <span className="ga-name">{p.nickname}</span>
+            </div>
+          ))}
         </div>
 
         {me && (
