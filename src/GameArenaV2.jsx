@@ -6,8 +6,12 @@ const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (su
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso, repete
 const AVATARS = [
-  '/seat-oracle-nobench.webp', '/seat-athena.webp', '/seat-cyclops2.webp', '/seat-spartan.webp',
-  '/seat-minotaur2.webp', '/seat-owl.webp', '/seat-amphora.webp', '/seat-boy.webp',
+  // TESTE TEMPORÁRIO (a pedido da Halls): repete a Oracle sem banco em
+  // várias posições pra comparar a ancoragem em vários pontos da
+  // arquibancada de uma vez, antes de decidir se regenera o resto do
+  // elenco assim. Reverter pra AVATARS normais depois da decisão.
+  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-spartan.webp',
+  '/seat-oracle-nobench.webp', '/seat-owl.webp', '/seat-oracle-nobench.webp', '/seat-boy.webp',
   '/seat-nymph.webp', '/seat-blossom.webp', '/seat-faun.webp', '/seat-statue.webp',
   '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
 ]
