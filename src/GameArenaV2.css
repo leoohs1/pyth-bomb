@@ -2,7 +2,15 @@
 
 /* Fundo novo (perspectiva em ângulo, anfiteatro curvo em U — não mais retinho).
    Proporção real do arquivo: 1683x935. */
-:root { --ga-ratio: 1683 / 935; }
+:root {
+  --ga-ratio: 1683 / 935;
+  /* ANCORAGEM DE VERDADE: ponto (fração da altura do PRÓPRIO avatar) onde o
+     personagem "encosta" no banco — calibrado olhando onde o degradê da
+     máscara (linha ~96) realmente vira mármore de verdade. Isso é o que
+     alinha com o platformAnchor de cada assento (o "top" em SEATS), em vez
+     de alinhar pelo topo da caixa (que foi a causa de tudo "flutuar"). */
+  --ga-seat-anchor: 0.74;
+}
 
 .ga-stage {
   --ga-ink: #2E1F63;
@@ -65,18 +73,21 @@
    menores ("sentadinhos no mármore, tipo coliseu") pra caber 4+3+3 por
    lado nos 3 bancos sem encavalar ninguém (era 11cqw, ficou "amontoado"). */
 .ga-seats { position: absolute; inset: 0; z-index: 1; }
-.ga-seat {
+.ga-seat, .ga-seat-name {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   width: 6.5cqw;
-  margin-left: -3.25cqw;
   text-align: center;
+  /* ancora o ponto (50%, --ga-seat-anchor) do personagem — não o topo da
+     caixa — na posição left/top do assento (o platformAnchor). O
+     transform-origin igual ao anchor faz a escala por fileira (depth)
+     não "escorregar" esse ponto de lugar. */
+  transform-origin: 50% calc(var(--ga-seat-anchor) * 100%);
+  transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%));
 }
+.ga-seat { display: flex; flex-direction: column; align-items: center; }
 .ga-row-0 { z-index: 3; }
-.ga-row-1 { transform: scale(0.87); z-index: 2; }
-.ga-row-2 { transform: scale(0.74); z-index: 1; }
+.ga-row-1 { transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%)) scale(0.87); z-index: 2; }
+.ga-row-2 { transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%)) scale(0.74); z-index: 1; }
 
 .ga-avatar {
   width: 100%;
@@ -86,20 +97,24 @@
   mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 92%);
 }
 /* camada separada só das plaquinhas — sempre por cima de todo mundo (ver
-   comentário no .jsx). Mesma largura/escala por fileira do .ga-seat, só
-   que sem o avatar: um espaçador do tamanho dele empurra o nome pro
-   mesmo lugar visual de antes. */
+   comentário no .jsx). Mesma largura/altura/ancoragem do .ga-seat (pra usar
+   a MESMA transformação e ficar exatamente alinhada por baixo dele), só
+   que sem avatar — é só uma caixinha invisível do tamanho dele, com o
+   nome grudado logo abaixo via position:absolute. */
 .ga-seat-name {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   width: 6.5cqw;
-  margin-left: -3.25cqw;
+  height: 7.4cqw;
   text-align: center;
   pointer-events: none;
 }
-.ga-seat-name-spacer { width: 100%; height: 7.4cqw; }
+.ga-seat-name .ga-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: -0.6cqw;
+}
 .ga-seat-name.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 
 .ga-name {
@@ -120,6 +135,10 @@
 
 .ga-seat.is-out .ga-avatar { filter: grayscale(1) brightness(0.5) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
 .ga-seat.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
+/* eu, eliminado — continuo aparecendo no centro (spec item 12: "keep my
+   local foreground character visible but grayscale"), só apagado */
+.ga-me-stage.is-out .ga-avatar { filter: grayscale(1) brightness(0.55) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
+.ga-me-stage.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 
 .ga-seat.is-holder, .ga-me-stage.is-holder {
   z-index: 5;
@@ -401,6 +420,37 @@
   background: rgba(255, 214, 224, 0.85);
   border: 1px solid rgba(143, 29, 54, 0.35);
 }
+
+/* "X HAS THE BOMB" (não é sua vez) / "ELIMINATED — WATCHING" — ocupa o
+   lugar do campo de resposta, mesma altura pra não pular o layout do card. */
+.ga-status {
+  margin: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: rgba(46, 31, 99, 0.65);
+  background: rgba(46, 31, 99, 0.06);
+  border: 2px dashed rgba(46, 31, 99, 0.25);
+  border-radius: 10px;
+}
+.ga-status-out { color: #8f1d36; background: rgba(143, 29, 54, 0.08); border-color: rgba(143, 29, 54, 0.3); }
+
+/* erros do holder atual — discreto, 5 bolinhas (spec item 7) */
+.ga-mistakes { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.ga-mistake-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(46, 31, 99, 0.4);
+  background: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.ga-mistake-dot.is-filled { background: #d92f5b; border-color: #b3143f; }
 
 @media (prefers-reduced-motion: reduce) {
   .ga-glow, .ga-ring, .ga-bomb-float, .ga-flying-bomb, .ga-seat.is-holder.dl-4, .ga-sparks span { animation: none; }

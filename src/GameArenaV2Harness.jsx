@@ -19,6 +19,7 @@ export default function GameArenaV2Harness() {
   const [holderIdx, setHolderIdx] = useState(0)
   const [outIds, setOutIds] = useState(() => new Set())
   const [povSeq, setPovSeq] = useState(0)
+  const [mistakes, setMistakes] = useState(0)
   const answerRef = useRef(null)
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p) => ({ ...p, alive: !outIds.has(p.id) }))
@@ -45,11 +46,23 @@ export default function GameArenaV2Harness() {
     const id = room.bomb_holder_id
     if (!id) return
     setOutIds((s) => new Set(s).add(id))
+    setMistakes(0)
     const alive = players.filter((p) => p.id !== id && p.alive)
     if (alive.length) {
       const next = alive[Math.floor(Math.random() * alive.length)]
       setHolderIdx(players.findIndex((p) => p.id === next.id))
     }
+  }
+
+  // só pra testar o estado "eu, eliminado, assistindo" (spec item 12) sem
+  // precisar torcer pra sorte cair em mim no eliminar aleatório
+  function toggleMyElimination() {
+    setOutIds((s) => {
+      const next = new Set(s)
+      if (next.has(MY_ID)) next.delete(MY_ID)
+      else next.add(MY_ID)
+      return next
+    })
   }
 
   return (
@@ -67,6 +80,7 @@ export default function GameArenaV2Harness() {
         error={null}
         myPlayerId={MY_ID}
         povFlash={povSeq || null}
+        mistakes={mistakes}
       />
       <div style={{ position: 'fixed', bottom: 8, left: 8, zIndex: 50, display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
         <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8 }}>🫵 "eu" sou: Halls (Oracle)</span>
@@ -94,6 +108,16 @@ export default function GameArenaV2Harness() {
         <button onClick={() => setPovSeq((n) => n + 1)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#8b5cf6', color: '#fff' }}>
           🎥 forçar flash (teste visual)
         </button>
+        <button onClick={toggleMyElimination} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#6b7280', color: '#fff' }}>
+          💀 eu, eliminado (on/off)
+        </button>
+        <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8, marginTop: 4 }}>erros do holder: {mistakes}/5</span>
+        {[0, 1, 2, 3, 4, 5].map((n) => (
+          <button key={n} onClick={() => setMistakes(n)}
+            style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: mistakes === n ? 800 : 400 }}>
+            {n}
+          </button>
+        ))}
       </div>
     </>
   )

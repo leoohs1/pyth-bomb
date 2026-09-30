@@ -90,6 +90,10 @@ export default function GameArenaV2({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
   myPlayerId, povFlash, onPovFlashDone,
+  // novo (spec da Halls, só a parte visual por enquanto): quantos erros o
+  // holder atual já tem nessa bomba (0-5, vira 5 bolinhas discretas no
+  // card) — a contagem de verdade é Step 4 (App.jsx), aqui é só exibição.
+  mistakes = 0,
 }) {
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
@@ -104,6 +108,8 @@ export default function GameArenaV2({
   const crowd = myPlayerId ? players.filter((p) => p.id !== myPlayerId) : players
   const seated = crowd.slice(0, SEATS.length).map((p, i) => ({ player: p, seat: SEATS[SEAT_ORDER[i]] }))
   const iAmHolder = !!me && me.id === room.bomb_holder_id
+  const iAmEliminated = !!me && !me.alive
+  const holder = players.find((p) => p.id === room.bomb_holder_id)
 
   const avatarRefs = useRef({})
   const prevHolderRef = useRef(null)
@@ -216,14 +222,13 @@ export default function GameArenaV2({
             <div key={p.id}
               className={`ga-seat-name ga-row-${s.row}${!p.alive ? ' is-out' : ''}`}
               style={{ left: `${s.col}%`, top: `${s.top}%` }}>
-              <div className="ga-seat-name-spacer" aria-hidden="true" />
               <span className="ga-name">{p.nickname}</span>
             </div>
           ))}
         </div>
 
         {me && (
-          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}`}>
+          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}${iAmEliminated ? ' is-out' : ''}`}>
             {iAmHolder && <p className="ga-me-banner">YOU HAVE THE BOMB!</p>}
             {iAmHolder && (
               <>
@@ -264,23 +269,41 @@ export default function GameArenaV2({
             <span className={`ga-secs${urgent ? ' is-urgent' : ''}`}>{secs}s</span>
           </div>
 
-          <form className="ga-answer" onSubmit={onSubmit}>
-            <label className="ga-field">
-              <PencilIcon />
-              <input
-                ref={answerRef}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                aria-label="Your answer"
-                placeholder="type your answer…"
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-              />
-            </label>
-            <button type="submit" className="ga-send">Answer</button>
-          </form>
+          {/* só quem tem a bomba responde — todo mundo vê a pergunta, mas o
+              campo só fica ativo pra quem está segurando (spec item 4) */}
+          {iAmEliminated ? (
+            <p className="ga-status ga-status-out">ELIMINATED — WATCHING</p>
+          ) : iAmHolder ? (
+            <form className="ga-answer" onSubmit={onSubmit}>
+              <label className="ga-field">
+                <PencilIcon />
+                <input
+                  ref={answerRef}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-label="Your answer"
+                  placeholder="type your answer…"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                />
+              </label>
+              <button type="submit" className="ga-send">Answer</button>
+            </form>
+          ) : (
+            <p className="ga-status">{holder?.nickname ?? '...'} HAS THE BOMB</p>
+          )}
+
+          {/* 5 bolinhas discretas — erros do holder atual nessa bomba (spec
+              item 7). So aparece pra quem tem a bomba, onde importa de verdade. */}
+          {iAmHolder && !iAmEliminated && (
+            <div className="ga-mistakes" aria-label={`${mistakes} of 5 mistakes`}>
+              {Array.from({ length: 5 }, (_, i) => (
+                <span key={i} className={`ga-mistake-dot${i < mistakes ? ' is-filled' : ''}`} />
+              ))}
+            </div>
+          )}
 
           {error && <p className="ga-error" role="alert">{error}</p>}
         </section>
