@@ -190,7 +190,7 @@
 /* no centro, mais separação da cabeça do que no assento normal (pedido da
    Halls: "sobe mais a bomba") — offset fixo em cqw, não em % da própria
    caixa (que encolheu e reduzia a distância de novo) */
-.ga-me-stage .ga-bomb-float { top: 1cqw; }
+.ga-me-stage .ga-bomb-float { top: 1cqw; width: 6.5cqw; }
 .ga-bomb-float img {
   display: block;
   width: 100%;
@@ -280,7 +280,7 @@
   /* precisa limpar a bomba flutuando (que sobe bem mais que a barriguinha
      do brilho normal) — medido na tela: sem essa margem grande, o selo
      fica bem em cima da bomba, competindo com o texto */
-  margin: 0 0 5.5cqw;
+  margin: 0 0 5.3cqw;
   white-space: nowrap;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
