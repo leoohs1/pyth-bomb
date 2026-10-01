@@ -152,14 +152,10 @@
   --ga-glow-color: rgba(255, 60, 80, 0.75); --ga-badge-scale: 1.9; --ga-pulse-speed: 0.35s;
   animation: ga-holder-shake 0.3s linear infinite;
 }
-/* no centro a bomba já nasce grande (mesmo tamanho do assento, mas com o
-   selo "YOU HAVE THE BOMB!" disputando o mesmo espaço em cima) — não tem
-   folga vertical pra ela crescer tanto quanto no assento normal (1.9x
-   encostava no selo). Cresce mais discreto aqui; cor/tremida continuam
-   escalando igual, então a urgência ainda fica óbvia. */
-.ga-me-stage.is-holder.dl-2 { --ga-badge-scale: 1.03; }
-.ga-me-stage.is-holder.dl-3 { --ga-badge-scale: 1.05; }
-.ga-me-stage.is-holder.dl-4 { --ga-badge-scale: 1.08; }
+/* a bomba do centro agora nasce na metade do tamanho de antes (pedido da
+   Halls), então o crescimento normal por perigo (igual ao da plateia)
+   cabe de novo sem bater no rosto/selo — a versão "crescimento fraco"
+   só existia por causa do tamanho grande antigo. */
 .ga-seat.is-holder .ga-avatar, .ga-me-stage.is-holder .ga-avatar {
   transform: scale(1.1);
   transform-origin: center bottom;
