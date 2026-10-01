@@ -76,6 +76,12 @@
 .ga-seat, .ga-seat-name {
   position: absolute;
   width: 4.55cqw;
+  /* o protótipo V1 (GameArena.css) também define ".ga-seat" com um
+     margin-left próprio, e o main.jsx carrega os dois arquivos na mesma
+     página (cada rota é um componente diferente, mas os imports de CSS
+     são globais) — sem isso explícito aqui, aquele valor antigo vazava e
+     cortava os assentos mais perto da borda (ex.: col:3%). */
+  margin-left: 0;
   text-align: center;
   /* ancora o ponto (50%, --ga-seat-anchor) do personagem — não o topo da
      caixa — na posição left/top do assento (o platformAnchor). O
