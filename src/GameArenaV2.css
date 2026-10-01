@@ -75,7 +75,7 @@
 .ga-seats { position: absolute; inset: 0; z-index: 1; }
 .ga-seat, .ga-seat-name {
   position: absolute;
-  width: 6.5cqw;
+  width: 4.55cqw;
   text-align: center;
   /* ancora o ponto (50%, --ga-seat-anchor) do personagem — não o topo da
      caixa — na posição left/top do assento (o platformAnchor). O
