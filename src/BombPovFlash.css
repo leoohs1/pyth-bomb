@@ -146,34 +146,6 @@
   100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1); }
 }
 
-/* mãos/colo em primeiro plano — mesma técnica do mockup: só a fatia de baixo
-   da arte já sentada, "vazando" pra fora da tela embaixo */
-.pov-hands {
-  position: absolute;
-  bottom: -2%;
-  left: 50%;
-  width: 62cqw;
-  /* janela mais justa (era 30cqw) — mira só peito+mãos, sem entrar no
-     cabelo/rosto (que colidia com a bomba lá em cima) */
-  height: 20cqw;
-  transform: translateX(-50%);
-  overflow: hidden;
-  /* fade bem mais fino que antes: só a beiradinha de cima, sem comer as mãos */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 15%);
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 15%);
-}
-.pov-hands img {
-  position: absolute;
-  /* empurra a imagem pra baixo do contentor (que corta o excesso) até a janela
-     visível cair nas mãos/peito da Oracle — nem no cabelo, nem nos pés */
-  bottom: -18cqw;
-  left: 50%;
-  width: 62cqw;
-  height: auto;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 -1cqw 2.4cqw rgba(10, 4, 26, 0.5));
-}
-
 @keyframes pov-shake {
   0%, 100% { transform: translate(0, 0); }
   20% { transform: translate(-0.4cqw, 0.2cqw); }
