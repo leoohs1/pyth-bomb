@@ -199,7 +199,7 @@
   position: absolute;
   top: -22%;
   left: 50%;
-  width: 9cqw;
+  width: 4.5cqw;
   transform-origin: center;
   transform: translate(-50%, -50%) scale(var(--ga-badge-scale));
   animation: ga-bomb-drift 2.2s ease-in-out infinite;
@@ -209,7 +209,7 @@
 /* no centro, mais separação da cabeça do que no assento normal (pedido da
    Halls: "sobe mais a bomba") — offset fixo em cqw, não em % da própria
    caixa (que encolheu e reduzia a distância de novo) */
-.ga-me-stage .ga-bomb-float { top: -2.8cqw; width: 5.5cqw; }
+.ga-me-stage .ga-bomb-float { top: -2.8cqw; width: 2.75cqw; }
 .ga-bomb-float img {
   display: block;
   width: 100%;
