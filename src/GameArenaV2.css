@@ -118,19 +118,19 @@
 .ga-seat-name.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 
 .ga-name {
-  margin-top: -0.6cqw;
-  padding: 0.22cqw 1cqw;
+  margin-top: -0.3cqw;
+  padding: 0.13cqw 0.6cqw;
   font-family: Cinzel, Georgia, serif;
   font-weight: 700;
-  font-size: 1.1cqw;
+  font-size: 0.44cqw;
   color: #f6eeff;
   background: rgba(30, 16, 60, 0.78);
-  border: 0.12cqw solid rgba(201, 162, 74, 0.75);
+  border: 0.08cqw solid rgba(201, 162, 74, 0.75);
   border-radius: 999px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 9cqw;
+  max-width: 6cqw;
 }
 
 .ga-seat.is-out .ga-avatar { filter: grayscale(1) brightness(0.5) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
