@@ -6,14 +6,14 @@ const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (su
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso, repete
 const AVATARS = [
-  // TESTE TEMPORÁRIO (a pedido da Halls): repete a Oracle sem banco em
-  // várias posições pra comparar a ancoragem em vários pontos da
-  // arquibancada de uma vez, antes de decidir se regenera o resto do
-  // elenco assim. Reverter pra AVATARS normais depois da decisão.
-  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-spartan.webp',
-  '/seat-oracle-nobench.webp', '/seat-owl.webp', '/seat-oracle-nobench.webp', '/seat-boy.webp',
-  '/seat-nymph.webp', '/seat-blossom.webp', '/seat-faun.webp', '/seat-statue.webp',
-  '/seat-raven.webp', '/seat-pegasus.webp', '/seat-naiad.webp', '/seat-ram.webp',
+  // TESTE TEMPORÁRIO (a pedido da Halls): só Oracle sem banco em TODO
+  // mundo, pra ver a plateia inteira "sentada" igual, sem misturar com
+  // personagens que ainda têm o banquinho embutido. Reverter pra AVATARS
+  // normais depois da decisão.
+  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp',
+  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp',
+  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp',
+  '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp', '/seat-oracle-nobench.webp',
 ]
 
 // ANCORAGEM POR PERSONAGEM (spec da Halls, item 3: "per-avatar offsets if
