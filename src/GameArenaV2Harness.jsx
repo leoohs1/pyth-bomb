@@ -20,7 +20,11 @@ export default function GameArenaV2Harness() {
   const [outIds, setOutIds] = useState(() => new Set())
   const [povSeq, setPovSeq] = useState(0)
   const [mistakes, setMistakes] = useState(0)
+  const [controlsVisible, setControlsVisible] = useState(true)
   const answerRef = useRef(null)
+  // só pra testar a explosão e o aviso de erro que o jogo real manda
+  const [flash, setFlash] = useState(null)
+  const [feedbackMsg, setFeedbackMsg] = useState(null)
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p) => ({ ...p, alive: !outIds.has(p.id) }))
   const room = {
@@ -68,6 +72,8 @@ export default function GameArenaV2Harness() {
   return (
     <>
       <GameArenaV2
+        flash={flash}
+        feedback={feedbackMsg}
         room={room}
         players={players}
         alive={players.filter((p) => p.alive)}
@@ -82,7 +88,14 @@ export default function GameArenaV2Harness() {
         povFlash={povSeq || null}
         mistakes={mistakes}
       />
-      <div style={{ position: 'fixed', bottom: 8, left: 8, zIndex: 50, display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
+      {/* botãozinho sempre visível pra esconder/mostrar o painel de teste
+          na hora de tirar print pra revisão (pedido: "hide the left-side
+          test controls for the next screenshot") */}
+      <button onClick={() => setControlsVisible((v) => !v)}
+        style={{ position: 'fixed', bottom: 8, left: 8, zIndex: 51, padding: '4px 8px', fontSize: 11, cursor: 'pointer', opacity: 0.7 }}>
+        {controlsVisible ? '🙈 esconder controles' : '👁️ mostrar controles'}
+      </button>
+      <div style={{ display: controlsVisible ? 'flex' : 'none', position: 'fixed', bottom: 36, left: 8, zIndex: 50, gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
         <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8 }}>🫵 "eu" sou: Halls (Oracle)</span>
         {[1, 2, 3, 4].map((d) => (
           <button key={d} onClick={() => setDanger(d)}
@@ -110,6 +123,14 @@ export default function GameArenaV2Harness() {
         </button>
         <button onClick={toggleMyElimination} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#6b7280', color: '#fff' }}>
           💀 eu, eliminado (on/off)
+        </button>
+        <button onClick={() => { setFlash({ name: 'Samurai', mine: false }); setTimeout(() => setFlash(null), 3000) }}
+          style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#f97316', color: '#fff' }}>
+          💥 testar explosão
+        </button>
+        <button onClick={() => { setFeedbackMsg('❌ wrong, try again!'); setTimeout(() => setFeedbackMsg(null), 1500) }}
+          style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#6b7280', color: '#fff' }}>
+          ❌ testar resposta errada
         </button>
         <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8, marginTop: 4 }}>erros do holder: {mistakes}/5</span>
         {[0, 1, 2, 3, 4, 5].map((n) => (

@@ -4,7 +4,7 @@ import { saveRoomCode, loadRoomCode, clearRoomCode, saveNickname, loadNickname }
 import Modes from './Modes'
 import Home from './Home'
 import Lobby from './Lobby'
-import Game from './Game'
+import GameArenaV2 from './GameArenaV2'
 import Finished from './Finished'
 
 function makeCode() {
@@ -244,10 +244,6 @@ export default function App() {
   }
 
   const alive = players.filter((p) => p.alive)
-  const holder = players.find((p) => p.id === room.bomb_holder_id)
-  const iAmHolder = room.bomb_holder_id === me?.id
-  const meNow = players.find((p) => p.id === me?.id)
-  const iAmOut = meNow && !meNow.alive
   const winner = players.find((p) => p.id === room.winner_id)
   const iAmHost = !!me && room.host_user_id === me.user_id
 
@@ -266,11 +262,10 @@ export default function App() {
 
   if (room.status === 'playing') {
     return (
-      <Game
-        room={room} players={players} me={me} holder={holder} alive={alive}
-        iAmHolder={iAmHolder} iAmOut={iAmOut} danger={danger} questionMs={questionMs}
-        flash={flash} feedback={feedback} answer={answer} setAnswer={setAnswer}
-        answerRef={answerRef} onSubmit={submitAnswer} error={error}
+      <GameArenaV2
+        room={room} players={players} alive={alive} danger={danger} questionMs={questionMs}
+        answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
+        error={error} myPlayerId={me?.id} flash={flash} feedback={feedback}
       />
     )
   }

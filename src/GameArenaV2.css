@@ -1,9 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@500;600&display=swap');
 
-/* Fundo novo (perspectiva em ângulo, anfiteatro curvo em U — não mais retinho).
-   Proporção real do arquivo: 1683x935. */
+/* Fundo oficial da Arena 2.0 (arena2-bg-v2.webp) — escada contínua em U +
+   arco central. Proporção real do arquivo: 1500x912 (NÃO é a mesma da arte
+   anterior, 1683x935 — são proporções bem diferentes, 1.645 vs 1.80; se
+   não ajustar aqui, a imagem estica pra caber no formato errado). */
 :root {
-  --ga-ratio: 1683 / 935;
+  --ga-ratio: 1500 / 912;
   /* ANCORAGEM DE VERDADE: ponto (fração da altura do PRÓPRIO avatar) onde o
      personagem "encosta" no banco — calibrado olhando onde o degradê da
      máscara (linha ~96) realmente vira mármore de verdade. Isso é o que
@@ -27,8 +29,8 @@
 .ga-arena {
   position: relative;
   aspect-ratio: var(--ga-ratio);
-  width: min(100vw, calc(100vh * 1683 / 935));
-  height: min(100vh, calc(100vw * 935 / 1683));
+  width: min(100vw, calc(100vh * 1500 / 912));
+  height: min(100vh, calc(100vw * 912 / 1500));
   overflow: hidden;
   container-type: inline-size;
 }
@@ -36,7 +38,12 @@
 .ga-bg {
   position: absolute;
   inset: 0;
-  background: url('/arena-seats-bg-v3.webp') center / 100% 100% no-repeat;
+  /* Arena 2.0 — referência visual oficial agora (substitui v1). Escada
+     contínua em U (sem vão vazio no meio) + arco/portal central em vez do
+     altar isolado — arquitetura bem diferente da v1, por isso as
+     coordenadas de assento antigas NÃO valem aqui, precisam ser
+     recalibradas do zero em cima dessa arte. */
+  background: url('/arena2-bg-v2.webp') center / 100% 100% no-repeat;
 }
 .ga-shade {
   position: absolute;
@@ -88,20 +95,88 @@
      transform-origin igual ao anchor faz a escala por fileira (depth)
      não "escorregar" esse ponto de lugar. */
   transform-origin: 50% calc(var(--ga-seat-anchor) * 100%);
-  transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%));
+  /* escala agora vem do PRÓPRIO assento (Arena 2.0: `scale` no array
+     ARENA2_SEATS, via --ga-seat-scale inline), não mais de uma classe de
+     fileira fixa — cada um dos 19 assentos tem seu próprio valor. */
+  transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%)) scale(var(--ga-seat-scale, 1));
 }
 .ga-seat { display: flex; flex-direction: column; align-items: center; }
-.ga-row-0 { z-index: 3; }
-.ga-row-1 { transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%)) scale(0.87); z-index: 2; }
-.ga-row-2 { transform: translate(-50%, calc(var(--ga-seat-anchor) * -100%)) scale(0.74); z-index: 1; }
+/* sombra de contato discreta — só pra "grudar" visualmente o personagem no
+   mármore, acompanha a mesma âncora (pés) do avatar, então sempre cai bem
+   embaixo dele não importa a fileira/escala. Elipse achatada (perspectiva
+   de degrau visto de baixo, não de cima), bem sutil de propósito. */
+.ga-seat-shadow {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--ga-seat-anchor) * 100%);
+  width: 3cqw;
+  height: 0.85cqw;
+  transform: translate(-50%, -15%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(20, 8, 40, 0.4) 0%, rgba(20, 8, 40, 0.18) 55%, transparent 78%);
+  filter: blur(0.12cqw);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* debug de ancoragem (SHOW_GROUND_DEBUG) — linha horizontal na altura do
+   degrau/assento + ponto no supportAnchorY do avatar. Os dois usam a MESMA
+   --ga-seat-anchor pra se posicionar, então sempre coincidem por
+   construção; servem pra provar visualmente (e pra flagrar na hora um
+   supportAnchorY medido errado, se a linha não bater com a base do banco
+   na imagem real). */
+.ga-ground-line {
+  position: absolute;
+  left: -3cqw;
+  right: -3cqw;
+  top: calc(var(--ga-seat-anchor) * 100%);
+  height: 2px;
+  background: #00e5ff;
+  box-shadow: 0 0 3px rgba(0, 229, 255, 0.9);
+  transform: translateY(-50%);
+  z-index: 40;
+  pointer-events: none;
+}
+.ga-ground-dot {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--ga-seat-anchor) * 100%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff00c8;
+  border: 1.5px solid #fff;
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  pointer-events: none;
+}
 
 .ga-avatar {
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6));
+  filter: drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4));
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 92%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 92%);
 }
+/* personagens sem banco embutido: o fade da base escondia pernas/pés (o
+   ponto de contato com o mármore) e dava cara de "torso flutuando". */
+.ga-seat .ga-avatar,
+.ga-me-stage .ga-avatar {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* vira o personagem de frente pro centro (ala esquerda espelhada) — só no
+   próprio avatar, não no wrapper .ga-seat (que já tem seu transform de
+   posição/escala) nem na bomba/nome, que têm que continuar legíveis.
+   Usa uma CSS var (--ga-mirror) em vez de um `transform` direto porque
+   `.ga-seat.is-holder .ga-avatar` (mais abaixo) já define outro `transform`
+   nesse MESMO elemento — se eu declarasse `scaleX(-1)` aqui, a regra do
+   holder (que vem depois no arquivo) simplesmente apagaria o espelhamento
+   sempre que o personagem virasse holder. Com a var, as duas regras
+   multiplicam o mesmo fator em vez de brigar — funciona igual em calmo E
+   pânico, porque os dois usam a mesma <img>, só troca o src. */
+.ga-avatar { transform: scaleX(var(--ga-mirror, 1)); }
+.ga-seat.ga-mirror { --ga-mirror: -1; }
 /* camada separada só das plaquinhas — sempre por cima de todo mundo (ver
    comentário no .jsx). Mesma largura/altura/ancoragem do .ga-seat (pra usar
    a MESMA transformação e ficar exatamente alinhada por baixo dele), só
@@ -114,14 +189,47 @@
   text-align: center;
   pointer-events: none;
 }
+/* a placa de nome foi movida pra CIMA da cabeça (era embaixo, "top:100%")
+   — com o --ga-seat-anchor agora sendo o supportAnchorY (base do banco,
+   bem perto do fundo da caixa), "embaixo da caixa" caía bem em cima do
+   degrau/base do banco, exatamente entre o personagem e o mármore. Acima
+   da cabeça nunca disputa espaço com o ponto de contato. */
 .ga-seat-name .ga-name {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: -0.6cqw;
+  margin-bottom: 0.25cqw;
 }
 .ga-seat-name.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
+
+/* placa de nome NOVA — "entalhada" na face frontal do bloco de mármore,
+   em vez do balão flutuando acima da cabeça. Posição é um ponto fixo do
+   MUNDO (namePlateY em ARENA2_SEATS), não depende da altura do avatar —
+   por isso NÃO usa a transformação de --ga-seat-anchor, só centraliza
+   nos dois eixos em cima do ponto medido. */
+.ga-seat-plaque {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: 0.4cqw;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  color: #f6eeff;
+  background: rgba(38, 18, 64, 0.85);
+  border: 0.06cqw solid rgba(201, 162, 74, 0.8);
+  border-radius: 999px;
+  padding: 0.07cqw 0.55cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 6cqw;
+  text-align: center;
+  box-shadow: 0 0.06cqw 0.2cqw rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.ga-seat-plaque.is-out { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 
 .ga-name {
   margin-top: -0.3cqw;
@@ -139,16 +247,19 @@
   max-width: 6cqw;
 }
 
-.ga-seat.is-out .ga-avatar { filter: grayscale(1) brightness(0.5) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
+.ga-seat.is-out .ga-avatar { filter: grayscale(1) brightness(0.5) drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4)); }
 .ga-seat.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 /* eu, eliminado — continuo aparecendo no centro (spec item 12: "keep my
    local foreground character visible but grayscale"), só apagado */
-.ga-me-stage.is-out .ga-avatar { filter: grayscale(1) brightness(0.55) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6)); }
+.ga-me-stage.is-out .ga-avatar { filter: grayscale(1) brightness(0.55) drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4)); }
 .ga-me-stage.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 
 .ga-seat.is-holder, .ga-me-stage.is-holder {
-  z-index: 5;
-  --ga-glow-color: rgba(255, 210, 90, 0.55);
+  /* z-index agora é decidido no JS (holder sobe pra cima de tudo) e
+     aplicado inline — uma regra aqui seria ignorada mesmo (inline sempre
+     ganha de classe), então nem declara. */
+  --ga-glow-color: rgba(176, 108, 255, 0.55);
+  --ga-glow-gold: rgba(255, 210, 90, 0.6);
   --ga-badge-scale: 1;
   --ga-pulse-speed: 1.4s;
 }
@@ -163,13 +274,21 @@
    cabe de novo sem bater no rosto/selo — a versão "crescimento fraco"
    só existia por causa do tamanho grande antigo. */
 .ga-seat.is-holder .ga-avatar, .ga-me-stage.is-holder .ga-avatar {
-  transform: scale(1.1);
+  transform: scaleX(var(--ga-mirror, 1)) scale(1.1);
   transform-origin: center bottom;
-  filter: drop-shadow(0 0 1cqw rgba(255, 210, 90, 0.6)) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6));
+  filter: drop-shadow(0 0 0.5cqw var(--ga-glow-gold)) drop-shadow(0 0 1cqw var(--ga-glow-color)) drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4));
+  animation: ga-holder-breathe var(--ga-pulse-speed) ease-in-out infinite;
+}
+/* no assento o pivô do aumento é o ponto de apoio (não a base da imagem),
+   senão o corpo "sobe" quando vira holder */
+.ga-seat.is-holder .ga-avatar { transform-origin: 50% calc(var(--ga-seat-anchor) * 100%); }
+@keyframes ga-holder-breathe {
+  0%, 100% { transform: scaleX(var(--ga-mirror, 1)) scale(1.1); }
+  50% { transform: scaleX(var(--ga-mirror, 1)) scale(1.135); }
 }
 .ga-seat.is-holder.dl-3 .ga-avatar, .ga-seat.is-holder.dl-4 .ga-avatar,
 .ga-me-stage.is-holder.dl-3 .ga-avatar, .ga-me-stage.is-holder.dl-4 .ga-avatar {
-  filter: drop-shadow(0 0 1.2cqw rgba(255, 90, 100, 0.75)) drop-shadow(0 1cqw 1.2cqw rgba(10, 4, 30, 0.6));
+  filter: drop-shadow(0 0 1.2cqw rgba(255, 90, 100, 0.75)) drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4));
 }
 .ga-glow {
   position: absolute;
@@ -197,20 +316,30 @@
   pointer-events: none;
 }
 
+.ga-seat .ga-glow { width: 7.5cqw; height: 7.5cqw; top: 8%; }
+.ga-seat .ga-ring { width: 4.5cqw; height: 4.5cqw; top: 8%; }
+
 .ga-bomb-float {
   position: absolute;
+  /* fallback — equivale ao DEFAULT_GEOMETRY.bomb (x:50, y:-22) do JS.
+     Assentos da plateia passam left/top inline vindos da geometria do
+     avatar (spec item 6); isso aqui só vale quando não há override. */
   top: -22%;
   left: 50%;
   width: 4.5cqw;
   transform-origin: center;
-  transform: translate(-50%, -50%) scale(var(--ga-badge-scale));
+  /* --ga-bomb-local-scale multiplica o offset por-avatar (bomb.scale) em
+     cima do crescimento por nível de perigo (--ga-badge-scale) — os dois
+     são independentes: um é "quão grande por natureza", o outro é "quão
+     grande porque tá perigoso". */
+  transform: translate(-50%, -50%) scale(calc(var(--ga-badge-scale) * var(--ga-bomb-local-scale, 1)));
   animation: ga-bomb-drift 2.2s ease-in-out infinite;
   transition: transform 0.3s ease;
   z-index: 3;
 }
-/* no centro, mais separação da cabeça do que no assento normal (pedido da
-   Halls: "sobe mais a bomba") — offset fixo em cqw, não em % da própria
-   caixa (que encolheu e reduzia a distância de novo) */
+/* personagem central: offset próprio, já calibrado e aprovado (pedido da
+   Halls: "sobe mais a bomba") — mantido fixo aqui em vez de usar o
+   fallback genérico de geometria, pra não perder esse ajuste fino. */
 .ga-me-stage .ga-bomb-float { top: -2.8cqw; width: 2.75cqw; }
 .ga-bomb-float img {
   display: block;
@@ -223,8 +352,8 @@
   filter: drop-shadow(0 0 1cqw rgba(255, 90, 100, 0.95)) drop-shadow(0 0.4cqw 0.5cqw rgba(10, 4, 30, 0.6));
 }
 @keyframes ga-bomb-drift {
-  0%, 100% { transform: translate(-50%, -50%) scale(var(--ga-badge-scale)) rotate(-4deg); }
-  50% { transform: translate(-50%, -56%) scale(var(--ga-badge-scale)) rotate(4deg); }
+  0%, 100% { transform: translate(-50%, -50%) scale(calc(var(--ga-badge-scale) * var(--ga-bomb-local-scale, 1))) rotate(-4deg); }
+  50% { transform: translate(-50%, -56%) scale(calc(var(--ga-badge-scale) * var(--ga-bomb-local-scale, 1))) rotate(4deg); }
 }
 
 .ga-sparks { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
@@ -281,41 +410,15 @@
    grupo sentado do lado. Maior que os assentos normais, é o foco da tela.
    Expressão muda igual ao resto: calma sem a bomba, pânico + bomba com ela. */
 .ga-me-stage {
+  /* posição/largura/z-index agora vêm do objeto LOCAL_PLAYER (JS), via
+     inline style — slot explícito e independente, igual pedido na spec
+     (item 7, "LOCAL_PLAYER" com x/y/scale/zIndex próprios). */
   position: absolute;
-  z-index: 3;
-  top: 75.5%;
-  left: 50%;
-  width: 8.5cqw;
-  margin-left: -4.25cqw;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
-.ga-me-stage.is-holder { z-index: 6; }
-.ga-me-banner {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  /* precisa limpar a bomba flutuando (que sobe bem mais que a barriguinha
-     do brilho normal) — medido na tela: sem essa margem grande, o selo
-     fica bem em cima da bomba, competindo com o texto */
-  margin: 0 0 6.1cqw;
-  white-space: nowrap;
-  font-family: Cinzel, Georgia, serif;
-  font-weight: 800;
-  font-size: 1.7cqw;
-  letter-spacing: 0.04em;
-  color: #ffe9a8;
-  text-shadow: 0 0 0.8cqw rgba(255, 180, 90, 0.85), 0 0 2cqw rgba(190, 110, 255, 0.6), 0 0.15cqw 0.3cqw rgba(10, 4, 26, 0.85);
-  animation: ga-me-banner-pulse 1.1s ease-in-out infinite;
-}
-@keyframes ga-me-banner-pulse {
-  0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
-}
-
 /* painel central: bem maior que a V1 (era ~30.5%, agora ~38%), e sobe pro
    meio vertical da cena — os clusters de personagem ficam dos dois lados,
    em alturas diferentes, emoldurando ele. */
@@ -323,7 +426,14 @@
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 13%;
+  /* desci de 13% pra abrir espaço pro assento CROWN (Arena 2.0, teste de
+     geometria 9+9+1) por cima, sem ninguém sentado atrás do card — ainda
+     não é um redesenho do card, só testando a planta nova. Reajustado de
+     22.5% pra 27% depois que a arte nova chegou: o altar de verdade (onde
+     o CROWN deveria "pisar") fica em ~25% da altura, e com 22.5% o card
+     cobria ele quase todo — o CROWN ficava flutuando no céu acima do
+     card em vez de em cima do altar. */
+  top: 27%;
   transform: translateX(-50%);
   width: clamp(360px, 38%, 620px);
   box-sizing: border-box;
@@ -454,7 +564,123 @@
 }
 .ga-mistake-dot.is-filled { background: #d92f5b; border-color: #b3143f; }
 
+/* overlay de calibração (Arena 2.0, spec item 2) — SHOW_SEAT_DEBUG no
+   .jsx. Camada A: os 19 slots do blueprint (cruz no ponto exato x%/y%,
+   caixa aproximada, ID) — aparece pra TODOS os 19, ocupados ou não.
+   Camada B: pontinhos de âncora de bomba/nome, dentro de cada assento
+   OCUPADO (ver .ga-debug-dot abaixo), porque esses dependem do avatar
+   de quem está sentado ali, não só do slot. */
+.ga-debug { position: absolute; inset: 0; z-index: 90; pointer-events: none; }
+.ga-debug-slot {
+  position: absolute;
+  /* aproximação: a caixa "encosta" com a base no ponto do assento — não é
+     a mesma fórmula de ancoragem fina por personagem (--ga-seat-anchor),
+     é só uma referência visual grosseira pra calibrar x/y/scale do slot. */
+  transform: translate(-50%, -100%);
+}
+.ga-debug-box {
+  box-sizing: border-box;
+  border: 1px dashed rgba(92, 255, 138, 0.65);
+  background: rgba(92, 255, 138, 0.06);
+}
+.ga-debug-cross {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, 50%);
+}
+.ga-debug-cross::before, .ga-debug-cross::after {
+  content: '';
+  position: absolute;
+  background: #5cff8a;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+.ga-debug-cross::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
+.ga-debug-cross::after { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
+.ga-debug-label {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translate(-50%, 100%);
+  font: 700 10px/1 monospace;
+  color: #5cff8a;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.ga-debug-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 99;
+}
+.ga-debug-dot-bomb { background: #ff5c7a; box-shadow: 0 0 4px rgba(255, 92, 122, 0.9); }
+/* a âncora do nome é sempre o mesmo ponto fixo onde a placa já gruda
+   (top:100% da caixa de nome) — não depende de pose nem de offset custom. */
+.ga-debug-dot-name { background: #ffd95c; box-shadow: 0 0 4px rgba(255, 217, 92, 0.9); left: 50%; top: 100%; }
+
 @media (prefers-reduced-motion: reduce) {
   .ga-glow, .ga-ring, .ga-bomb-float, .ga-flying-bomb, .ga-seat.is-holder.dl-4, .ga-sparks span { animation: none; }
   .ga-sparks { display: none; }
 }
+
+/* === teste "sentar no mármore" (?stage=1|2|3, ?debug=1) === */
+/* stage 1: só geometria — some a sombra padrão pra comparar limpo */
+.ga-seat.has-contact.st-1 .ga-seat-shadow { display: none; }
+/* stage 2/3: sombra de contato achatada e escura NO TAMPO, na altura do
+   ponto de apoio do corpo (--ga-seat-anchor = seatContactY) */
+.ga-seat.has-contact.st-2 .ga-seat-shadow,
+.ga-seat.has-contact.st-3 .ga-seat-shadow {
+  width: 6.2cqw;
+  height: 1.1cqw;
+  transform: translate(-50%, -45%);
+  background: radial-gradient(ellipse, rgba(8, 3, 22, 0.9) 0%, rgba(8, 3, 22, 0.6) 45%, transparent 78%);
+  filter: blur(0.08cqw);
+}
+/* stage 3: recorte do próprio fundo (mesmas camadas do .ga-bg + .ga-shade)
+   por cima da base do personagem, cortado em polígono (inline) */
+.ga-occluder {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(15, 6, 35, 0.35) 0%, rgba(15, 6, 35, 0.05) 22%, rgba(15, 6, 35, 0.12) 62%, rgba(10, 4, 26, 0.55) 100%),
+    url('/arena2-bg-v2.webp') center / 100% 100% no-repeat;
+}
+/* debug */
+.ga-dbg-dot {
+  position: absolute;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  pointer-events: none;
+}
+.ga-dbg-contact { background: #ff00c8; }
+.ga-dbg-feet { background: #ffd400; }
+.ga-dbg-line {
+  position: absolute;
+  height: 0;
+  z-index: 55;
+  pointer-events: none;
+  border-top: 2px solid;
+}
+.ga-dbg-top { border-color: #00e5ff; }
+.ga-dbg-lip { border-color: #7CFF3a; border-top-style: dashed; }
+.ga-dbg-edge { border-color: #ff8a00; }
+
+/* alguns panics vieram desenhados mais altos que o calm (corpo subiu na
+   imagem) — desce o panic pela mesma fração da altura (--ga-panic-dy,
+   medida por avatar) pra a base do corpo ficar no mesmo lugar do calm.
+   Usa a propriedade `translate` (separada de `transform`, que a animação
+   do holder já usa) */
+.ga-seat.is-holder .ga-avatar { translate: 0 calc(var(--ga-panic-dy, 0) * 100%); }
