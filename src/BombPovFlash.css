@@ -12,8 +12,6 @@
 }
 .pov-flash.pov-out { opacity: 0; }
 
-.pov-flash.pov-incoming { animation: pov-shake 0.42s linear; }
-
 .pov-backdrop {
   position: absolute;
   inset: 0;
@@ -25,34 +23,9 @@
     radial-gradient(ellipse 70% 62% at 50% 58%, rgba(90, 20, 120, 0.1) 30%, rgba(10, 4, 26, 0.55) 78%, rgba(6, 2, 16, 0.9) 100%),
     linear-gradient(180deg, rgba(18, 6, 38, 0.5) 0%, rgba(18, 6, 38, 0.05) 22%, rgba(7, 3, 18, 0.85) 100%);
 }
-.pov-flash.pov-incoming .pov-backdrop,
 .pov-flash.pov-impact .pov-backdrop { opacity: 1; }
 
-/* fase 1: a bomba vem crescendo em direção à câmera, tipo um zoom rápido */
-.pov-approach {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 14cqw;
-  transform: translate(-50%, -50%) scale(0.25);
-  opacity: 0;
-}
-.pov-flash.pov-incoming .pov-approach {
-  animation: pov-approach-anim 0.42s cubic-bezier(0.3, 0.1, 0.3, 1) forwards;
-}
-.pov-approach img {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 0 3cqw rgba(190, 110, 255, 0.75));
-}
-@keyframes pov-approach-anim {
-  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0; }
-  35% { opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(6.2) rotate(18deg); opacity: 0; }
-}
-
-/* fase 2: o flash em si — cena parada, foco na bomba enorme + mãos */
+/* o flash em si — cena parada, foco na bomba enorme + mãos */
 .pov-scene {
   position: absolute;
   inset: 0;
@@ -146,15 +119,6 @@
   100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1); }
 }
 
-@keyframes pov-shake {
-  0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-0.4cqw, 0.2cqw); }
-  40% { transform: translate(0.3cqw, -0.3cqw); }
-  60% { transform: translate(-0.2cqw, -0.2cqw); }
-  80% { transform: translate(0.3cqw, 0.2cqw); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .pov-flash.pov-incoming { animation: none; }
-  .pov-approach, .pov-title, .pov-glow, .pov-ring, .pov-spark, .pov-bomb { animation: none; }
+  .pov-title, .pov-glow, .pov-ring, .pov-spark, .pov-bomb { animation: none; }
 }

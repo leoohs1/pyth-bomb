@@ -330,6 +330,7 @@ export default function GameArenaV2({
   const avatarRefs = useRef({})
   const prevHolderRef = useRef(null)
   const flightSeqRef = useRef(0)
+  const flightTimerRef = useRef(null)
   const [flight, setFlight] = useState(null)
   const [povSeq, setPovSeq] = useState(0)
 
@@ -372,11 +373,15 @@ export default function GameArenaV2({
         '--xm': `${(x0 + x1) / 2}px`, '--ym': `${Math.min(y0, y1) - 60}px`,
       },
     })
-    const t = setTimeout(() => {
+    // o timer NÃO pode morrer com o cleanup do effect: se 'players' mudar
+    // (resposta certa atualiza a lista quase junto) a bomba ficava presa na tela
+    clearTimeout(flightTimerRef.current)
+    flightTimerRef.current = setTimeout(() => {
       setFlight((f) => (f && f.seq === seq ? null : f))
-    }, 550)
-    return () => clearTimeout(t)
+    }, 600)
   }, [room.bomb_holder_id, players, myPlayerId])
+
+  useEffect(() => () => clearTimeout(flightTimerRef.current), [])
 
   return (
     <main className="ga-stage">
@@ -390,7 +395,7 @@ export default function GameArenaV2({
         </div>
 
         {flight && (
-          <span key={flight.seq} className="ga-flying-bomb" aria-hidden="true" style={flight.vars}>💣</span>
+          <img key={flight.seq} className="ga-flying-bomb" src="/bomb-laurel.webp" alt="" aria-hidden="true" style={flight.vars} />
         )}
 
         <div className="ga-seats">
