@@ -32,13 +32,12 @@ export default function Landing() {
       </div>
 
       <header className="pb-header">
-        <p className="pb-kicker">Myths ✦ Friends ✦ Mayhem</p>
         <h1 className="pb-title">
           <img className="pb-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
         </h1>
         <div className="pb-laurel">
           <Laurel />
-          <div className="pb-soon">Coming soon</div>
+          <a className="pb-soon pb-play" href="/play">Play now</a>
           <Laurel flip />
         </div>
         <p className="pb-tag">Answer fast. Pass the bomb. Don't get rugged.</p>
@@ -47,11 +46,7 @@ export default function Landing() {
       <div className="pb-cast">
         <div className="pb-bomb" aria-hidden="true">
           <div className="pb-aura" />
-          <img src="/bomb.webp" alt="" />
-          <svg className="pb-spark" viewBox="-20 -20 40 40">
-            <path d="M0-18 L4-4 L18 0 L4 4 L0 18 L-4 4 L-18 0 L-4-4Z" fill="#FFE59A" />
-            <path d="M0-9 L2-2 L9 0 L2 2 L0 9 L-2 2 L-9 0 L-2-2Z" fill="#fff" />
-          </svg>
+          <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
         </div>
         <img
           className="pb-cast-img"

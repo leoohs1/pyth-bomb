@@ -19,7 +19,7 @@
 .hm-bg {
   position: fixed;
   inset: 0;
-  background: url('/arena-night.webp') center bottom / cover no-repeat;
+  background: url('/arena2-bg-v2.webp') center bottom / cover no-repeat;
 }
 /* escurece um pouquinho as bordas pra dar foco no painel */
 .hm-shade {

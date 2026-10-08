@@ -3,9 +3,8 @@ import { supabase, ensureSession } from './supabaseClient'
 import { saveRoomCode, loadRoomCode, clearRoomCode, saveNickname, loadNickname } from './roomStorage'
 import Modes from './Modes'
 import Home from './Home'
-import Lobby from './Lobby'
 import GameArenaV2 from './GameArenaV2'
-import Finished from './Finished'
+import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -224,6 +223,7 @@ export default function App() {
     if (e) return setError(e.message)
     if (data === 'wrong') setFeedback('❌ wrong, try again!')
     else if (data === 'timeout') setFeedback('⏱ too slow!')
+    else if (data === 'exploded') setFeedback('💥 5 mistakes — boom!')
     else setFeedback(null)
     if (data !== 'correct') setTimeout(() => setFeedback(null), 1200)
     setAnswer('')
@@ -248,7 +248,13 @@ export default function App() {
   const iAmHost = !!me && room.host_user_id === me.user_id
 
   if (room.status === 'lobby') {
-    return <Lobby room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} error={error} />
+    return (
+      <GameArenaV2
+        room={room} players={players} alive={alive} danger={1} questionMs={0}
+        myPlayerId={me?.id} phase="lobby"
+        panel={<LobbyPanel room={room} players={players} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} error={error} />}
+      />
+    )
   }
 
   // perigo cresce com o tempo decorrido (o tempo real continua secreto).
@@ -266,16 +272,24 @@ export default function App() {
         room={room} players={players} alive={alive} danger={danger} questionMs={questionMs}
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
         error={error} myPlayerId={me?.id} flash={flash} feedback={feedback}
+        mistakes={room.holder_mistakes ?? 0}
       />
     )
   }
 
-  // status 'finished'
-  const lastVictim = players.find((p) => p.id === room.last_victim_id)
+  // status 'finished': a mesma arena, com o vencedor no centro
+  const meNow = players.find((p) => p.id === me?.id)
   return (
-    <Finished
-      room={room} players={players} me={me} winner={winner} lastVictim={lastVictim}
-      iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} flash={flash} error={error}
+    <GameArenaV2
+      room={room} players={players} alive={alive} danger={1} questionMs={0}
+      myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash}
+      panel={
+        <FinishedPanel
+          room={room} winner={winner} iWon={!!winner && winner.id === me?.id}
+          iAmOut={!!meNow && !meNow.alive} iAmHost={iAmHost}
+          onStart={startGame} onLeave={leaveRoom} error={error}
+        />
+      }
     />
   )
 }

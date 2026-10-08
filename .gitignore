@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# sons temporários (wav) gerados por scripts/make-sounds.mjs
+scripts/.out

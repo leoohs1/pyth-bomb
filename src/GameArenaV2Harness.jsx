@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import GameArenaV2 from './GameArenaV2.jsx'
+import { LobbyPanel, FinishedPanel } from './ArenaPanels.jsx'
 
 // mesmo chicote de testes do GameArenaHarness.jsx, só que pro layout V2
 // (composição em clusters, fundo novo). Já testado com ~14, agora
@@ -20,6 +21,8 @@ export default function GameArenaV2Harness() {
   const [outIds, setOutIds] = useState(() => new Set())
   const [povSeq, setPovSeq] = useState(0)
   const [mistakes, setMistakes] = useState(0)
+  const [phase, setPhase] = useState('playing') // 'playing' | 'lobby' | 'finished'
+  const [asHost, setAsHost] = useState(true)
   const [controlsVisible, setControlsVisible] = useState(true)
   const answerRef = useRef(null)
   // só pra testar a explosão e o aviso de erro que o jogo real manda
@@ -33,11 +36,18 @@ export default function GameArenaV2Harness() {
     bomb_holder_id: players[holderIdx % players.length]?.id,
   }
 
+  // mesma regra do servidor (supabase/008_fair_passing.sql): vai pro próximo
+  // vivo da fila, em círculo — depois que sai de alguém, passa por todos os
+  // outros antes de voltar pra ele.
   function passToRandom() {
-    const alive = players.filter((p) => p.id !== room.bomb_holder_id && p.alive)
-    if (!alive.length) return
-    const next = alive[Math.floor(Math.random() * alive.length)]
-    setHolderIdx(players.findIndex((p) => p.id === next.id))
+    const cur = players.findIndex((p) => p.id === room.bomb_holder_id)
+    for (let k = 1; k <= players.length; k++) {
+      const cand = players[(cur + k) % players.length]
+      if (cand.alive && cand.id !== room.bomb_holder_id) {
+        setHolderIdx(players.findIndex((p) => p.id === cand.id))
+        return
+      }
+    }
   }
 
   function passToMe() {
@@ -87,6 +97,13 @@ export default function GameArenaV2Harness() {
         myPlayerId={MY_ID}
         povFlash={povSeq || null}
         mistakes={mistakes}
+        phase={phase}
+        centerId={phase === 'finished' ? 'p3' : null}
+        panel={phase === 'lobby'
+          ? <LobbyPanel room={{ code: 'K7QX2M' }} players={players} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
+          : phase === 'finished'
+            ? <FinishedPanel room={{ code: 'K7QX2M' }} winner={players.find((p) => p.id === 'p3')} iWon={false} iAmOut={false} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
+            : null}
       />
       {/* botãozinho sempre visível pra esconder/mostrar o painel de teste
           na hora de tirar print pra revisão (pedido: "hide the left-side
@@ -96,6 +113,15 @@ export default function GameArenaV2Harness() {
         {controlsVisible ? '🙈 esconder controles' : '👁️ mostrar controles'}
       </button>
       <div style={{ display: controlsVisible ? 'flex' : 'none', position: 'fixed', bottom: 36, left: 8, zIndex: 50, gap: 6, flexWrap: 'wrap', maxWidth: 260, background: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 6 }}>
+        {['playing', 'lobby', 'finished'].map((ph) => (
+          <button key={ph} onClick={() => setPhase(ph)}
+            style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#38bdf8', fontWeight: phase === ph ? 800 : 400 }}>
+            tela: {ph}
+          </button>
+        ))}
+        <button onClick={() => setAsHost((v) => !v)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+          sou dono da sala: {asHost ? 'sim' : 'não'}
+        </button>
         <span style={{ width: '100%', color: '#fff', fontSize: 11, opacity: 0.8 }}>🫵 "eu" sou: Halls (Oracle)</span>
         {[1, 2, 3, 4].map((d) => (
           <button key={d} onClick={() => setDanger(d)}
@@ -110,7 +136,7 @@ export default function GameArenaV2Harness() {
           </button>
         ))}
         <button onClick={passToRandom} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#dcae40' }}>
-          💣 passar bomba (aleatório)
+          💣 passar bomba (próximo da fila)
         </button>
         <button onClick={passToMe} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#22c55e' }}>
           🎯 bomba vem até mim
@@ -127,6 +153,10 @@ export default function GameArenaV2Harness() {
         <button onClick={() => { setFlash({ name: 'Samurai', mine: false }); setTimeout(() => setFlash(null), 3000) }}
           style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#f97316', color: '#fff' }}>
           💥 testar explosão
+        </button>
+        <button onClick={() => { setFlash({ name: 'Halls', mine: true }); setTimeout(() => setFlash(null), 3000) }}
+          style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#dc2626', color: '#fff' }}>
+          🤡 explodiu EU (deboche)
         </button>
         <button onClick={() => { setFeedbackMsg('❌ wrong, try again!'); setTimeout(() => setFeedbackMsg(null), 1500) }}
           style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#6b7280', color: '#fff' }}>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './GameArenaV2.css'
 import BombPovFlash from './BombPovFlash.jsx'
-import { Boom } from './Game'
+import { play, unlock, getSoundState, setMuted, subscribeSound } from './sound.js'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
 
@@ -70,34 +70,34 @@ const AVATARS = [
 const ARENA2_SEATS = [
   // --- esquerda (ga-mirror ativo automaticamente, x<50) ---
   // fundo: topo x≈97-180px/y≈330-348, face frontal y≈348-380, borda y≈380
-  { id: 'L_BACK', x: 7.4, y: 41.7, scale: 0.95, zIndex: 10, namePlateY: 42.2, lipY: 38.9, blockX: [3.8, 11.0] },
+  { id: 'L_BACK', x: 8.1, y: 41.1, scale: 0.95, zIndex: 10, namePlateY: 41.60, lipY: 38.9, blockX: [5.1, 11.1] },
   // meio: topo x≈95-195px/y≈455-465, face frontal y≈465-498, borda y≈498
-  { id: 'L_MID', x: 8.6, y: 54.6, scale: 1.17, zIndex: 20, namePlateY: 55.1, lipY: 51.8, blockX: [4.5, 12.4] },
+  { id: 'L_MID', x: 8.55, y: 54.85, scale: 1.17, zIndex: 20, namePlateY: 55.35, lipY: 52, blockX: [4.5, 12.6] },
   // frente: topo x≈75-195px/y≈580-598, face frontal y≈598-628, borda y≈628
-  { id: 'L_FRONT', x: 9.0, y: 68.9, scale: 1.35, zIndex: 30, namePlateY: 69.4, lipY: 66.1, blockX: [4.7, 13.0] },
+  { id: 'L_FRONT', x: 9.15, dx: 0.7, y: 68.9, scale: 1.35, zIndex: 30, namePlateY: 69.40, lipY: 66.1, blockX: [5.1, 13.2] },
 
   // --- direita (sem mirror, x>=50 — arte já olha pro centro "de graça") ---
-  { id: 'R_BACK', x: 92.8, y: 41.7, scale: 0.95, zIndex: 10, namePlateY: 42.2, lipY: 38.9, blockX: [89.3, 96.7] },
+  { id: 'R_BACK', x: 92.2, dx: -0.35, y: 41.1, scale: 0.95, zIndex: 10, namePlateY: 41.60, lipY: 38.9, blockX: [89.4, 95] },
   // (igual ao piloto aprovado: x=90.8, y=54.3 — mantidos exatamente)
-  { id: 'R_MID', x: 90.8, y: 54.3, scale: 1.17, zIndex: 20, namePlateY: 54.8, lipY: 51.8, blockX: [87.6, 94.4] },
-  { id: 'R_FRONT', x: 90.8, y: 68.9, scale: 1.35, zIndex: 30, namePlateY: 69.4, lipY: 66.1, blockX: [87.2, 94.5] },
+  { id: 'R_MID', x: 91.55, dx: -0.35, y: 54.85, scale: 1.17, zIndex: 20, namePlateY: 55.35, lipY: 52, blockX: [87.6, 95.5] },
+  { id: 'R_FRONT', x: 90.95, dx: -0.35, y: 68.9, scale: 1.35, zIndex: 30, namePlateY: 69.40, lipY: 66.1, blockX: [86.9, 95] },
 
   // --- TESTE 16 assentos: 2º e 3º bloco de cada fileira (indo pro centro).
   // Medidos a olho no fundo (±0.5%) — a fileira da frente sobe em direção
   // ao centro (U). Direita = espelho da esquerda (100 - x).
-  { id: 'L_BACK2', x: 16.2, y: 42.9, scale: 0.95, zIndex: 10, namePlateY: 43.4, lipY: 40.1, blockX: [12.6, 19.9] },
-  { id: 'L_MID2', x: 17.7, y: 54.7, scale: 1.17, zIndex: 20, namePlateY: 55.2, lipY: 51.9, blockX: [13.8, 21.6] },
-  { id: 'L_FRONT2', x: 18.8, y: 68.0, scale: 1.35, zIndex: 30, namePlateY: 68.5, lipY: 65.2, blockX: [14.6, 23.0] },
-  { id: 'R_BACK2', x: 83.8, y: 42.9, scale: 0.95, zIndex: 10, namePlateY: 43.4, lipY: 40.1, blockX: [80.1, 87.4] },
-  { id: 'R_MID2', x: 82.3, y: 54.7, scale: 1.17, zIndex: 20, namePlateY: 55.2, lipY: 51.9, blockX: [78.4, 86.2] },
-  { id: 'R_FRONT2', x: 81.2, y: 68.0, scale: 1.35, zIndex: 30, namePlateY: 68.5, lipY: 65.2, blockX: [77.0, 85.4] },
-  { id: 'L_MID3', x: 26.8, y: 54.9, scale: 1.17, zIndex: 20, namePlateY: 55.4, lipY: 52.1, blockX: [23.0, 30.6] },
-  { id: 'L_FRONT3', x: 28.3, y: 67.2, scale: 1.35, zIndex: 30, namePlateY: 67.7, lipY: 64.4, blockX: [24.3, 32.4] },
-  { id: 'R_MID3', x: 73.2, y: 54.9, scale: 1.17, zIndex: 20, namePlateY: 55.4, lipY: 52.1, blockX: [69.4, 77.0] },
-  { id: 'R_FRONT3', x: 71.7, y: 67.2, scale: 1.35, zIndex: 30, namePlateY: 67.7, lipY: 64.4, blockX: [67.6, 75.7] },
+  { id: 'L_BACK2', x: 16.35, y: 41.9, scale: 0.95, zIndex: 10, namePlateY: 42.40, lipY: 39.5, blockX: [12.7, 20] },
+  { id: 'L_MID2', x: 17.85, y: 54.8, scale: 1.17, zIndex: 20, namePlateY: 55.30, lipY: 52.1, blockX: [14, 21.7] },
+  { id: 'L_FRONT2', x: 19.1, dx: 0.7, y: 66.95, scale: 1.35, zIndex: 30, namePlateY: 67.45, lipY: 64.3, blockX: [15.2, 23] },
+  { id: 'R_BACK2', x: 83.05, dx: -0.35, y: 41.9, scale: 0.95, zIndex: 10, namePlateY: 42.40, lipY: 39.5, blockX: [80.1, 86] },
+  { id: 'R_MID2', x: 82.25, dx: -0.35, y: 54.8, scale: 1.17, zIndex: 20, namePlateY: 55.30, lipY: 52.1, blockX: [78.5, 86] },
+  { id: 'R_FRONT2', x: 81.35, dx: -0.35, y: 66.95, scale: 1.35, zIndex: 30, namePlateY: 67.45, lipY: 64.3, blockX: [77.3, 85.4] },
+  { id: 'L_MID3', x: 26.75, y: 54.8, scale: 1.17, zIndex: 20, namePlateY: 55.30, lipY: 52.2, blockX: [23.3, 30.2] },
+  { id: 'L_FRONT3', x: 28.25, dx: 0.7, y: 66.6, scale: 1.35, zIndex: 30, namePlateY: 67.10, lipY: 64, blockX: [24.5, 32] },
+  { id: 'R_MID3', x: 73.4, dx: -0.35, y: 54.8, scale: 1.17, zIndex: 20, namePlateY: 55.30, lipY: 52.2, blockX: [69.8, 77] },
+  { id: 'R_FRONT3', x: 71.8, dx: -0.35, y: 66.6, scale: 1.35, zIndex: 30, namePlateY: 67.10, lipY: 64, blockX: [68, 75.6] },
   // 17º e 18º assentos: bloco de trás (fundo) mais perto do centro, de cada lado
-  { id: 'L_BACK3', x: 25.4, y: 43.1, scale: 0.95, zIndex: 10, namePlateY: 43.6, lipY: 40.3, blockX: [21.8, 29.2] },
-  { id: 'R_BACK3', x: 74.6, y: 43.1, scale: 0.95, zIndex: 10, namePlateY: 43.6, lipY: 40.3, blockX: [70.8, 78.2] },
+  { id: 'L_BACK3', x: 24.95, y: 42, scale: 0.95, zIndex: 10, namePlateY: 42.50, lipY: 40, blockX: [21.4, 28.5] },
+  { id: 'R_BACK3', x: 75.2, dx: -0.35, y: 42, scale: 0.95, zIndex: 10, namePlateY: 42.50, lipY: 40, blockX: [71.6, 78.8] },
 
   // Os outros 13 assentos (CROWN incluso) e o restante da ala — ainda NÃO
   // mapeados nessa arte nova. Entram só depois que esses 6 passarem no
@@ -228,6 +228,14 @@ function getAvatarGeometry(src) {
   }
 }
 
+// placa de nome presa na FACE do próprio bloco: centrada no bloco (blockX) e
+// na parte de baixo da face, abaixo dos pés de quem senta (os pés pendem uns
+// 70% da face). Antes ficava na parede ENTRE as fileiras, em cima da cabeça
+// de quem senta na fileira de baixo — parecia o nome dele.
+const PLATE_ABOVE_EDGE = 0.75
+function plateX(s) { return s.blockX ? (s.blockX[0] + s.blockX[1]) / 2 : s.x }
+function plateY(s) { return s.blockX ? s.y - PLATE_ABOVE_EDGE : s.namePlateY }
+
 // como o personagem é posicionado neste assento: modo novo (corpo no tampo)
 // só se stage>=1, o avatar tem seatContactY e o assento tem lipY.
 function placeOnSeat(geo, s) {
@@ -245,6 +253,45 @@ const PencilIcon = () => (
       strokeLinejoin="round" strokeLinecap="round" fill="none" />
   </svg>
 )
+
+// imagem do deboche quando EU exploda (troque o arquivo em public/ pra mudar a arte)
+const RUGGED_IMG = '/minotaur.webp'
+
+// aviso de explosão: "X got rugged!" pra todo mundo; pra quem explodiu, a tela
+// toda treme, fica vermelha e a arte debocha ("HA HA HA")
+function RuggedOverlay({ flash }) {
+  if (!flash) return null
+  return (
+    <div key={flash.name + (flash.mine ? 'm' : '')} className={`ga-rugged${flash.mine ? ' is-mine' : ''}`} role="status">
+      <div className="ga-rugged-body">
+        <div className="ga-rugged-art">
+          <img src={RUGGED_IMG} alt="" width="1254" height="1254" />
+          {flash.mine && (
+            <>
+              <span className="ga-ha ga-ha-1" aria-hidden="true">HA!</span>
+              <span className="ga-ha ga-ha-2" aria-hidden="true">HA!</span>
+              <span className="ga-ha ga-ha-3" aria-hidden="true">HA!</span>
+            </>
+          )}
+        </div>
+        <p className="ga-rugged-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
+      </div>
+    </div>
+  )
+}
+
+// botão de mutar/ligar o som (lembra a escolha no navegador)
+function SoundToggle() {
+  const [st, setSt] = useState(getSoundState())
+  useEffect(() => subscribeSound(setSt), [])
+  return (
+    <button type="button" className="ga-chip ga-sound"
+      onClick={() => { unlock(); setMuted(!st.muted) }}
+      aria-label={st.muted ? 'Turn sound on' : 'Mute sound'} title={st.muted ? 'Sound off' : 'Sound on'}>
+      {st.muted ? '🔇' : '🔊'}
+    </button>
+  )
+}
 
 // troca pra uma segunda arte (expressão de pânico) quando o personagem está com
 // a bomba — mesmo mecanismo do GameArena.jsx original.
@@ -280,7 +327,12 @@ export default function GameArenaV2({
   // holder atual já tem nessa bomba (0-5, vira 5 bolinhas discretas no
   // card) — a contagem de verdade é Step 4 (App.jsx), aqui é só exibição.
   mistakes = 0,
+  // telas fora da partida usam a mesma arena: 'lobby' / 'finished' trocam o
+  // cartão da pergunta por `panel` (conteúdo vindo do App). No fim, o vencedor
+  // ocupa o centro (centerId) e o resto da turma continua sentado.
+  phase = 'playing', panel = null, centerId = null,
 }) {
+  const inGame = phase === 'playing'
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
@@ -289,11 +341,13 @@ export default function GameArenaV2({
   // (visão em 1ª pessoa: cada jogador se vê ali, e vê todo mundo sentado).
   // Sem myPlayerId (ex.: usos futuros sem "quem sou eu" definido), ninguém
   // é tirado da plateia — comportamento igual ao V1.
-  const myIndex = myPlayerId ? players.findIndex((p) => p.id === myPlayerId) : -1
+  const focusId = centerId ?? myPlayerId
+  const myIndex = focusId ? players.findIndex((p) => p.id === focusId) : -1
   const me = myIndex >= 0 ? players[myIndex] : null
-  const crowd = myPlayerId ? players.filter((p) => p.id !== myPlayerId) : players
-  const iAmHolder = !!me && me.id === room.bomb_holder_id
-  const iAmEliminated = !!me && !me.alive
+  const crowd = focusId ? players.filter((p) => p.id !== focusId) : players
+  const isWinnerStage = phase === 'finished' && !!me
+  const iAmHolder = inGame && !!me && me.id === room.bomb_holder_id
+  const iAmEliminated = inGame && !!me && !me.alive
   const holder = players.find((p) => p.id === room.bomb_holder_id)
   // personagem do jogador = posição dele na lista (ordem de entrada)
   const avatarOf = (p) => AVATARS[Math.max(0, players.findIndex((x) => x.id === p.id)) % AVATARS.length]
@@ -348,6 +402,11 @@ export default function GameArenaV2({
     const prevPlayer = players.find((p) => p.id === prevId)
     if (!prevPlayer || !prevPlayer.alive) return
 
+    // sons: a bomba chegou em mim / voou entre outros / saiu de mim (acertei)
+    if (myPlayerId && nextId === myPlayerId) play('bomb_received')
+    else play('bomb_pass')
+    if (myPlayerId && prevId === myPlayerId) play('correct')
+
     if (myPlayerId && nextId === myPlayerId) {
       setPovSeq((n) => n + 1)
     }
@@ -383,15 +442,53 @@ export default function GameArenaV2({
 
   useEffect(() => () => clearTimeout(flightTimerRef.current), [])
 
+  // ---- sons do jogo ----
+  const prevDangerRef = useRef(danger)
+  useEffect(() => {
+    if (danger > prevDangerRef.current && danger > 1) play('danger_up', { level: danger })
+    prevDangerRef.current = danger
+  }, [danger])
+
+  // pulso de bomba enquanto EU seguro ela: acelera conforme o perigo sobe
+  useEffect(() => {
+    if (!iAmHolder || iAmEliminated) return
+    const ms = { 1: 1000, 2: 720, 3: 400, 4: 300 }[danger] ?? 1000
+    const id = setInterval(() => play('tick', { level: danger }), ms)
+    return () => clearInterval(id)
+  }, [iAmHolder, iAmEliminated, danger])
+
+  useEffect(() => { if (flash) play('explosion') }, [flash])
+  useEffect(() => { if (feedback) play('wrong') }, [feedback])
+  // o trombone triste de quem explodiu entra DEPOIS do estrondo (senão um abafa o outro)
+  useEffect(() => {
+    if (!iAmEliminated) return
+    const id = setTimeout(() => play('eliminated'), 900)
+    return () => clearTimeout(id)
+  }, [iAmEliminated])
+
   return (
     <main className="ga-stage">
+      {/* celular em pé: a arena é horizontal, então pedimos pra girar (CSS decide quando aparece) */}
+      <div className="ga-rotate" role="alert">
+        <svg className="ga-rotate-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="20" y="6" width="24" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="3" />
+          <circle cx="32" cy="51" r="2.2" fill="currentColor" />
+        </svg>
+        <p className="ga-rotate-title">Rotate your phone</p>
+        <p className="ga-rotate-sub">Pyth Bomb is played in landscape</p>
+      </div>
       <div className="ga-arena">
         <div className="ga-bg" />
         <div className="ga-shade" />
 
         <div className="ga-hud">
-          <span className="ga-chip">👥 {alive?.length ?? 0}/{ARENA2_SEATS.length} players</span>
-          <span className="ga-chip">Round {room.round_number} · Classic</span>
+          <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/{ARENA2_SEATS.length} players</span>
+          <div className="ga-hud-right">
+            <SoundToggle />
+            <span className="ga-chip">
+              {inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over'}
+            </span>
+          </div>
         </div>
 
         {flight && (
@@ -417,7 +514,7 @@ export default function GameArenaV2({
               <div key={p.id}
                 className={`ga-seat${isHolder ? ` is-holder dl-${danger}` : ''}${isOut ? ' is-out' : ''}${faceMirror ? ' ga-mirror' : ''}${place.contact ? ` has-contact st-${STAGE}` : ''}`}
                 style={{
-                  left: `${s.x + (nudge?.dx ?? 0)}%`, top: `${place.top + (nudge?.dy ?? 0)}%`, zIndex: z,
+                  left: `${s.x + (s.dx ?? 0) + (nudge?.dx ?? 0)}%`, top: `${place.top + (nudge?.dy ?? 0)}%`, zIndex: z,
                   // posição no mundo: ponto de apoio do avatar (seatContactY
                   // no modo novo, supportAnchorY no antigo).
                   '--ga-seat-anchor': place.anchor,
@@ -517,7 +614,7 @@ export default function GameArenaV2({
               return (
                 <div key={p.id}
                   className={`ga-seat-plaque${!p.alive ? ' is-out' : ''}`}
-                  style={{ left: `${s.x}%`, top: `${s.namePlateY}%`, zIndex: s.zIndex + 1 }}>
+                  style={{ left: `${plateX(s)}%`, top: `${plateY(s)}%`, zIndex: s.zIndex + 1 }}>
                   {p.nickname}
                 </div>
               )
@@ -538,7 +635,7 @@ export default function GameArenaV2({
         </div>
 
         {me && (
-          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}${iAmEliminated ? ' is-out' : ''}`}
+          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}${iAmEliminated ? ' is-out' : ''}${isWinnerStage ? ' is-winner' : ''}`}
             style={{
               left: `${LOCAL_PLAYER.x}%`, top: `${LOCAL_PLAYER.y}%`,
               width: `${LOCAL_PLAYER.widthCqw}cqw`, marginLeft: `${-LOCAL_PLAYER.widthCqw / 2}cqw`,
@@ -566,14 +663,21 @@ export default function GameArenaV2({
                 <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
               </div>
             )}
+            {isWinnerStage && <span className="ga-crown" role="img" aria-label="Winner">👑</span>}
             <span className="ga-name">{me.nickname}</span>
           </div>
         )}
 
+        {!inGame && (
+          <>
+            <section className={`ga-card ga-panel ga-panel-${phase}`}>{panel}</section>
+          </>
+        )}
+
+        {inGame && (
         <section className={`ga-card dl-${danger}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
           <p className="ga-qnum">Question</p>
-          <Boom flash={flash} />
           <p className="ga-qtext">{room.current_question_text}</p>
 
           <div className="ga-time">
@@ -623,6 +727,7 @@ export default function GameArenaV2({
           {feedback && <p className="ga-error" role="alert">{feedback}</p>}
           {error && <p className="ga-error" role="alert">{error}</p>}
         </section>
+        )}
 
         {/* overlay de calibração (spec item 2) — mostra os 19 assentos do
             blueprint, ocupados ou não, com cruz no ponto exato (x%, y%) e
@@ -644,6 +749,8 @@ export default function GameArenaV2({
             })}
           </div>
         )}
+
+        <RuggedOverlay flash={flash} />
 
         {povSeq > 0 && <BombPovFlash playKey={povSeq} onDone={onPovFlashDone} />}
       </div>

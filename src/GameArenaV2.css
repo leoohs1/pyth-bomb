@@ -685,3 +685,254 @@
    Usa a propriedade `translate` (separada de `transform`, que a animação
    do holder já usa) */
 .ga-seat.is-holder .ga-avatar { translate: 0 calc(var(--ga-panic-dy, 0) * 100%); }
+
+/* botão de som no canto (ao lado do "Round") */
+.ga-hud-right { display: flex; align-items: center; gap: 0.6em; }
+.ga-sound { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.8em; }
+.ga-sound:hover { filter: brightness(1.2); }
+
+/* "gire o celular": só aparece em celular/tablet pequeno NA VERTICAL */
+.ga-rotate { display: none; }
+@media (orientation: portrait) and (max-width: 900px) {
+  .ga-rotate {
+    position: fixed; inset: 0; z-index: 9999;
+    display: grid; place-content: center; justify-items: center; gap: 14px;
+    padding: 24px; text-align: center; color: #f6eeff;
+    background: radial-gradient(ellipse at 50% 40%, #2a1558 0%, #120a26 70%);
+    font-family: Cinzel, Georgia, serif;
+  }
+  .ga-rotate-icon { width: 84px; height: 84px; color: #e9c46a; animation: ga-rotate-turn 2.4s ease-in-out infinite; }
+  .ga-rotate-title { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.04em; }
+  .ga-rotate-sub { margin: 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; opacity: 0.75; }
+}
+@keyframes ga-rotate-turn {
+  0%, 20% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+
+/* CELULAR NA HORIZONTAL (tela baixa): o card encolhe pra caber no meio da arena sem
+   cobrir a plateia nem o seu personagem — logo e "QUESTION" saem pra ganhar espaço */
+@media (max-height: 520px) {
+  .ga-card {
+    top: 16%;
+    width: 38%;
+    min-width: 0;
+    padding: 6px 10px 8px;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+  .ga-logo, .ga-qnum { display: none; }
+  .ga-qtext { font-size: 11.5px; margin: 0 0 4px; min-height: 2.5em; line-height: 1.25; }
+  .ga-time { margin-bottom: 6px; gap: 6px; }
+  .ga-track { height: 6px; }
+  .ga-time span { font-size: 11px; min-width: 1.8em; }
+  .ga-answer { gap: 6px; }
+  .ga-field input { height: 32px; font-size: 12px; padding: 0 8px 0 28px; border-radius: 8px; }
+  .ga-icon { left: 8px; width: 14px; height: 14px; }
+  .ga-send { height: 32px; padding: 0 10px; font-size: 11px; border-radius: 8px; }
+  .ga-status { height: 32px; font-size: 10.5px; border-radius: 8px; }
+  .ga-error { margin-top: 5px; padding: 4px 6px; font-size: 10.5px; }
+  .ga-mistakes { margin-top: 5px; }
+  .ga-chip { font-size: 10px; padding: 0.35em 0.8em; }
+  .ga-sound { padding: 0.3em 0.6em; }
+}
+
+/* ---------- Sala de espera / fim de jogo: mesmo cartão, conteúdo diferente ----------
+   Tamanhos em cqw pra escalar junto com a arena (mínimos em px pra continuar legível). */
+.ga-panel {
+  top: 20%;
+  width: 34cqw;
+  padding: 1.3cqw 2cqw 1.4cqw;
+  z-index: 6;
+}
+.ga-panel .ga-logo { width: 11cqw; margin-bottom: 0.2cqw; }
+.ga-panel .ga-qnum { font-size: max(10px, 0.85cqw); }
+.ga-code-row { display: flex; justify-content: center; align-items: stretch; gap: 0.7cqw; }
+.ga-code {
+  padding: 0.2cqw 1.4cqw;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: max(22px, 3.6cqw);
+  line-height: 1.15;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+  color: #ffe9a8;
+  background: linear-gradient(180deg, #3d3160, #2a2048);
+  border: 2px solid var(--ga-gold);
+  border-radius: 10px;
+  box-shadow: inset 0 3px 10px rgba(10, 4, 30, 0.5);
+  user-select: all;
+}
+.ga-winner-name {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: max(18px, 2.6cqw);
+  text-transform: uppercase;
+}
+.ga-copy {
+  min-width: 6.4cqw;
+  padding: 0 1cqw;
+  cursor: pointer;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: max(11px, 1.15cqw);
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #8f62e6, #5c33b4);
+  border: 2px solid var(--ga-gold);
+  border-radius: 10px;
+}
+.ga-copy:hover { filter: brightness(1.08); }
+.ga-copy.is-copied { color: #2c1a06; background: linear-gradient(180deg, #f8de8e, #dcae40 55%, #c08d25); border-color: #a9771a; }
+.ga-hint { margin: 0.5cqw 0 0; font-size: max(10.5px, 1cqw); font-weight: 600; color: rgba(46, 31, 99, 0.7); }
+.ga-bigbtn { width: 100%; margin-top: 1cqw; height: max(34px, 3.4cqw); font-size: max(13px, 1.5cqw); }
+.ga-bigbtn:disabled { cursor: not-allowed; filter: grayscale(0.55) brightness(0.95); opacity: 0.7; transform: none; }
+.ga-wait {
+  margin: 1.2cqw 0 0;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 700;
+  font-size: max(12px, 1.5cqw);
+  color: var(--ga-ink);
+}
+.ga-dots::after { content: ''; display: inline-block; width: 1.5em; text-align: left; animation: ga-dots 1.4s steps(4, end) infinite; }
+@keyframes ga-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%, 100% { content: '...'; } }
+.ga-me {
+  margin: 0.8cqw 0 0;
+  padding: 0.5cqw 0.8cqw;
+  font-weight: 700;
+  font-size: max(11px, 1.2cqw);
+  color: var(--ga-ink);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(201, 162, 74, 0.6);
+  border-radius: 10px;
+}
+.ga-me.is-win { font-family: Cinzel, Georgia, serif; font-weight: 800; color: #2c1a06; background: linear-gradient(180deg, #f8de8e, #dcae40 60%, #c08d25); border-color: #a9771a; }
+.ga-leave {
+  display: block;
+  margin: 0.8cqw auto 0;
+  padding: 2px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: max(10px, 0.95cqw);
+  font-weight: 600;
+  color: rgba(46, 31, 99, 0.55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ga-leave:hover { color: rgba(46, 31, 99, 0.85); }
+
+/* vencedor no centro: coroa + brilho dourado */
+.ga-me-stage.is-winner { filter: drop-shadow(0 0 1.2cqw rgba(255, 214, 110, 0.85)); }
+.ga-crown {
+  position: absolute;
+  top: -2.4cqw;
+  left: 50%;
+  font-size: 2.6cqw;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: ga-crown-bob 1.6s ease-in-out infinite;
+}
+@keyframes ga-crown-bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -0.4cqw); } }
+
+@media (max-height: 520px) {
+  .ga-panel { top: 17%; width: 36%; padding: 6px 10px 8px; }
+  .ga-panel .ga-qnum { display: block; margin: 0 0 2px; font-size: 9px; }
+  .ga-code { font-size: 20px; padding: 2px 10px; }
+  .ga-copy { font-size: 10px; min-width: 52px; }
+  .ga-bigbtn { height: 30px; font-size: 11px; margin-top: 5px; }
+  .ga-hint, .ga-leave { font-size: 9.5px; margin-top: 3px; }
+  .ga-me { font-size: 10px; margin-top: 4px; padding: 3px 6px; }
+}
+
+/* ---------- explosão: "X got rugged!" ----------
+   Cobre a arena inteira (por cima do cartão) e some sozinha em 3s. Pra quem explodiu
+   (.is-mine): a tela fica vermelha e treme, a arte grande debocha com "HA! HA! HA!". */
+.ga-rugged {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: ga-rugged-life 3.2s ease-out forwards;
+}
+.ga-rugged-body { display: grid; justify-items: center; gap: 0.6cqw; }
+.ga-rugged-art { position: relative; }
+.ga-rugged-art img {
+  display: block;
+  height: 11cqw;
+  width: auto;
+  filter: drop-shadow(0 0.5cqw 0.8cqw rgba(60, 5, 30, 0.6));
+  animation: ga-rugged-pop 0.45s ease-out;
+}
+.ga-rugged-text {
+  margin: 0;
+  padding: 0.5cqw 2cqw;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 900;
+  font-size: max(16px, 2.4cqw);
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(150, 20, 60, 0.82);
+  border: 0.15cqw solid #f3e3b0;
+  border-radius: 999px;
+  text-shadow: 0 0.12cqw 0 #7a1030;
+}
+.ga-ha { display: none; }
+
+.ga-rugged.is-mine {
+  background: radial-gradient(ellipse at 50% 48%, rgba(255, 70, 100, 0.55) 0%, rgba(120, 15, 55, 0.7) 60%, rgba(60, 5, 30, 0.82) 100%);
+  animation: ga-rugged-life 3.2s ease-out forwards, ga-rugged-shake 0.5s linear;
+}
+.ga-rugged.is-mine .ga-rugged-art img {
+  height: 26cqw;
+  animation: ga-rugged-pop 0.45s ease-out, ga-rugged-laugh 0.32s ease-in-out 0.45s infinite;
+}
+.ga-rugged.is-mine .ga-rugged-text {
+  font-size: max(24px, 5.4cqw);
+  padding: 0.6cqw 3cqw;
+  background: none;
+  border: none;
+  text-shadow: 0 0.25cqw 0 #7a1030, 0 0.6cqw 1.6cqw rgba(60, 5, 30, 0.8);
+  animation: ga-rugged-slam 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) 0.15s backwards;
+}
+.ga-rugged.is-mine .ga-ha {
+  display: block;
+  position: absolute;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 900;
+  font-size: max(18px, 3.2cqw);
+  color: #ffe08a;
+  text-shadow: 0 0.2cqw 0 #7a1030;
+  animation: ga-ha-pop 0.7s ease-in-out infinite;
+}
+.ga-ha-1 { left: -9cqw; top: 3cqw; transform: rotate(-14deg); }
+.ga-ha-2 { right: -9cqw; top: 1cqw; transform: rotate(12deg); animation-delay: 0.23s !important; }
+.ga-ha-3 { right: -6cqw; top: 12cqw; transform: rotate(-6deg); animation-delay: 0.46s !important; }
+
+@keyframes ga-rugged-life {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes ga-rugged-pop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.12) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+@keyframes ga-rugged-laugh { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-1.2cqw) rotate(4deg); } }
+@keyframes ga-rugged-slam { 0% { transform: scale(2.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes ga-rugged-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-1.2cqw, 0.4cqw); }
+  40% { transform: translate(1cqw, -0.6cqw); }
+  60% { transform: translate(-0.8cqw, 0.4cqw); }
+  80% { transform: translate(0.6cqw, -0.2cqw); }
+}
+@keyframes ga-ha-pop { 0%, 100% { scale: 0.8; opacity: 0.7; } 50% { scale: 1.25; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-rugged, .ga-rugged.is-mine, .ga-rugged-art img, .ga-rugged.is-mine .ga-ha, .ga-rugged.is-mine .ga-rugged-text { animation: none; }
+}
