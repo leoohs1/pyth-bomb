@@ -851,7 +851,7 @@
 
 /* ---------- explosão: "X got rugged!" ----------
    Cobre a arena inteira (por cima do cartão) e some sozinha em 3s. Pra quem explodiu
-   (.is-mine): a tela fica vermelha e treme, a arte grande debocha com "HA! HA! HA!". */
+   (.is-mine): a tela fica vermelha e treme, a arte grande debocha com "Oráculo rindo". */
 .ga-rugged {
   position: absolute;
   inset: 0;
@@ -883,10 +883,9 @@
   border-radius: 999px;
   text-shadow: 0 0.12cqw 0 #7a1030;
 }
-.ga-ha { display: none; }
 
 .ga-rugged.is-mine {
-  background: radial-gradient(ellipse at 50% 48%, rgba(255, 70, 100, 0.55) 0%, rgba(120, 15, 55, 0.7) 60%, rgba(60, 5, 30, 0.82) 100%);
+  background: radial-gradient(ellipse at 50% 48%, rgba(255, 70, 100, 0.8) 0%, rgba(120, 15, 55, 0.86) 55%, rgba(60, 5, 30, 0.92) 100%);
   animation: ga-rugged-life 3.2s ease-out forwards, ga-rugged-shake 0.5s linear;
 }
 .ga-rugged.is-mine .ga-rugged-art img {
@@ -901,19 +900,6 @@
   text-shadow: 0 0.25cqw 0 #7a1030, 0 0.6cqw 1.6cqw rgba(60, 5, 30, 0.8);
   animation: ga-rugged-slam 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) 0.15s backwards;
 }
-.ga-rugged.is-mine .ga-ha {
-  display: block;
-  position: absolute;
-  font-family: Cinzel, Georgia, serif;
-  font-weight: 900;
-  font-size: max(18px, 3.2cqw);
-  color: #ffe08a;
-  text-shadow: 0 0.2cqw 0 #7a1030;
-  animation: ga-ha-pop 0.7s ease-in-out infinite;
-}
-.ga-ha-1 { left: -9cqw; top: 3cqw; transform: rotate(-14deg); }
-.ga-ha-2 { right: -9cqw; top: 1cqw; transform: rotate(12deg); animation-delay: 0.23s !important; }
-.ga-ha-3 { right: -6cqw; top: 12cqw; transform: rotate(-6deg); animation-delay: 0.46s !important; }
 
 @keyframes ga-rugged-life {
   0% { opacity: 0; }
@@ -931,8 +917,7 @@
   60% { transform: translate(-0.8cqw, 0.4cqw); }
   80% { transform: translate(0.6cqw, -0.2cqw); }
 }
-@keyframes ga-ha-pop { 0%, 100% { scale: 0.8; opacity: 0.7; } 50% { scale: 1.25; opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ga-rugged, .ga-rugged.is-mine, .ga-rugged-art img, .ga-rugged.is-mine .ga-ha, .ga-rugged.is-mine .ga-rugged-text { animation: none; }
+  .ga-rugged, .ga-rugged.is-mine, .ga-rugged-art img, .ga-rugged.is-mine .ga-rugged-text { animation: none; }
 }

@@ -1,5 +1,6 @@
 import './Home.css'   // fundo, painel de mármore, personagens (compartilhados)
 import './Modes.css'
+import SoundToggle from './SoundToggle.jsx'
 
 const MODES = [
   {
@@ -30,6 +31,7 @@ const MODES = [
 export default function Modes({ onSelectClassic }) {
   return (
     <main className="hm-stage">
+      <SoundToggle className="sound-fixed" />
       <div className="hm-bg" role="img" aria-label="Marble arena above a night city with the Pyth emblem on the floor" />
       <div className="hm-shade" />
 

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import './GameArenaV2.css'
 import BombPovFlash from './BombPovFlash.jsx'
-import { play, unlock, getSoundState, setMuted, subscribeSound } from './sound.js'
+import { play } from './sound.js'
+import { setMusicDuck } from './music.js'
+import SoundToggle from './SoundToggle.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
 
@@ -254,8 +256,10 @@ const PencilIcon = () => (
   </svg>
 )
 
-// imagem do deboche quando EU exploda (troque o arquivo em public/ pra mudar a arte)
-const RUGGED_IMG = '/minotaur.webp'
+// arte do deboche quando EU exploda (Oráculo rindo do Minotauro chamuscado) e a arte pequena
+// que aparece quando OUTRA pessoa explode. Troque os arquivos em public/ pra mudar.
+const RUGGED_IMG_MINE = '/rugged-taunt.webp'
+const RUGGED_IMG_OTHER = '/minotaur.webp'
 
 // aviso de explosão: "X got rugged!" pra todo mundo; pra quem explodiu, a tela
 // toda treme, fica vermelha e a arte debocha ("HA HA HA")
@@ -265,31 +269,11 @@ function RuggedOverlay({ flash }) {
     <div key={flash.name + (flash.mine ? 'm' : '')} className={`ga-rugged${flash.mine ? ' is-mine' : ''}`} role="status">
       <div className="ga-rugged-body">
         <div className="ga-rugged-art">
-          <img src={RUGGED_IMG} alt="" width="1254" height="1254" />
-          {flash.mine && (
-            <>
-              <span className="ga-ha ga-ha-1" aria-hidden="true">HA!</span>
-              <span className="ga-ha ga-ha-2" aria-hidden="true">HA!</span>
-              <span className="ga-ha ga-ha-3" aria-hidden="true">HA!</span>
-            </>
-          )}
+          <img src={flash.mine ? RUGGED_IMG_MINE : RUGGED_IMG_OTHER} alt="" />
         </div>
         <p className="ga-rugged-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
       </div>
     </div>
-  )
-}
-
-// botão de mutar/ligar o som (lembra a escolha no navegador)
-function SoundToggle() {
-  const [st, setSt] = useState(getSoundState())
-  useEffect(() => subscribeSound(setSt), [])
-  return (
-    <button type="button" className="ga-chip ga-sound"
-      onClick={() => { unlock(); setMuted(!st.muted) }}
-      aria-label={st.muted ? 'Turn sound on' : 'Mute sound'} title={st.muted ? 'Sound off' : 'Sound on'}>
-      {st.muted ? '🔇' : '🔊'}
-    </button>
   )
 }
 
@@ -442,6 +426,12 @@ export default function GameArenaV2({
 
   useEffect(() => () => clearTimeout(flightTimerRef.current), [])
 
+  // música de fundo: abaixa durante a partida pra o coração da bomba e os efeitos aparecerem
+  useEffect(() => {
+    setMusicDuck(inGame)
+    return () => setMusicDuck(false)
+  }, [inGame])
+
   // ---- sons do jogo ----
   const prevDangerRef = useRef(danger)
   useEffect(() => {
@@ -459,12 +449,15 @@ export default function GameArenaV2({
 
   useEffect(() => { if (flash) play('explosion') }, [flash])
   useEffect(() => { if (feedback) play('wrong') }, [feedback])
-  // o trombone triste de quem explodiu entra DEPOIS do estrondo (senão um abafa o outro)
+  // a risada de quem explodiu entra DEPOIS do estrondo (senão um abafa o outro). Ligada ao
+  // aviso de explosão (flash.mine) e não ao estado 'eliminado': assim não repete quando
+  // alguém já eliminado recarrega a página.
+  const iGotRugged = !!flash?.mine
   useEffect(() => {
-    if (!iAmEliminated) return
+    if (!iGotRugged) return
     const id = setTimeout(() => play('eliminated'), 900)
     return () => clearTimeout(id)
-  }, [iAmEliminated])
+  }, [iGotRugged])
 
   return (
     <main className="ga-stage">

@@ -1,4 +1,5 @@
 import './Landing.css'
+import SoundToggle from './SoundToggle.jsx'
 
 function Laurel({ flip = false }) {
   return (
@@ -21,6 +22,7 @@ function Laurel({ flip = false }) {
 export default function Landing() {
   return (
     <main className="pb-stage">
+      <SoundToggle className="sound-fixed" />
       <div className="pb-bg" role="img" aria-label="Marble arena with the Pyth emblem on the floor" />
       <div className="pb-veil" />
       <div className="pb-glow" />

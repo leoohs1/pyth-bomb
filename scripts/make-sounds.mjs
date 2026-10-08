@@ -318,7 +318,7 @@ function brassNote(sec, f0, f1, wahHz, vib = 0) {
   for (let i = 0; i < raw.length; i++) raw[i] += sq[i]
   return filter(raw, 'low', (t) => 380 + 1500 * Math.pow(Math.sin((Math.PI * Math.min(t, sec)) / sec), 1.3) * (wahHz > 0 ? 1 : 0.6), 2.2)
 }
-function eliminated() {
+function sadTrombone() { // [guardado, fora do jogo] o trombone triste antigo
   const L = 3.4
   const out = buf(L)
   // Bb3, A3, Ab3 curtas, depois G3 longa caindo
@@ -331,6 +331,33 @@ function eliminated() {
   return softClip(fade(reverb(out, 0.18, 1.0, 0.6), 0.003, 0.3), 1.3)
 }
 
+// Eliminada: a RISADA da Oráculo, "ha-ha-ha-ha-HAAA", depois do estrondo. Voz sintética de
+// desenho animado: fonte glotal (serra com vibrato) passando por 3 formantes de "a" (voz aguda),
+// com um sopro de "h" no começo de cada "ha" e o tom descendo dentro de cada risada.
+function haBurst(sec, f0, { breath = 0.45, vib = 0.012 } = {}) {
+  const src = osc(sec, (t) => f0 * (1.16 - 0.16 * Math.min(1, t / (sec * 0.8))) * (1 + vib * Math.sin(TAU * 6.5 * t)), 'saw', (t) => env(t, 0.012, sec * 0.38) * Math.min(1, (sec - t) / 0.03))
+  const out = buf(sec)
+  for (const [f, q, g] of [[880, 5, 1.0], [1450, 6, 0.8], [3000, 7, 0.4]]) {
+    const v = filter(src, 'band', () => f, q)
+    for (let i = 0; i < out.length; i++) out[i] += v[i] * g
+  }
+  // "h": ruído filtrado nos mesmos formantes, só no ataque
+  const h = filter(noise(sec), 'band', () => 1800, 1.2)
+  for (let i = 0; i < out.length; i++) out[i] += h[i] * breath * env(i / SR, 0.004, 0.035)
+  return out
+}
+function eliminated() {
+  const L = 2.8
+  const out = buf(L)
+  // 5 "ha" curtinhos, cada vez um pouco mais graves e fracos, e um "HAAAA" final comprido
+  const has = [[0.00, 0.15, 470], [0.20, 0.15, 450], [0.40, 0.15, 430], [0.60, 0.16, 410], [0.82, 0.17, 390]]
+  has.forEach(([t0, dur, f0], i) => addTo(out, haBurst(dur, f0), t0, 1 - i * 0.08))
+  addTo(out, haBurst(0.75, 360, { breath: 0.25, vib: 0.03 }), 1.05, 0.95)
+  // segunda risadinha, "hi-hi-hi" mais alta, no fim
+  ;[[1.95, 0.1, 620], [2.08, 0.1, 640], [2.21, 0.1, 660]].forEach(([t0, dur, f0]) => addTo(out, haBurst(dur, f0, { breath: 0.3 }), t0, 0.55))
+  return softClip(fade(reverb(out, 0.14, 0.8, 0.5), 0.003, 0.2), 1.2)
+}
+
 // ---------- gravação ----------
 // pico alvo (dBFS) de cada som — o relativo entre eles é o "mix" do jogo
 const SOUNDS = {
@@ -340,10 +367,12 @@ const SOUNDS = {
   // o que muda de um nível pro outro é só o RITMO (no jogo). tick_1/2/4 ficam guardados acima.
   tick: [tick_3, -11, 0.36],
   danger_up: [danger_up, -9],
-  explosion: [explosion, -1, 4.2],
+  // explosion: usa o arquivo real (Pixabay kick-bomb-01) em public/sounds/explosion.mp3 — NAO regerar aqui; o sintetico antigo ficou em scripts/originais/
+  // explosion: [explosion, -1, 4.2],
   wrong: [wrong, -9],
   correct: [correct, -9],
-  eliminated: [eliminated, -7],
+  // eliminated: usa a risada real (Pixabay) em public/sounds/eliminated.mp3 — NAO regerar aqui; a sintetica ficou em scripts/originais/
+  // eliminated: [eliminated, -4],
 }
 
 function wav(name, data) {

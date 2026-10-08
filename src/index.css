@@ -109,3 +109,6 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* botão de som fixo nas telas fora da arena (Landing, Home, Modos) */
+.sound-fixed { position: fixed; top: 14px; right: 14px; z-index: 60; }
