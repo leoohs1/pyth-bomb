@@ -37,7 +37,7 @@ export default function Landing() {
         </h1>
         <div className="pb-laurel">
           <Laurel />
-          <a className="pb-soon pb-play" href="/play">Play now</a>
+          <div className="pb-soon pb-play">Play now</div>
           <Laurel flip />
         </div>
         <p className="pb-tag">Answer fast. Pass the bomb. Don't get rugged.</p>
