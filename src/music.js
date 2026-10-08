@@ -4,13 +4,14 @@
 // - Só começa depois do primeiro clique/toque/tecla (regra do navegador pra áudio).
 // - Usa o MESMO mudo do resto do som (botão 🔊/🔇): mutou, a música para; desmutou, volta.
 // - Silencia quando a aba fica escondida.
-// - Durante a partida ela abaixa ainda mais ("duck"), pra o coração da bomba e os efeitos
-//   aparecerem. Quem chama: GameArenaV2 -> setMusicDuck(true).
+// - Na página inicial (pythbomb.com) ela toca no volume normal. Em TODO o /play (modos, home, lobby,
+//   partida e fim) cai pra METADE, pra não tirar o foco da bomba. A arena também chama
+//   setMusicDuck(true) (cobre a rota de preview, que não é /play).
 import { getSoundState, subscribeSound } from './sound.js'
 
 const SRC = '/music/athens.mp3'
-const VOLUME = 0.8        // volume "normal" da música (o arquivo já é baixo)
-const DUCK = 0.35         // fração do volume durante a partida
+const VOLUME = 1.0        // volume máximo da música (o arquivo já é baixo); o controle do jogador multiplica isso
+const DUCK = 0.5          // fração do volume durante a partida (metade)
 const FADE_MS = 1200
 
 let audio = null
@@ -29,18 +30,20 @@ function ensure() {
 }
 
 function target() {
-  if (!started || hidden || getSoundState().muted) return 0
-  return VOLUME * (duck ? DUCK : 1)
+  const st = getSoundState()
+  if (!started || hidden || st.musicMuted) return 0
+  const onPlay = typeof location !== 'undefined' && location.pathname.startsWith('/play')
+  return VOLUME * st.musicVolume * (duck || onPlay ? DUCK : 1)
 }
 
-function rampTo(to) {
+function rampTo(to, ms = FADE_MS) {
   const a = ensure()
   clearInterval(fadeTimer)
   if (to > 0 && a.paused) a.play().catch(() => { /* ainda sem gesto: tenta de novo no próximo clique */ })
   const from = a.volume
   const t0 = performance.now()
   fadeTimer = setInterval(() => {
-    const k = Math.min(1, (performance.now() - t0) / FADE_MS)
+    const k = Math.min(1, (performance.now() - t0) / ms)
     a.volume = Math.max(0, Math.min(1, from + (to - from) * k))
     if (k >= 1) {
       clearInterval(fadeTimer)
@@ -49,9 +52,9 @@ function rampTo(to) {
   }, 40)
 }
 
-function apply() {
+function apply(ms) {
   if (!started) return
-  rampTo(target())
+  rampTo(target(), ms)
 }
 
 export function setMusicDuck(v) {
@@ -68,7 +71,7 @@ function start() {
 
 if (typeof window !== 'undefined') {
   ;['pointerdown', 'keydown'].forEach((e) => window.addEventListener(e, start, { once: true, passive: true }))
-  subscribeSound(apply)
+  subscribeSound(() => apply(180)) // mexer no controle responde rápido
   document.addEventListener('visibilitychange', () => {
     hidden = document.visibilityState === 'hidden'
     apply()

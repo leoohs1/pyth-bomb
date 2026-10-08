@@ -358,6 +358,19 @@ function eliminated() {
   return softClip(fade(reverb(out, 0.14, 0.8, 0.5), 0.003, 0.2), 1.2)
 }
 
+// Tique de relógio digital (quando a bomba está com OUTRO jogador): um 'tik' eletrônico, seco e
+// curtinho, estilo contagem regressiva de thriller. Um bipe agudo com decaimento rápido + um
+// estalinho no ataque. O ritmo vem do jogo (acelera com o perigo).
+function clock_tick() {
+  const L = 0.14
+  const out = buf(L)
+  addTo(out, osc(L, () => 2100, 'sine', (t) => env(t, 0.0008, 0.022)), 0, 1.0)
+  addTo(out, osc(L, () => 4200, 'sine', (t) => 0.35 * env(t, 0.0008, 0.012)), 0, 0.8)
+  addTo(out, osc(L, () => 1050, 'sine', (t) => 0.5 * env(t, 0.0008, 0.03)), 0, 0.7)
+  addTo(out, filter(noise(0.02), 'high', () => 3000, 0.7).map((v, i) => v * env(i / SR, 0.0003, 0.004)), 0, 0.5)
+  return softClip(fade(out, 0.0004, 0.03), 1.1)
+}
+
 // ---------- gravação ----------
 // pico alvo (dBFS) de cada som — o relativo entre eles é o "mix" do jogo
 const SOUNDS = {
@@ -366,6 +379,7 @@ const SOUNDS = {
   // um tique só pra todos os níveis de perigo (a batida de coração do antigo nível 3);
   // o que muda de um nível pro outro é só o RITMO (no jogo). tick_1/2/4 ficam guardados acima.
   tick: [tick_3, -11, 0.36],
+  clock_tick: [clock_tick, -15, 0.14],
   danger_up: [danger_up, -9],
   // explosion: usa o arquivo real (Pixabay kick-bomb-01) em public/sounds/explosion.mp3 — NAO regerar aqui; o sintetico antigo ficou em scripts/originais/
   // explosion: [explosion, -1, 4.2],

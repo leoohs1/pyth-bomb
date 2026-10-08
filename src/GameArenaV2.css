@@ -54,7 +54,8 @@
 /* HUD: cantos superiores, discreto */
 .ga-hud {
   position: absolute;
-  z-index: 3;
+  z-index: 50;
+  pointer-events: none; /* só os controles do HUD recebem clique */
   top: 2.2%;
   left: 2%;
   right: 2%;
@@ -688,6 +689,7 @@
 
 /* botão de som no canto (ao lado do "Round") */
 .ga-hud-right { display: flex; align-items: center; gap: 0.6em; }
+.ga-hud .snd-wrap { pointer-events: auto; }
 .ga-sound { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.8em; }
 .ga-sound:hover { filter: brightness(1.2); }
 

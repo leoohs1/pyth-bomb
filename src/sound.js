@@ -15,6 +15,7 @@ export const SOUNDS = [
   'bomb_received', // a bomba chegou em MIM
   'bomb_pass',     // a bomba voa de um jogador pra outro
   'tick',          // batida de coração enquanto eu seguro a bomba (o ritmo acelera com o perigo)
+  'clock_tick',    // tique de relógio digital enquanto OUTRO jogador segura a bomba
   'danger_up',     // o perigo subiu de nível (opts.level = 2..4)
   'explosion',     // alguém explodiu
   'wrong',         // resposta errada / tempo da pergunta acabou
@@ -30,12 +31,22 @@ const cache = new Map() // nome -> AudioBuffer | null (null = sem arquivo)
 const loading = new Set()
 const listeners = new Set()
 
+// Dois canais independentes: música ambiente (music.js) e sons do jogo (efeitos). Cada um tem
+// mudo e volume (0 a 1), guardados no navegador. Versão antiga guardava só {muted, volume}.
+const DEFAULTS = { musicMuted: false, musicVolume: 0.8, sfxMuted: false, sfxVolume: 0.7 }
+const clamp01 = (v) => Math.max(0, Math.min(1, Number(v)))
 function loadState() {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY))
-    return { muted: !!s?.muted, volume: typeof s?.volume === 'number' ? s.volume : 0.7 }
+    const s = JSON.parse(localStorage.getItem(KEY)) || {}
+    const old = typeof s.muted === 'boolean' // formato antigo: um mudo só pra tudo
+    return {
+      musicMuted: typeof s.musicMuted === 'boolean' ? s.musicMuted : (old ? s.muted : DEFAULTS.musicMuted),
+      musicVolume: typeof s.musicVolume === 'number' ? clamp01(s.musicVolume) : DEFAULTS.musicVolume,
+      sfxMuted: typeof s.sfxMuted === 'boolean' ? s.sfxMuted : (old ? s.muted : DEFAULTS.sfxMuted),
+      sfxVolume: typeof s.sfxVolume === 'number' ? clamp01(s.sfxVolume) : (typeof s.volume === 'number' ? clamp01(s.volume) : DEFAULTS.sfxVolume),
+    }
   } catch {
-    return { muted: false, volume: 0.7 }
+    return { ...DEFAULTS }
   }
 }
 const state = loadState()
@@ -44,16 +55,17 @@ function persist() {
   try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* sem storage: tudo bem */ }
 }
 function applyGain() {
-  if (master) master.gain.value = state.muted ? 0 : state.volume
+  if (master) master.gain.value = state.sfxMuted ? 0 : state.sfxVolume
 }
 function emit() { listeners.forEach((f) => f({ ...state })) }
 
 export function getSoundState() { return { ...state } }
 export function subscribeSound(fn) { listeners.add(fn); return () => listeners.delete(fn) }
-export function setMuted(m) { state.muted = !!m; persist(); applyGain(); emit() }
-export function setVolume(v) {
-  state.volume = Math.max(0, Math.min(1, v)); persist(); applyGain(); emit()
-}
+function update(patch) { Object.assign(state, patch); persist(); applyGain(); emit() }
+export function setSfxMuted(m) { update({ sfxMuted: !!m }) }
+export function setSfxVolume(v) { update({ sfxVolume: clamp01(v) }) }
+export function setMusicMuted(m) { update({ musicMuted: !!m }) }
+export function setMusicVolume(v) { update({ musicVolume: clamp01(v) }) }
 
 function ensure() {
   if (ctx) return ctx
@@ -143,6 +155,7 @@ const SYNTH = {
   },
   bomb_pass: () => swish({ f0: 500, f1: 2400, q: 2, dur: 0.24, gain: 0.4 }),
   tick: () => { tone({ f0: 95, f1: 40, dur: 0.14, gain: 0.8 }); tone({ f0: 95, f1: 40, dur: 0.14, gain: 0.6, at: 0.11 }) },
+  clock_tick: () => tone({ type: 'sine', f0: 2100, dur: 0.05, gain: 0.12 }),
   danger_up: (o) => {
     const n = Math.max(1, (o.level || 2) - 1)
     for (let i = 0; i < n; i++) tone({ type: 'square', f0: 600 + (o.level || 2) * 120, dur: 0.1, gain: 0.22, at: i * 0.14 })
@@ -160,7 +173,7 @@ const SYNTH = {
 }
 
 export function play(name, opts = {}) {
-  if (state.muted || hidden) return
+  if (state.sfxMuted || hidden) return
   const c = ensure()
   if (!c) return
   if (c.state === 'suspended') { c.resume(); return } // ainda sem clique: o navegador não deixa tocar

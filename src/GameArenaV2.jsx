@@ -447,6 +447,15 @@ export default function GameArenaV2({
     return () => clearInterval(id)
   }, [iAmHolder, iAmEliminated, danger])
 
+  // tique de relógio enquanto OUTRO jogador segura a bomba (mesmo ritmo por perigo)
+  const someoneElseHolds = inGame && !!room.bomb_holder_id && !iAmHolder
+  useEffect(() => {
+    if (!someoneElseHolds) return
+    const ms = { 1: 1000, 2: 720, 3: 400, 4: 300 }[danger] ?? 1000
+    const id = setInterval(() => play('clock_tick', { level: danger }), ms)
+    return () => clearInterval(id)
+  }, [someoneElseHolds, danger])
+
   useEffect(() => { if (flash) play('explosion') }, [flash])
   useEffect(() => { if (feedback) play('wrong') }, [feedback])
   // a risada de quem explodiu entra DEPOIS do estrondo (senão um abafa o outro). Ligada ao
