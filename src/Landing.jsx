@@ -53,7 +53,7 @@ export default function Landing() {
         <img
           className="pb-cast-img"
           src="/cast.webp"
-          alt="Nysa the Oracle, Mino the Minotaur about to catch the bomb, and Alex the Hoplite"
+          alt="Nysa the Oracle, Minos the Minotaur about to catch the bomb, and Plite the Hoplite"
         />
       </div>
     </main>
