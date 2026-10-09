@@ -925,3 +925,9 @@
 
 .ga-leave-chip { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.9em; }
 .ga-leave-chip:hover { filter: brightness(1.25); }
+
+/* explosão de OUTRA pessoa: fundo escurecido no centro, pra o Minotauro e a faixa não ficarem
+   misturados com o que está atrás (personagem em destaque, cartão) */
+.ga-rugged:not(.is-mine) {
+  background: radial-gradient(ellipse 80% 45% at 50% 50%, rgba(70, 8, 38, 0.92) 0%, rgba(40, 5, 25, 0.78) 55%, rgba(20, 3, 14, 0) 100%);
+}

@@ -281,3 +281,10 @@
   .mb-players .mb-p { padding: 3px 2px 2px; }
 }
 .mb-stage.is-many .mb-hero-pic { width: clamp(80px, min(34vw, calc(100dvh - 560px)), 150px); }
+
+/* explosão de outra pessoa no celular: fundo escuro do tamanho da tela, imagem e faixa maiores */
+.mb-stage .ga-rugged:not(.is-mine) {
+  background: radial-gradient(ellipse 120% 60% at 50% 48%, rgba(70, 8, 38, 0.94) 0%, rgba(40, 5, 25, 0.8) 60%, rgba(20, 3, 14, 0.35) 100%);
+}
+.mb-stage .ga-rugged:not(.is-mine) .ga-rugged-art img { height: 34vw; }
+.mb-stage .ga-rugged:not(.is-mine) .ga-rugged-text { font-size: 18px; max-width: 92vw; white-space: normal; text-align: center; }
