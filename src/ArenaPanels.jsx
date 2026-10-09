@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import CharacterPicker from './CharacterPicker.jsx'
+import { CHARACTER_NAMES, avatarIndex } from './characters.js'
 
 const MIN_PLAYERS = 2
 
@@ -10,8 +12,13 @@ function copyText(text) {
   return navigator.clipboard?.writeText(text).catch(() => false) ?? Promise.resolve(false)
 }
 
-export function LobbyPanel({ room, players, iAmHost, onStart, onLeave, error }) {
+export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeave, onPick, error }) {
+  // o "me" do App é o registro de quando entrei; o da lista é o atual (personagem escolhido etc.)
+  const me = players.find((x) => x.id === meProp?.id) ?? meProp
   const [copied, setCopied] = useState(false)
+  const [picking, setPicking] = useState(false)
+  // só mostra a escolha se o banco já tem a coluna avatar_idx (SQL 013 rodado)
+  const canPick = !!me && players.some((p) => p.avatar_idx != null)
   const timerRef = useRef(null)
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
@@ -35,6 +42,14 @@ export function LobbyPanel({ room, players, iAmHost, onStart, onLeave, error }) 
         </button>
       </div>
       <p className="ga-hint">Share this code with your friends</p>
+
+      {canPick && (
+        <div className="ga-pick">
+          <img className="ga-pick-thumb" src={CHARACTER_NAMES[avatarIndex(me, players)].file} alt="" />
+          <button type="button" className="ga-pick-btn" onClick={() => setPicking(true)}>Choose character</button>
+        </div>
+      )}
+      {picking && <CharacterPicker players={players} me={me} onPick={onPick} onClose={() => setPicking(false)} />}
 
       {iAmHost ? (
         <>

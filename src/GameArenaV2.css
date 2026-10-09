@@ -923,3 +923,21 @@
 @media (prefers-reduced-motion: reduce) {
   .ga-rugged, .ga-rugged.is-mine, .ga-rugged-art img, .ga-rugged.is-mine .ga-rugged-text { animation: none; }
 }
+
+/* lobby: linha do personagem escolhido + botão de trocar */
+.ga-pick { display: flex; align-items: center; justify-content: center; gap: 0.8cqw; margin-top: 0.8cqw; }
+.ga-pick-thumb {
+  width: 3.4cqw; height: 4.1cqw; min-width: 26px; min-height: 31px; object-fit: contain;
+  background: radial-gradient(#5a43a8, #2e1f63); border: 2px solid var(--ga-gold); border-radius: 8px;
+}
+.ga-pick-btn {
+  padding: 0.4cqw 1.1cqw; cursor: pointer;
+  font: 800 max(10px, 1cqw) Cinzel, Georgia, serif; text-transform: uppercase; letter-spacing: 0.03em;
+  color: #fff; background: linear-gradient(180deg, #8f62e6, #5c33b4); border: 2px solid var(--ga-gold); border-radius: 10px;
+}
+.ga-pick-btn:hover { filter: brightness(1.1); }
+@media (max-height: 520px) {
+  .ga-pick { margin-top: 4px; gap: 6px; }
+  .ga-pick-thumb { width: 22px; height: 27px; min-width: 22px; min-height: 27px; }
+  .ga-pick-btn { font-size: 9px; padding: 3px 8px; }
+}

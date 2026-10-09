@@ -7,7 +7,7 @@ const MODES = [
     id: 'classic',
     icon: '💣',
     title: 'Pyth Bomb Classic',
-    sub: 'Answer fast, pass the bomb, don\'t get rugged. Up to 20 players.',
+    sub: 'Answer fast, pass the bomb, don\'t get rugged.',
     locked: false,
   },
   {

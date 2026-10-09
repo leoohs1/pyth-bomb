@@ -5,6 +5,7 @@ import Modes from './Modes'
 import Home from './Home'
 import GameArenaV2 from './GameArenaV2'
 import { LobbyPanel, FinishedPanel } from './ArenaPanels'
+import { preloadCharacters } from './characters'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -31,6 +32,16 @@ export default function App() {
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
   const answerRef = useRef(null)
+  const meRef = useRef(null)
+  const statusRef = useRef(null)
+  meRef.current = me
+  statusRef.current = room?.status
+
+  // baixa as imagens dos personagens em segundo plano (a arena abre sem "pipocar")
+  useEffect(() => {
+    const id = setTimeout(preloadCharacters, 1200)
+    return () => clearTimeout(id)
+  }, [])
 
   // pergunta nova (ou sala nova): limpa o campo de resposta
   useEffect(() => {
@@ -72,6 +83,13 @@ export default function App() {
       const { data } = await supabase
         .from('players').select().eq('room_id', roomId).order('joined_at')
       setPlayers(data ?? [])
+      // fui removido por inatividade (lobby / fim de jogo)? volta pra tela inicial com um aviso
+      const mine = meRef.current
+      if (data && mine && !data.some((p) => p.id === mine.id) && statusRef.current !== 'playing') {
+        clearRoomCode()
+        setRoom(null); setMe(null); setPlayers([])
+        setError('You were removed from the room because you were away. Join again with the code.')
+      }
     }
     async function loadRoom() {
       const { data } = await supabase.from('rooms').select().eq('id', roomId).single()
@@ -125,6 +143,38 @@ export default function App() {
     }, 1000)
     return () => clearInterval(id)
   }, [roomId, room?.status])
+
+  // "ainda estou aqui": a cada 15 s o servidor sabe quem está presente. Quem some do lobby é
+  // removido; se o dono sumir, o próximo a ter entrado vira o dono (supabase/013).
+  useEffect(() => {
+    if (!roomId || !me) return
+    let stopped = false
+    async function beat() {
+      const { error: e } = await supabase.rpc('heartbeat', { p_room_id: roomId })
+      if (e || stopped) return // SQL 013 ainda não rodado, ou sem internet: segue sem
+      if (statusRef.current === 'playing') return
+      // lobby / fim: pode ter saído gente ou mudado o dono -> atualiza
+      const [{ data: ps }, { data: r }] = await Promise.all([
+        supabase.from('players').select().eq('room_id', roomId).order('joined_at'),
+        supabase.from('rooms').select().eq('id', roomId).single(),
+      ])
+      if (stopped) return
+      if (ps) {
+        setPlayers(ps)
+        const mine = meRef.current
+        if (mine && !ps.some((p) => p.id === mine.id) && statusRef.current !== 'playing') {
+          clearRoomCode()
+          setRoom(null); setMe(null); setPlayers([])
+          setError('You were removed from the room because you were away. Join again with the code.')
+          return
+        }
+      }
+      if (r) setRoom(r)
+    }
+    beat()
+    const id = setInterval(beat, 15000)
+    return () => { stopped = true; clearInterval(id) }
+  }, [roomId, me?.id])
 
   // avisa quem explodiu
   useEffect(() => {
@@ -180,7 +230,7 @@ export default function App() {
   async function createRoom() {
     setError(null)
     const nick = nickname.trim()
-    if (!nick) return setError('Pick a nickname first')
+    if (nick.length < 2) return setError('Pick a nickname first (at least 2 characters)')
     saveNickname(nick)
     const { data, error: e } = await supabase.from('rooms').insert({ code: makeCode() }).select().single()
     if (e) return setError(e.message)
@@ -190,7 +240,7 @@ export default function App() {
   async function joinByCode() {
     setError(null)
     const nick = nickname.trim()
-    if (!nick) return setError('Pick a nickname first')
+    if (nick.length < 2) return setError('Pick a nickname first (at least 2 characters)')
     saveNickname(nick)
     const { data, error: e } = await supabase
       .from('rooms').select().eq('code', codeInput.trim().toUpperCase()).single()
@@ -200,11 +250,18 @@ export default function App() {
 
   // sai da sala guardada no navegador; não mexe no jogo em si nem apaga o jogador
   function leaveRoom() {
+    if (room) supabase.rpc('leave_room', { p_room_id: room.id }).then(() => {}, () => {}) // tira meu jogador do lobby e passa o dono pra frente
     clearRoomCode()
     setRoom(null)
     setMe(null)
     setPlayers([])
     setError(null)
+  }
+
+  async function pickCharacter(idx) {
+    setError(null)
+    const { error: e } = await supabase.rpc('pick_character', { p_room_id: room.id, p_idx: idx })
+    if (e) setError(e.message)
   }
 
   async function startGame() {
@@ -252,7 +309,7 @@ export default function App() {
       <GameArenaV2
         room={room} players={players} alive={alive} danger={1} questionMs={0}
         myPlayerId={me?.id} phase="lobby"
-        panel={<LobbyPanel room={room} players={players} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} error={error} />}
+        panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
       />
     )
   }

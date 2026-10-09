@@ -27,3 +27,23 @@ export const CHARACTER_NAMES = [
 export function characterName(file) {
   return CHARACTER_NAMES.find((c) => c.file === file)?.name ?? ''
 }
+
+// Qual personagem (0-19) um jogador usa: o que ele escolheu no lobby (players.avatar_idx) ou,
+// se ainda não tem (banco antigo / sala antiga), a ordem de entrada na sala.
+export function avatarIndex(player, players) {
+  const n = CHARACTER_NAMES.length
+  if (player?.avatar_idx != null) return player.avatar_idx % n
+  return Math.max(0, players.findIndex((x) => x.id === player?.id)) % n
+}
+
+// baixa as imagens dos personagens (parado e em pânico) em segundo plano, pra arena não
+// "pipocar" na primeira partida. Chamar uma vez ao abrir o /play.
+let preloaded = false
+export function preloadCharacters() {
+  if (preloaded || typeof Image === 'undefined') return
+  preloaded = true
+  const files = CHARACTER_NAMES.map((c) => c.file)
+  const load = (src) => { const img = new Image(); img.src = src }
+  files.forEach(load)
+  setTimeout(() => files.forEach((f) => load(f.replace('.webp', '-panic.webp'))), 2500)
+}

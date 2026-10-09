@@ -19,7 +19,7 @@ function Laurel({ flip = false }) {
   )
 }
 
-export default function Landing() {
+export default function Landing({ label = 'Play now' }) {
   return (
     <main className="pb-stage">
       <SoundToggle className="sound-fixed" />
@@ -39,7 +39,7 @@ export default function Landing() {
         </h1>
         <div className="pb-laurel">
           <Laurel />
-          <div className="pb-soon pb-play">Play now</div>
+          <div className="pb-soon pb-play">{label}</div>
           <Laurel flip />
         </div>
         <p className="pb-tag">Answer fast. Pass the bomb. Don't get rugged.</p>

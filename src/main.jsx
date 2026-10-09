@@ -4,6 +4,7 @@ import './index.css'
 import './music.js' // música de fundo (começa no primeiro clique)
 import App from './App.jsx'
 import Landing from './Landing.jsx'
+import PlayGate from './PlayGate.jsx'
 import ArenaPreview from './ArenaPreview.jsx'
 import GameArenaV2Harness from './GameArenaV2Harness.jsx'
 
@@ -14,7 +15,7 @@ const path = window.location.pathname
 // sobrescrevia o fundo quando entrava no mesmo bundle.)
 const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/game-arena-v2-preview') ? <GameArenaV2Harness />
-  : path.startsWith('/play') ? <App />
+  : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing />
 
 createRoot(document.getElementById('root')).render(

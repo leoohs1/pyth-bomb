@@ -1,0 +1,34 @@
+# Mantém o projeto Supabase acordado.
+# O plano grátis PAUSA o projeto depois de ~7 dias sem uso (e o jogo mostra "Failed to fetch").
+# Todo dia esta tarefa faz uma consulta simples no banco, o que conta como atividade.
+# Precisa de 2 "secrets" no GitHub (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL       = o mesmo VITE_SUPABASE_URL do .env.local
+#   SUPABASE_ANON_KEY  = a mesma chave anon (VITE_SUPABASE_ANON_KEY) do .env.local
+# Também dá pra rodar na mão: aba Actions > "Keep Supabase awake" > Run workflow.
+name: Keep Supabase awake
+
+on:
+  # AGENDAMENTO DESLIGADO por enquanto (os secrets ainda não foram criados e daria erro todo dia).
+  # Quando for abrir o jogo pro público: crie os 2 secrets e tire o # das 2 linhas abaixo.
+  # schedule:
+  #   - cron: '17 11 * * *'   # todo dia, 11:17 UTC (08:17 no Brasil)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Faltam os secrets SUPABASE_URL e SUPABASE_ANON_KEY"
+            exit 1
+          fi
+          status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+            "$SUPABASE_URL/rest/v1/rooms?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Resposta do Supabase: HTTP $status"
+          [ "$status" = "200" ]

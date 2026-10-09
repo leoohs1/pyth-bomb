@@ -23,13 +23,14 @@ export default function GameArenaV2Harness() {
   const [mistakes, setMistakes] = useState(0)
   const [phase, setPhase] = useState('playing') // 'playing' | 'lobby' | 'finished'
   const [asHost, setAsHost] = useState(true)
+  const [myIdx, setMyIdx] = useState(0) // personagem escolhido por "mim" (Halls) no lobby
   const [controlsVisible, setControlsVisible] = useState(true)
   const answerRef = useRef(null)
   // só pra testar a explosão e o aviso de erro que o jogo real manda
   const [flash, setFlash] = useState(null)
   const [feedbackMsg, setFeedbackMsg] = useState(null)
 
-  const players = ALL_MOCK_PLAYERS.slice(0, count).map((p) => ({ ...p, alive: !outIds.has(p.id) }))
+  const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), avatar_idx: p.id === MY_ID ? myIdx : i }))
   const room = {
     round_number: 3,
     current_question_text: 'Which ancient wonder was located in the city of Rhodes?',
@@ -100,7 +101,7 @@ export default function GameArenaV2Harness() {
         phase={phase}
         centerId={phase === 'finished' ? 'p3' : null}
         panel={phase === 'lobby'
-          ? <LobbyPanel room={{ code: 'K7QX2M' }} players={players} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
+          ? <LobbyPanel room={{ code: 'K7QX2M' }} players={players} me={players[0]} onPick={setMyIdx} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
           : phase === 'finished'
             ? <FinishedPanel room={{ code: 'K7QX2M' }} winner={players.find((p) => p.id === 'p3')} iWon={false} iAmOut={false} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
             : null}

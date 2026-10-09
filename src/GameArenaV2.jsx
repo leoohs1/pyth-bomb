@@ -3,6 +3,7 @@ import './GameArenaV2.css'
 import BombPovFlash from './BombPovFlash.jsx'
 import { play } from './sound.js'
 import { setMusicDuck } from './music.js'
+import { CHARACTER_NAMES, avatarIndex } from './characters.js'
 import SoundToggle from './SoundToggle.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
@@ -13,20 +14,9 @@ const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (su
 // em camadas + elenco novo desenhado pro sistema, e só depois disso volta
 // pra calibração. Esse array continua sendo só o MAPEAMENTO índice→arquivo,
 // independente de qual arte está por trás de cada nome.
-const AVATARS = [
-  // Elenco aprovado (20), na ordem de ENTRADA na sala: quem entrou primeiro
-  // (índice 0 = a Oracle, que é a Halls no preview) pega o primeiro, e assim
-  // por diante. É por JOGADOR, não por assento — o mesmo jogador é o mesmo
-  // personagem em todas as telas. A ordem alterna estilos pra os primeiros
-  // a entrar já serem bem diferentes entre si.
-  '/oracle-pilot-calm.webp', '/hephaestus-sit-calm.webp', '/artemis-sit-calm.webp',
-  '/hermes-sit-calm.webp', '/nymph-sit-calm.webp', '/hoplite-sit-calm.webp',
-  '/demeter-sit-calm.webp', '/whip-sit-calm.webp', '/apollo-sit-calm.webp',
-  '/athena-sit-calm.webp', '/pythagoras-sit-calm.webp', '/naiad-sit-calm.webp',
-  '/boy-sit-calm.webp', '/blossom-sit-calm.webp', '/amazon-sit-calm.webp',
-  '/faun-sit-calm.webp', '/sage-sit-calm.webp', '/cyclops-sit-calm.webp',
-  '/owl-sit-calm.webp', '/minotaur-sit-calm.webp',
-]
+// Elenco aprovado (20), na ordem de ENTRADA na sala por padrão; cada jogador pode escolher
+// outro no lobby (players.avatar_idx). A lista fica em characters.js (fonte única).
+const AVATARS = CHARACTER_NAMES.map((c) => c.file)
 
 // === ARENA 2.0 — geometria do MUNDO (onde cada assento fica na tela) ===
 // Separada de propósito da geometria do AVATAR (onde a bomba/nome ficam
@@ -334,7 +324,7 @@ export default function GameArenaV2({
   const iAmEliminated = inGame && !!me && !me.alive
   const holder = players.find((p) => p.id === room.bomb_holder_id)
   // personagem do jogador = posição dele na lista (ordem de entrada)
-  const avatarOf = (p) => AVATARS[Math.max(0, players.findIndex((x) => x.id === p.id)) % AVATARS.length]
+  const avatarOf = (p) => AVATARS[avatarIndex(p, players)]
 
   // atribuição ESTÁVEL jogador → assento (spec item 7): uma vez que alguém
   // ganha um assento, ele fica com ele a partida inteira inteira — pânico,
@@ -653,7 +643,7 @@ export default function GameArenaV2({
               </>
             )}
             <SeatAvatar
-              src={AVATARS[myIndex % AVATARS.length]}
+              src={avatarOf(me)}
               isHolder={iAmHolder}
               imgRef={(el) => {
                 if (el) avatarRefs.current[me.id] = el
