@@ -23,6 +23,16 @@ export default function GameArenaV2Harness() {
   const [mistakes, setMistakes] = useState(0)
   const [phase, setPhase] = useState('playing') // 'playing' | 'lobby' | 'finished'
   const [asHost, setAsHost] = useState(true)
+  // chat de mentira só pra ver o visual (o de verdade usa o Supabase)
+  const [fakeMsgs, setFakeMsgs] = useState([
+    { id: 1, player_id: 'p1', nickname: 'Ricardo', body: 'quem vai explodir primeiro? 😂', created_at: '1' },
+    { id: 2, player_id: 'p2', nickname: 'Adrian', body: 'eu nao sou eu hahaha', created_at: '2' },
+  ])
+  const fakeChat = {
+    messages: fakeMsgs, available: true, error: null, clearError: () => {},
+    send: async (t) => { setFakeMsgs((m) => [...m, { id: Date.now(), player_id: 'p0', nickname: 'Halls', body: t, created_at: String(Date.now()) }]); return true },
+    addOther: () => setFakeMsgs((m) => [...m, { id: Date.now(), player_id: 'p3', nickname: 'Samurai', body: 'olha a bomba!!', created_at: String(Date.now()) }]),
+  }
   const [myIdx, setMyIdx] = useState(0) // personagem escolhido por "mim" (Halls) no lobby
   const [controlsVisible, setControlsVisible] = useState(true)
   const answerRef = useRef(null)
@@ -99,6 +109,7 @@ export default function GameArenaV2Harness() {
         povFlash={povSeq || null}
         mistakes={mistakes}
         phase={phase}
+        chat={fakeChat}
         onLeave={() => window.alert('(preview) saiu da sala')}
         centerId={phase === 'finished' ? 'p3' : null}
         panel={phase === 'lobby'
@@ -121,6 +132,7 @@ export default function GameArenaV2Harness() {
             tela: {ph}
           </button>
         ))}
+        <button onClick={fakeChat.addOther} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>💬 chegou mensagem</button>
         <button onClick={() => setAsHost((v) => !v)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
           sou dono da sala: {asHost ? 'sim' : 'não'}
         </button>

@@ -1,0 +1,137 @@
+/* Chat da sala (ChatBox.jsx). Variante "arena": dentro da arena, no canto de baixo à esquerda
+   (tamanhos em cqw, acompanham a arena). Variante "compact": celular em pé, fixo na tela. */
+.ct-fab, .ct-panel { font-family: Inter, system-ui, sans-serif; }
+
+.ct-fab {
+  position: absolute;
+  z-index: 60;
+  left: 1.6cqw;
+  bottom: 2.4cqw;
+  width: max(44px, 3.6cqw);
+  height: max(44px, 3.6cqw);
+  padding: 0;
+  cursor: pointer;
+  font-size: max(20px, 1.8cqw);
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(180deg, #8f62e6, #5c33b4);
+  border: 2px solid #c9a24a;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(10, 4, 30, 0.55);
+}
+.ct-fab:hover { filter: brightness(1.12); }
+.ct-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  font: 800 12px Inter, system-ui, sans-serif;
+  color: #fff;
+  background: #e0264f;
+  border: 2px solid #fff;
+  border-radius: 999px;
+}
+
+.ct-panel {
+  position: absolute;
+  z-index: 60;
+  left: 1.6cqw;
+  bottom: 2.4cqw;
+  width: max(250px, 24cqw);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+  color: #f6eeff;
+  background: rgba(30, 16, 60, 0.9);
+  border: 2px solid #c9a24a;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(10, 4, 30, 0.6);
+  backdrop-filter: blur(4px);
+}
+.ct-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.ct-title { font: 800 13px Cinzel, Georgia, serif; letter-spacing: 0.05em; text-transform: uppercase; }
+.ct-close {
+  width: 26px; height: 26px; cursor: pointer; line-height: 1; font-size: 18px; font-weight: 700;
+  color: #f6eeff; background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(246, 238, 255, 0.35); border-radius: 50%;
+}
+.ct-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 2px 2px 0;
+  height: max(110px, 11cqw);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.ct-empty { margin: auto; opacity: 0.6; font-size: 13px; }
+.ct-msg { word-break: break-word; }
+.ct-nick { margin-right: 6px; font-weight: 800; color: #ffd98a; }
+.ct-msg.is-me .ct-nick { color: #c9a2ff; }
+.ct-body { color: #f6eeff; }
+.ct-error { margin: 4px 0 0; padding: 4px 8px; font-size: 12px; font-weight: 600; color: #ffd6e0; background: rgba(224, 38, 79, 0.35); border-radius: 8px; }
+.ct-form { display: flex; gap: 6px; margin-top: 6px; }
+.ct-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  font: 500 16px Inter, system-ui, sans-serif; /* 16px: sem zoom no iPhone */
+  color: #f6eeff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(201, 162, 74, 0.7);
+  border-radius: 10px;
+  outline: none;
+}
+.ct-input:focus { border-color: #ffe08a; box-shadow: 0 0 0 2px rgba(169, 139, 255, 0.5); }
+.ct-send {
+  padding: 0 12px;
+  cursor: pointer;
+  font: 800 13px Cinzel, Georgia, serif;
+  text-transform: uppercase;
+  color: #2c1a06;
+  background: linear-gradient(180deg, #f8de8e, #dcae40 60%, #c08d25);
+  border: 2px solid #a9771a;
+  border-radius: 10px;
+}
+.ct-send:disabled { opacity: 0.45; cursor: default; }
+
+/* celular em pé: balão no canto de baixo à esquerda, painel como folha embaixo */
+.ct-fab.ct-compact {
+  position: fixed;
+  z-index: 300;
+  left: 14px;
+  right: auto;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: 52px;
+  height: 52px;
+  font-size: 24px;
+}
+.ct-panel.ct-compact {
+  position: fixed;
+  z-index: 300;
+  left: 8px;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  width: auto;
+}
+.ct-panel.ct-compact .ct-list { height: min(34dvh, 240px); }
+/* celular, lobby e tela final: o chat fica NO FLUXO da tela (abaixo do cartão), sem cobrir o botão de começar */
+.ct-panel.ct-compact.ct-inline { position: relative; z-index: auto; left: auto; right: auto; bottom: auto; flex: 0 0 auto; }
+.ct-panel.ct-compact.ct-inline .ct-list { height: 96px; }
+
+/* celular deitado (tela baixa): painel menor */
+@media (max-height: 520px) {
+  .ct-fab { width: 36px; height: 36px; min-width: 0; font-size: 17px; left: 8px; bottom: 8px; }
+  .ct-panel { width: 230px; left: 8px; bottom: 8px; padding: 5px 8px 7px; }
+  .ct-list { height: 70px; font-size: 12px; }
+}

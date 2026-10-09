@@ -8,6 +8,7 @@ import SoundToggle from './SoundToggle.jsx'
 import RuggedOverlay from './RuggedOverlay.jsx'
 import Confetti from './Confetti.jsx'
 import LeaveButton from './LeaveButton.jsx'
+import ChatBox from './ChatBox.jsx'
 import GameCompact from './GameCompact.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
@@ -309,6 +310,8 @@ export default function GameArenaV2({
   phase = 'playing', panel = null, centerId = null,
   // botão "Leave" do topo: sai da sala e volta pra tela de criar/entrar
   onLeave = null,
+  // chat da sala (useChat); aparece no canto de baixo à esquerda
+  chat = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -471,7 +474,7 @@ export default function GameArenaV2({
         error={error} feedback={feedback} mistakes={mistakes} flash={flash}
         myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
         avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
-        questionMax={QUESTION_MS / 1000} onLeave={onLeave}
+        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat}
       />
     )
   }
@@ -751,6 +754,8 @@ export default function GameArenaV2({
             })}
           </div>
         )}
+
+        {chat && <ChatBox chat={chat} myPlayerId={myPlayerId} phase={phase} variant="arena" />}
 
         <RuggedOverlay flash={flash} />
 

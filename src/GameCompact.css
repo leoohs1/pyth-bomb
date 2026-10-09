@@ -289,3 +289,6 @@
 }
 .mb-stage .ga-rugged:not(.is-mine) .ga-rugged-art img { height: 34vw; }
 .mb-stage .ga-rugged:not(.is-mine) .ga-rugged-text { font-size: 18px; max-width: 92vw; white-space: normal; text-align: center; }
+
+/* espaço embaixo pro balão do chat (canto esquerdo) não cobrir o primeiro bonequinho */
+.mb-stage.has-chat { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }

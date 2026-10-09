@@ -6,6 +6,7 @@ import Home from './Home'
 import GameArenaV2 from './GameArenaV2'
 import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 import { preloadCharacters } from './characters'
+import useChat from './useChat'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -27,6 +28,7 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0)
 
   const roomId = room?.id
+  const chat = useChat(roomId) // chat da sala (supabase/014_chat.sql)
   const lastEventRef = useRef(null)
   const [flash, setFlash] = useState(null)
   const [answer, setAnswer] = useState('')
@@ -335,7 +337,7 @@ export default function App() {
     return (
       <GameArenaV2
         room={room} players={players} alive={alive} danger={1} questionMs={0}
-        myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom}
+        myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
         panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
       />
     )
@@ -355,7 +357,7 @@ export default function App() {
       <GameArenaV2
         room={room} players={players} alive={alive} danger={danger} questionMs={questionMs}
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
-        error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom}
+        error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom} chat={chat}
         mistakes={room.holder_mistakes ?? 0}
       />
     )
@@ -366,7 +368,7 @@ export default function App() {
   return (
     <GameArenaV2
       room={room} players={players} alive={alive} danger={1} questionMs={0}
-      myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash} onLeave={leaveRoom}
+      myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash} onLeave={leaveRoom} chat={chat}
       panel={
         <FinishedPanel
           room={room} winner={winner} iWon={!!winner && winner.id === me?.id}
