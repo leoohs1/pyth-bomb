@@ -99,6 +99,7 @@ export default function GameArenaV2Harness() {
         povFlash={povSeq || null}
         mistakes={mistakes}
         phase={phase}
+        onLeave={() => window.alert('(preview) saiu da sala')}
         centerId={phase === 'finished' ? 'p3' : null}
         panel={phase === 'lobby'
           ? <LobbyPanel room={{ code: 'K7QX2M' }} players={players} me={players[0]} onPick={setMyIdx} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />

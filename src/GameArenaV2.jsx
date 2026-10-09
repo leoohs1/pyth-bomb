@@ -7,6 +7,7 @@ import { CHARACTER_NAMES, avatarIndex } from './characters.js'
 import SoundToggle from './SoundToggle.jsx'
 import RuggedOverlay from './RuggedOverlay.jsx'
 import Confetti from './Confetti.jsx'
+import LeaveButton from './LeaveButton.jsx'
 import GameCompact from './GameCompact.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
@@ -306,6 +307,8 @@ export default function GameArenaV2({
   // cartão da pergunta por `panel` (conteúdo vindo do App). No fim, o vencedor
   // ocupa o centro (centerId) e o resto da turma continua sentado.
   phase = 'playing', panel = null, centerId = null,
+  // botão "Leave" do topo: sai da sala e volta pra tela de criar/entrar
+  onLeave = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -468,7 +471,7 @@ export default function GameArenaV2({
         error={error} feedback={feedback} mistakes={mistakes} flash={flash}
         myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
         avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
-        questionMax={QUESTION_MS / 1000}
+        questionMax={QUESTION_MS / 1000} onLeave={onLeave}
       />
     )
   }
@@ -482,6 +485,7 @@ export default function GameArenaV2({
         <div className="ga-hud">
           <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/{ARENA2_SEATS.length} players</span>
           <div className="ga-hud-right">
+            <LeaveButton onLeave={onLeave} inGame={inGame} />
             <SoundToggle />
             <span className="ga-chip">
               {inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over'}

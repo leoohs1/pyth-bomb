@@ -689,7 +689,7 @@
 
 /* botão de som no canto (ao lado do "Round") */
 .ga-hud-right { display: flex; align-items: center; gap: 0.6em; }
-.ga-hud .snd-wrap { pointer-events: auto; }
+.ga-hud .snd-wrap, .ga-hud .ga-leave-chip { pointer-events: auto; }
 .ga-sound { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.8em; }
 .ga-sound:hover { filter: brightness(1.2); }
 
@@ -922,3 +922,6 @@
   .ga-pick-thumb { width: 22px; height: 27px; min-width: 22px; min-height: 27px; }
   .ga-pick-btn { font-size: 9px; padding: 3px 8px; }
 }
+
+.ga-leave-chip { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.9em; }
+.ga-leave-chip:hover { filter: brightness(1.25); }

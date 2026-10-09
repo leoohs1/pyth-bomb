@@ -3,6 +3,7 @@ import './GameCompact.css'
 import SoundToggle from './SoundToggle.jsx'
 import RuggedOverlay from './RuggedOverlay.jsx'
 import Confetti from './Confetti.jsx'
+import LeaveButton from './LeaveButton.jsx'
 
 // Layout do CELULAR EM PÉ (e tablet pequeno em pé). Mesma lógica do jogo (os sons, a bomba
 // passando, o relógio etc. continuam no GameArenaV2); aqui é só o que a pessoa VÊ, bem
@@ -24,7 +25,7 @@ export default function GameCompact({
   danger, pct, secs, urgent, questionMax,
   answer, setAnswer, answerRef, onSubmit, error, feedback, mistakes, flash,
   myPlayerId, holder, iAmHolder, iAmEliminated,
-  avatarOf, avatarRefs, flight, bombSeq,
+  avatarOf, avatarRefs, flight, bombSeq, onLeave,
 }) {
   const inGame = phase === 'playing'
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
@@ -39,6 +40,7 @@ export default function GameCompact({
       <div className="mb-top">
         <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/18</span>
         <span className="ga-chip mb-title">{title}</span>
+        <LeaveButton onLeave={onLeave} inGame={inGame} short />
         <SoundToggle />
       </div>
 

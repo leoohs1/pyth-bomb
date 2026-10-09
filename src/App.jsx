@@ -335,7 +335,7 @@ export default function App() {
     return (
       <GameArenaV2
         room={room} players={players} alive={alive} danger={1} questionMs={0}
-        myPlayerId={me?.id} phase="lobby"
+        myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom}
         panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
       />
     )
@@ -355,7 +355,7 @@ export default function App() {
       <GameArenaV2
         room={room} players={players} alive={alive} danger={danger} questionMs={questionMs}
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
-        error={error} myPlayerId={me?.id} flash={flash} feedback={feedback}
+        error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom}
         mistakes={room.holder_mistakes ?? 0}
       />
     )
@@ -366,7 +366,7 @@ export default function App() {
   return (
     <GameArenaV2
       room={room} players={players} alive={alive} danger={1} questionMs={0}
-      myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash}
+      myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash} onLeave={leaveRoom}
       panel={
         <FinishedPanel
           room={room} winner={winner} iWon={!!winner && winner.id === me?.id}
