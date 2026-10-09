@@ -16,6 +16,7 @@ const FADE_MS = 1200
 
 let audio = null
 let started = false
+let playing = false
 let duck = false
 let hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
 let fadeTimer = null
@@ -39,7 +40,9 @@ function target() {
 function rampTo(to, ms = FADE_MS) {
   const a = ensure()
   clearInterval(fadeTimer)
-  if (to > 0 && a.paused) a.play().catch(() => { /* ainda sem gesto: tenta de novo no próximo clique */ })
+  if (to > 0 && a.paused) {
+    a.play().then(() => { playing = true; stopListening() }).catch(() => { /* ainda sem gesto (iPhone só aceita toque/clique): tenta de novo no próximo */ })
+  }
   const from = a.volume
   const t0 = performance.now()
   fadeTimer = setInterval(() => {
@@ -62,15 +65,22 @@ export function setMusicDuck(v) {
   apply()
 }
 
+// primeiro gesto da pessoa: começa a música (fade curtinho, pra não parecer atraso)
 function start() {
-  if (started) return
+  if (playing) return
   started = true
   ensure()
-  apply()
+  apply(500)
+}
+const GESTURES = ['pointerdown', 'click', 'touchend', 'keydown']
+function stopListening() {
+  GESTURES.forEach((e) => window.removeEventListener(e, start))
 }
 
 if (typeof window !== 'undefined') {
-  ;['pointerdown', 'keydown'].forEach((e) => window.addEventListener(e, start, { once: true, passive: true }))
+  ensure()
+  audio.load() // já vai baixando o arquivo (2 MB) pra começar na hora do primeiro toque
+  GESTURES.forEach((e) => window.addEventListener(e, start, { passive: true }))
   subscribeSound(() => apply(180)) // mexer no controle responde rápido
   document.addEventListener('visibilitychange', () => {
     hidden = document.visibilityState === 'hidden'

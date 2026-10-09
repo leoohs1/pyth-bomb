@@ -137,9 +137,27 @@ export default function App() {
   // cutuca o servidor pra ver se já explodiu
   useEffect(() => {
     if (!roomId || room?.status !== 'playing') return
-        const id = setInterval(async () => {
+    let n = 0
+    const id = setInterval(async () => {
       const { error } = await supabase.rpc('tick', { p_room_id: roomId })
       if (error) console.log('TICK ERROR:', error.message)
+      // rede de segurança: o tempo real pode falhar no celular (tela apagou, sinal fraco). A cada
+      // 3 s confere a sala e a cada 6 s os jogadores, e só atualiza se algo mudou. Assim a bomba, a
+      // eliminação e o aviso de explosão chegam mesmo se o aviso ao vivo se perder.
+      n++
+      if (n % 3 === 0) {
+        const { data: r } = await supabase.from('rooms').select().eq('id', roomId).single()
+        // (nunca aceita uma versão MAIS VELHA da sala que a já mostrada: resposta atrasada)
+        if (r) setRoom((old) => {
+          if (old && JSON.stringify(old) === JSON.stringify(r)) return old
+          if (old && (r.round_number < old.round_number || (old.last_event_at && r.last_event_at && new Date(r.last_event_at) < new Date(old.last_event_at)))) return old
+          return r
+        })
+      }
+      if (n % 6 === 0) {
+        const { data: ps } = await supabase.from('players').select().eq('room_id', roomId).order('joined_at')
+        if (ps) setPlayers((old) => (JSON.stringify(old) === JSON.stringify(ps) ? old : ps))
+      }
     }, 1000)
     return () => clearInterval(id)
   }, [roomId, room?.status])
@@ -178,7 +196,9 @@ export default function App() {
 
   // avisa quem explodiu
   useEffect(() => {
-    if (!room?.last_event_at || room.last_event_at === lastEventRef.current) return
+    if (!room?.last_event_at) return
+    // só dispara pra explosão NOVA (mais recente que a última avisada), nunca pra uma antiga
+    if (lastEventRef.current && new Date(room.last_event_at) <= new Date(lastEventRef.current)) return
     lastEventRef.current = room.last_event_at
     const victim = players.find((p) => p.id === room.last_victim_id)
     if (victim) {
@@ -241,10 +261,17 @@ export default function App() {
     setError(null)
     const nick = nickname.trim()
     if (nick.length < 2) return setError('Pick a nickname first (at least 2 characters)')
+    // o teclado do celular pode meter espaço, hífen ou letra minúscula: fica só letra e número, em maiúscula
+    const code = codeInput.replace(/[^a-z0-9]/gi, '').toUpperCase()
+    if (!code) return setError('Type the room code first')
     saveNickname(nick)
     const { data, error: e } = await supabase
-      .from('rooms').select().eq('code', codeInput.trim().toUpperCase()).single()
-    if (e) return setError('Room not found')
+      .from('rooms').select().eq('code', code).maybeSingle()
+    if (e) {
+      console.warn('join error:', e)
+      return setError('Could not reach the game server. Check your connection and try again.')
+    }
+    if (!data) return setError('Room not found. Check the code (' + code + ').')
     joinRoom(data)
   }
 

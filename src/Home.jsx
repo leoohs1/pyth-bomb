@@ -84,6 +84,8 @@ export default function Home({ nickname, setNickname, codeInput, setCodeInput, o
                   placeholder="room code"
                   maxLength={8}
                   autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   autoCapitalize="characters"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}

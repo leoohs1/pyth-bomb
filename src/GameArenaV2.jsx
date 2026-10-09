@@ -5,6 +5,8 @@ import { play } from './sound.js'
 import { setMusicDuck } from './music.js'
 import { CHARACTER_NAMES, avatarIndex } from './characters.js'
 import SoundToggle from './SoundToggle.jsx'
+import RuggedOverlay from './RuggedOverlay.jsx'
+import GameCompact from './GameCompact.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
 
@@ -246,26 +248,6 @@ const PencilIcon = () => (
   </svg>
 )
 
-// arte do deboche quando EU exploda (Oráculo rindo do Minotauro chamuscado) e a arte pequena
-// que aparece quando OUTRA pessoa explode. Troque os arquivos em public/ pra mudar.
-const RUGGED_IMG_MINE = '/rugged-taunt.webp'
-const RUGGED_IMG_OTHER = '/minotaur.webp'
-
-// aviso de explosão: "X got rugged!" pra todo mundo; pra quem explodiu, a tela
-// toda treme, fica vermelha e a arte debocha ("HA HA HA")
-function RuggedOverlay({ flash }) {
-  if (!flash) return null
-  return (
-    <div key={flash.name + (flash.mine ? 'm' : '')} className={`ga-rugged${flash.mine ? ' is-mine' : ''}`} role="status">
-      <div className="ga-rugged-body">
-        <div className="ga-rugged-art">
-          <img src={flash.mine ? RUGGED_IMG_MINE : RUGGED_IMG_OTHER} alt="" />
-        </div>
-        <p className="ga-rugged-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
-      </div>
-    </div>
-  )
-}
 
 // troca pra uma segunda arte (expressão de pânico) quando o personagem está com
 // a bomba — mesmo mecanismo do GameArena.jsx original.
@@ -291,6 +273,24 @@ function SeatAvatar({ src, isHolder, imgRef }) {
 // V2 do GameArena: mesma lógica/props de sempre (nada de jogo real tocado),
 // só a composição visual (fundo novo + card maior + clusters em vez de
 // fileiras retas) — protótipo isolado pra aprovar antes de virar o principal.
+// celular em pé (ou tablet pequeno em pé): a arena larga não cabe e o teclado estraga tudo,
+// então usamos um layout próprio (GameCompact). ?compact=1 força, pra testar no computador.
+const COMPACT_QUERY = '(orientation: portrait) and (max-width: 900px)'
+function useCompact() {
+  const forced = QS.get('compact') === '1'
+  const [on, setOn] = useState(() => forced || !!window.matchMedia?.(COMPACT_QUERY).matches)
+  useEffect(() => {
+    if (forced) return
+    const mq = window.matchMedia?.(COMPACT_QUERY)
+    if (!mq) return
+    const h = () => setOn(mq.matches)
+    h()
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [forced])
+  return on
+}
+
 export default function GameArenaV2({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
@@ -307,6 +307,7 @@ export default function GameArenaV2({
   phase = 'playing', panel = null, centerId = null,
 }) {
   const inGame = phase === 'playing'
+  const compact = useCompact()
   const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
@@ -448,27 +449,31 @@ export default function GameArenaV2({
 
   useEffect(() => { if (flash) play('explosion') }, [flash])
   useEffect(() => { if (feedback) play('wrong') }, [feedback])
-  // a risada de quem explodiu entra DEPOIS do estrondo (senão um abafa o outro). Ligada ao
-  // aviso de explosão (flash.mine) e não ao estado 'eliminado': assim não repete quando
-  // alguém já eliminado recarrega a página.
-  const iGotRugged = !!flash?.mine
+  // a risada entra DEPOIS do estrondo (senão um abafa o outro) e toca pra TODO MUNDO quando alguém
+  // explode. Ligada ao aviso de explosão (flash), não ao estado 'eliminado': assim não repete
+  // quando alguém já eliminado recarrega a página.
   useEffect(() => {
-    if (!iGotRugged) return
+    if (!flash) return
     const id = setTimeout(() => play('eliminated'), 900)
     return () => clearTimeout(id)
-  }, [iGotRugged])
+  }, [flash])
+
+  if (compact) {
+    return (
+      <GameCompact
+        room={room} players={players} alive={alive} phase={phase} panel={panel} centerId={centerId}
+        danger={danger} pct={pct} secs={secs} urgent={urgent}
+        answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={onSubmit}
+        error={error} feedback={feedback} mistakes={mistakes} flash={flash}
+        myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
+        avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
+        questionMax={QUESTION_MS / 1000}
+      />
+    )
+  }
 
   return (
     <main className="ga-stage">
-      {/* celular em pé: a arena é horizontal, então pedimos pra girar (CSS decide quando aparece) */}
-      <div className="ga-rotate" role="alert">
-        <svg className="ga-rotate-icon" viewBox="0 0 64 64" aria-hidden="true">
-          <rect x="20" y="6" width="24" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="3" />
-          <circle cx="32" cy="51" r="2.2" fill="currentColor" />
-        </svg>
-        <p className="ga-rotate-title">Rotate your phone</p>
-        <p className="ga-rotate-sub">Pyth Bomb is played in landscape</p>
-      </div>
       <div className="ga-arena">
         <div className="ga-bg" />
         <div className="ga-shade" />

@@ -693,25 +693,6 @@
 .ga-sound { cursor: pointer; appearance: none; line-height: 1; padding: 0.45em 0.8em; }
 .ga-sound:hover { filter: brightness(1.2); }
 
-/* "gire o celular": só aparece em celular/tablet pequeno NA VERTICAL */
-.ga-rotate { display: none; }
-@media (orientation: portrait) and (max-width: 900px) {
-  .ga-rotate {
-    position: fixed; inset: 0; z-index: 9999;
-    display: grid; place-content: center; justify-items: center; gap: 14px;
-    padding: 24px; text-align: center; color: #f6eeff;
-    background: radial-gradient(ellipse at 50% 40%, #2a1558 0%, #120a26 70%);
-    font-family: Cinzel, Georgia, serif;
-  }
-  .ga-rotate-icon { width: 84px; height: 84px; color: #e9c46a; animation: ga-rotate-turn 2.4s ease-in-out infinite; }
-  .ga-rotate-title { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.04em; }
-  .ga-rotate-sub { margin: 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; opacity: 0.75; }
-}
-@keyframes ga-rotate-turn {
-  0%, 20% { transform: rotate(0deg); }
-  60%, 100% { transform: rotate(-90deg); }
-}
-
 /* CELULAR NA HORIZONTAL (tela baixa): o card encolhe pra caber no meio da arena sem
    cobrir a plateia nem o seu personagem — logo e "QUESTION" saem pra ganhar espaço */
 @media (max-height: 520px) {

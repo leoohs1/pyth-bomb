@@ -112,7 +112,8 @@ if (typeof document !== 'undefined') {
   })
 }
 if (typeof window !== 'undefined') {
-  ;['pointerdown', 'keydown'].forEach((e) => window.addEventListener(e, unlock, { passive: true }))
+  // iPhone/Safari só libera o áudio com toque ou clique (pointerdown sozinho não basta)
+  ;['pointerdown', 'touchend', 'click', 'keydown'].forEach((e) => window.addEventListener(e, unlock, { passive: true }))
 }
 
 // ---------- versões sintetizadas (provisórias) ----------
