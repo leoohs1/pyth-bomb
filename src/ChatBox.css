@@ -137,3 +137,8 @@
   .ct-panel { width: 230px; left: 8px; bottom: 8px; padding: 5px 8px 7px; }
   .ct-list { height: 70px; font-size: 12px; }
 }
+
+/* durante a partida o chat é MENOR (metade da altura): a bomba é o foco */
+.ct-panel.ct-playing .ct-list { height: max(55px, 5.5cqw); }
+.ct-panel.ct-compact.ct-playing .ct-list { height: clamp(60px, 10dvh, 74px); }
+@media (max-height: 520px) { .ct-panel.ct-playing .ct-list { height: 36px; } }

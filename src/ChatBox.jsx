@@ -51,7 +51,7 @@ export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) 
   }
 
   return (
-    <section className={`ct-panel ct-${variant}${variant === 'compact' && phase !== 'playing' ? ' ct-inline' : ''}`} aria-label="Chat">
+    <section className={`ct-panel ct-${variant}${variant === 'compact' && phase !== 'playing' ? ' ct-inline' : ''}${phase === 'playing' ? ' ct-playing' : ''}`} aria-label="Chat">
       <header className="ct-head">
         <span className="ct-title">💬 Chat</span>
         <button type="button" className="ct-close" onClick={toggle} aria-label="Close chat">×</button>
