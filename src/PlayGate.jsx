@@ -13,10 +13,14 @@ const STORE = 'pb_beta'
 function hasAccess() {
   if (LAUNCHED) return true
   try {
-    const q = new URLSearchParams(window.location.search).get('beta')
-    if (q === BETA_KEY) {
+    // perdoa maiúscula/minúscula e pontuação colada no fim do link (ex.: um ponto final do chat)
+    const q = (new URLSearchParams(window.location.search).get('beta') ?? '').trim().replace(/[^A-Za-z0-9]+$/, '')
+    if (q && q.toLowerCase() === BETA_KEY.toLowerCase()) {
       localStorage.setItem(STORE, '1')
-      window.history.replaceState(null, '', window.location.pathname)
+      const keep = new URLSearchParams(window.location.search)
+      keep.delete('beta')
+      const rest = keep.toString()
+      window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''))
     }
     return localStorage.getItem(STORE) === '1'
   } catch {

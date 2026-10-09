@@ -103,7 +103,8 @@
 .mb-panel .ga-hint { font-size: 13px; margin-top: 8px; }
 .mb-panel .ga-bigbtn { height: 50px; font-size: 17px; margin-top: 12px; }
 .mb-panel .ga-wait { font-size: 15px; margin-top: 12px; }
-.mb-panel .ga-me { font-size: 14px; padding: 8px 10px; }
+.mb-panel .ga-me { font-size: 14px; padding: 0; margin-top: 10px; }
+.mb-panel .ga-me.is-win { font-size: 19px; }
 .mb-panel .ga-leave { font-size: 13px; margin-top: 10px; }
 .mb-panel .ga-winner-name { font-size: 26px; }
 .mb-panel .ga-pick { margin-top: 12px; gap: 10px; }

@@ -179,24 +179,24 @@ const AVATAR_GEOMETRY = {
   //   seatContactY: fração da altura onde o CORPO (quadril/barra da saia)
   //     encosta no assento — medido a olho com régua. Propriedade do AVATAR;
   //     o assento só diz onde está o mármore (lipY/blockX).
-  //   panicDy: alguns panics foram desenhados mais altos que o calm; é a
+  //   panicDy: alguns panics foram desenhados mais altos (ou, no caso da Athena, mais BAIXOS: valor negativo) que o calm; é a
   //     fração da altura que o panic desce pra base do corpo ficar no mesmo
   //     lugar (medido comparando o perfil de linhas das duas imagens).
   //   sizeMultiplier / occlude: ajustes opcionais (tamanho; stage 3).
   '/oracle-pilot-calm.webp': { supportAnchorY: 0.9753, sizeMultiplier: 1, seatContactY: 0.69 },
   '/hoplite-sit-calm.webp': { supportAnchorY: 0.99, seatContactY: 0.77 },
   '/owl-sit-calm.webp': { supportAnchorY: 0.938, seatContactY: 0.81 },
-  '/minotaur-sit-calm.webp': { supportAnchorY: 0.974, seatContactY: 0.77 },
-  '/athena-sit-calm.webp': { supportAnchorY: 0.982, seatContactY: 0.78 },
+  '/minotaur-sit-calm.webp': { supportAnchorY: 0.974, seatContactY: 0.77, panicDy: 0.013 },
+  '/athena-sit-calm.webp': { supportAnchorY: 0.982, seatContactY: 0.78, panicDy: -0.051 },
   '/blossom-sit-calm.webp': { supportAnchorY: 0.977, seatContactY: 0.74 },
-  '/faun-sit-calm.webp': { supportAnchorY: 0.984, seatContactY: 0.77 },
+  '/faun-sit-calm.webp': { supportAnchorY: 0.984, seatContactY: 0.77, panicDy: 0.014 },
   '/naiad-sit-calm.webp': { supportAnchorY: 0.983, seatContactY: 0.76 },
   '/cyclops-sit-calm.webp': { supportAnchorY: 0.965, seatContactY: 0.77 },
   '/boy-sit-calm.webp': { supportAnchorY: 0.953, seatContactY: 0.72 },
   '/nymph-sit-calm.webp': { supportAnchorY: 0.966, seatContactY: 0.73 },
-  '/demeter-sit-calm.webp': { supportAnchorY: 0.979, seatContactY: 0.8 },
-  '/hermes-sit-calm.webp': { supportAnchorY: 0.979, seatContactY: 0.74 },
-  '/apollo-sit-calm.webp': { supportAnchorY: 0.98, seatContactY: 0.79 },
+  '/demeter-sit-calm.webp': { supportAnchorY: 0.979, seatContactY: 0.8, panicDy: 0.019 },
+  '/hermes-sit-calm.webp': { supportAnchorY: 0.979, seatContactY: 0.74, panicDy: 0.031 },
+  '/apollo-sit-calm.webp': { supportAnchorY: 0.98, seatContactY: 0.79, panicDy: 0.025 },
   '/amazon-sit-calm.webp': { supportAnchorY: 0.99, seatContactY: 0.77, panicDy: 0.033 },
   '/sage-sit-calm.webp': { supportAnchorY: 0.98, seatContactY: 0.78 },
   '/whip-sit-calm.webp': { supportAnchorY: 0.97, seatContactY: 0.77, panicDy: 0.016 },

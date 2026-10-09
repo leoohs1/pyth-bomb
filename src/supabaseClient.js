@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { perTab } from './storageMode'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(url, key)
+// (?tab=1 no endereço = modo de teste: cada aba guarda o próprio login, ver storageMode.js)
+export const supabase = createClient(url, key, perTab ? { auth: { storage: window.sessionStorage } } : undefined)
 
 // cada navegador ganha um crachá anônimo, sem cadastro nenhum
 export async function ensureSession() {

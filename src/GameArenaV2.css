@@ -383,10 +383,13 @@
   0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.6); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9); }
 }
+/* o tremor usa as propriedades separadas translate/rotate, e NÃO transform: o assento já usa
+   transform pra se posicionar (translate -50% + escala); animar transform apagava isso e o
+   personagem com a bomba pulava de lugar no perigo 4. */
 @keyframes ga-holder-shake {
-  0%, 100% { transform: translate(0, 0) rotate(0); }
-  25% { transform: translate(-0.2cqw, 0.1cqw) rotate(-1.5deg); }
-  75% { transform: translate(0.2cqw, -0.1cqw) rotate(1.5deg); }
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  25% { translate: -0.2cqw 0.1cqw; rotate: -1.5deg; }
+  75% { translate: 0.2cqw -0.1cqw; rotate: 1.5deg; }
 }
 
 .ga-flying-bomb {
@@ -783,17 +786,25 @@
 }
 .ga-dots::after { content: ''; display: inline-block; width: 1.5em; text-align: left; animation: ga-dots 1.4s steps(4, end) infinite; }
 @keyframes ga-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%, 100% { content: '...'; } }
+/* mensagem de resultado ("That's you!" / "You got rugged..."): só texto, SEM caixa nem borda,
+   pra não parecer um botão ao lado do "Play again" */
 .ga-me {
   margin: 0.8cqw 0 0;
-  padding: 0.5cqw 0.8cqw;
+  padding: 0;
   font-weight: 700;
-  font-size: max(11px, 1.2cqw);
+  font-size: max(12px, 1.3cqw);
   color: var(--ga-ink);
-  background: rgba(255, 255, 255, 0.65);
-  border: 1.5px solid rgba(201, 162, 74, 0.6);
-  border-radius: 10px;
+  background: none;
+  border: none;
 }
-.ga-me.is-win { font-family: Cinzel, Georgia, serif; font-weight: 800; color: #2c1a06; background: linear-gradient(180deg, #f8de8e, #dcae40 60%, #c08d25); border-color: #a9771a; }
+.ga-me.is-win {
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: max(15px, 1.7cqw);
+  letter-spacing: 0.03em;
+  color: #8a5a10;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85), 0 0 12px rgba(255, 214, 110, 0.7);
+}
 .ga-leave {
   display: block;
   margin: 0.8cqw auto 0;
