@@ -1,6 +1,8 @@
 /* Chat da sala (ChatBox.jsx). Variante "arena": dentro da arena, no canto de baixo à esquerda
    (tamanhos em cqw, acompanham a arena). Variante "compact": celular em pé, fixo na tela. */
 .ct-fab, .ct-panel { font-family: Inter, system-ui, sans-serif; }
+/* tudo alinhado à ESQUERDA (o cartão em volta é centralizado e o texto herdava isso) */
+.ct-panel, .ct-list, .ct-msg, .ct-error { text-align: left; }
 
 .ct-fab {
   position: absolute;
@@ -72,7 +74,7 @@
   font-size: 13px;
   line-height: 1.3;
 }
-.ct-empty { margin: auto; opacity: 0.6; font-size: 13px; }
+.ct-empty { margin: auto; opacity: 0.6; font-size: 13px; text-align: center; }
 .ct-msg { word-break: break-word; }
 .ct-nick { margin-right: 6px; font-weight: 800; color: #ffd98a; }
 .ct-msg.is-me .ct-nick { color: #c9a2ff; }
