@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './GameCompact.css'
 import SoundToggle from './SoundToggle.jsx'
 import RuggedOverlay from './RuggedOverlay.jsx'
+import Confetti from './Confetti.jsx'
 
 // Layout do CELULAR EM PÉ (e tablet pequeno em pé). Mesma lógica do jogo (os sons, a bomba
 // passando, o relógio etc. continuam no GameArenaV2); aqui é só o que a pessoa VÊ, bem
@@ -137,6 +138,7 @@ export default function GameCompact({
       </div>
 
       <RuggedOverlay flash={flash} />
+      {phase === 'finished' && <Confetti />}
     </main>
   )
 }

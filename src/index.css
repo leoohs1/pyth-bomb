@@ -204,3 +204,20 @@ code {
   .cp-badge { font-size: 8px; }
   .cp-hint { display: none; }
 }
+
+/* confete da tela do vencedor */
+.cf-wrap { position: fixed; inset: 0; z-index: 40; overflow: hidden; pointer-events: none; }
+.cf-piece {
+  position: absolute;
+  top: -20px;
+  opacity: 0;
+  animation-name: cf-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes cf-fall {
+  0% { transform: translate3d(0, -4vh, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: 1; }
+  100% { transform: translate3d(var(--sway), 108vh, 0) rotate(var(--rot)); opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) { .cf-wrap { display: none; } }

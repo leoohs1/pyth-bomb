@@ -6,6 +6,7 @@ import { setMusicDuck } from './music.js'
 import { CHARACTER_NAMES, avatarIndex } from './characters.js'
 import SoundToggle from './SoundToggle.jsx'
 import RuggedOverlay from './RuggedOverlay.jsx'
+import Confetti from './Confetti.jsx'
 import GameCompact from './GameCompact.jsx'
 
 const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
@@ -751,6 +752,7 @@ export default function GameArenaV2({
 
         {povSeq > 0 && <BombPovFlash playKey={povSeq} onDone={onPovFlashDone} />}
       </div>
+      {phase === 'finished' && <Confetti />}
     </main>
   )
 }

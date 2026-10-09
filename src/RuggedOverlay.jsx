@@ -13,7 +13,7 @@ export default function RuggedOverlay({ flash }) {
         <div className="ga-rugged-art">
           <img src={flash.mine ? RUGGED_IMG_MINE : RUGGED_IMG_OTHER} alt="" />
         </div>
-        <p className="ga-rugged-text">{flash.mine ? 'You got rugged!' : `${flash.name} got rugged!`}</p>
+        <p className="ga-rugged-text">{flash.mine ? 'You got rugged!!!' : `${flash.name} got rugged!!!`}</p>
       </div>
     </div>
   )

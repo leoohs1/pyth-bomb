@@ -167,7 +167,7 @@
 .mb-stage .ga-rugged-art img { height: 24vw; }
 .mb-stage .ga-rugged-text { font-size: 16px; padding: 6px 16px; border-width: 2px; }
 .mb-stage .ga-rugged.is-mine .ga-rugged-art img { height: 52vw; }
-.mb-stage .ga-rugged.is-mine .ga-rugged-text { font-size: 9vw; padding: 4px 8px; }
+.mb-stage .ga-rugged.is-mine .ga-rugged-text { font-size: 8.4vw; padding: 4px 8px; }
 .mb-stage .ga-flying-bomb { width: 36px; }
 
 @media (prefers-reduced-motion: reduce) {
