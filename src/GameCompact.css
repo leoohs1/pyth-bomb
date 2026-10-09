@@ -262,3 +262,22 @@
 .mb-stage.is-many .mb-hero { min-height: 140px; gap: 4px; }
 .mb-stage.is-many .mb-hero-pic { width: min(34vw, 150px); }
 .mb-stage.is-many .mb-hero-name { font-size: 13px; padding: 3px 12px; }
+
+/* telas baixas (iPhone com a barra do Safari): tudo cabe sem rolar, com poucos jogadores */
+.mb-hero { min-height: 0; }
+.mb-hero-pic { width: clamp(88px, min(46vw, calc(100dvh - 540px)), 220px); }
+@media (max-height: 760px) {
+  .mb-stage { gap: 8px; padding-top: 8px; }
+  .mb-card { padding: 10px 12px 10px; }
+  .mb-card .ga-qtext { font-size: 19px; margin-bottom: 8px; }
+  .mb-card .ga-time { margin-bottom: 8px; }
+  .mb-input { height: 46px; }
+  .mb-card .ga-send { height: 44px; font-size: 16px; }
+  .mb-card .ga-answer { gap: 8px; }
+  .mb-card .ga-mistakes { margin-top: 8px; }
+  .mb-card .ga-status { height: 42px; }
+  .mb-hero { gap: 4px; }
+  .mb-hero-name { font-size: 13px; padding: 3px 12px; }
+  .mb-players .mb-p { padding: 3px 2px 2px; }
+}
+.mb-stage.is-many .mb-hero-pic { width: clamp(80px, min(34vw, calc(100dvh - 560px)), 150px); }
