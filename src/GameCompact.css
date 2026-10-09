@@ -17,8 +17,8 @@
   color: #f6eeff;
   font-family: Inter, system-ui, sans-serif;
   background:
-    linear-gradient(180deg, rgba(18, 10, 38, 0.8), rgba(18, 10, 38, 0.93)),
-    url('/arena2-bg-v2.webp') center / cover no-repeat,
+    linear-gradient(180deg, rgba(18, 10, 38, 0.72) 0%, rgba(18, 10, 38, 0.1) 38%, rgba(18, 10, 38, 0.2) 62%, rgba(18, 10, 38, 0.82) 100%),
+    url('/arena2-bg-v2.webp') center 62% / cover no-repeat,
     #120a26;
 }
 
@@ -111,8 +111,9 @@
 .mb-panel .ga-pick-btn { font-size: 13px; padding: 8px 12px; }
 
 /* bonequinhos */
-.mb-players { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-@media (max-width: 380px) { .mb-players { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.mb-players { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: auto; }
+.mb-players .mb-p { flex: 0 0 calc((100% - 34px) / 6); }
+@media (max-width: 380px) { .mb-players .mb-p { flex-basis: calc((100% - 28px) / 5); } }
 .mb-p {
   position: relative;
   min-width: 0;
@@ -172,3 +173,92 @@
 @media (prefers-reduced-motion: reduce) {
   .mb-p.is-holder, .mb-bomb, .mb-bombtoast { animation: none; }
 }
+
+/* destaque grande: quem está com a bomba (partida), eu (lobby) ou o vencedor (fim) */
+.mb-hero {
+  position: relative;
+  flex: 1 0 auto; /* não encolhe: se faltar altura, a tela rola em vez de amassar o destaque */
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  --hero-glow: rgba(169, 139, 255, 0.55);
+}
+.mb-hero.dl-2 { --hero-glow: rgba(255, 180, 80, 0.6); }
+.mb-hero.dl-3 { --hero-glow: rgba(255, 120, 100, 0.7); }
+.mb-hero.dl-4 { --hero-glow: rgba(255, 60, 100, 0.85); }
+.mb-hero.is-winner { --hero-glow: rgba(255, 214, 110, 0.85); }
+.mb-hero-glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(86vw, 380px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-glow) 0%, rgba(0, 0, 0, 0) 66%);
+  animation: mb-hero-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.mb-hero.dl-2 .mb-hero-glow { animation-duration: 1.1s; }
+.mb-hero.dl-3 .mb-hero-glow { animation-duration: 0.75s; }
+.mb-hero.dl-4 .mb-hero-glow { animation-duration: 0.4s; }
+@keyframes mb-hero-pulse { 0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(0.92); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); } }
+.mb-hero-pic { position: relative; z-index: 1; width: min(50vw, 230px); }
+.mb-hero-pic > img:first-child {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 6;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 14px rgba(10, 4, 30, 0.6));
+}
+.mb-hero-pic::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 2%;
+  height: 8%;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(8, 3, 22, 0.55);
+  filter: blur(6px);
+}
+.mb-hero.dl-3 .mb-hero-pic > img:first-child, .mb-hero.dl-4 .mb-hero-pic > img:first-child { animation: mb-hero-shake 0.3s linear infinite; }
+@keyframes mb-hero-shake { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-2px, 1px) rotate(-1.5deg); } 75% { transform: translate(2px, -1px) rotate(1.5deg); } }
+.mb-hero-bomb {
+  position: absolute;
+  top: 2%;
+  right: -6%;
+  width: 36%;
+  height: auto;
+  filter: drop-shadow(0 0 10px rgba(190, 110, 255, 0.95));
+  animation: mb-bob 0.9s ease-in-out infinite;
+}
+.mb-hero-crown { position: absolute; top: -8%; left: 50%; transform: translateX(-50%); font-size: 40px; }
+.mb-hero-name {
+  position: relative;
+  z-index: 1;
+  padding: 5px 16px;
+  font: 800 15px Cinzel, Georgia, serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f6eeff;
+  background: rgba(30, 16, 60, 0.85);
+  border: 2px solid var(--ga-gold);
+  border-radius: 999px;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mb-hero.is-me .mb-hero-name { border-color: #ffe08a; background: rgba(120, 20, 50, 0.85); }
+@media (max-height: 640px) { .mb-hero { min-height: 150px; } .mb-hero-pic { width: min(38vw, 170px); } }
+@media (prefers-reduced-motion: reduce) { .mb-hero-glow, .mb-hero-bomb, .mb-hero-pic > img { animation: none !important; } }
+
+/* sala cheia: destaque menor pra a grade de jogadores aparecer sem rolar muito */
+.mb-stage.is-many .mb-hero { min-height: 140px; gap: 4px; }
+.mb-stage.is-many .mb-hero-pic { width: min(34vw, 150px); }
+.mb-stage.is-many .mb-hero-name { font-size: 13px; padding: 3px 12px; }

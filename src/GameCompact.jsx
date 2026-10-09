@@ -26,10 +26,15 @@ export default function GameCompact({
   avatarOf, avatarRefs, flight, bombSeq,
 }) {
   const inGame = phase === 'playing'
+  // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
+  const meNow = players.find((p) => p.id === myPlayerId)
+  const hero = inGame ? holder : phase === 'finished' ? players.find((p) => p.id === centerId) : meNow
+  const heroIsMe = !!hero && hero.id === myPlayerId
+  const heroPanic = inGame && !!holder
   const title = inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over'
 
   return (
-    <main className="mb-stage">
+    <main className={`mb-stage${players.length > 8 ? ' is-many' : ''}`}>
       <div className="mb-top">
         <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/18</span>
         <span className="ga-chip mb-title">{title}</span>
@@ -92,6 +97,18 @@ export default function GameCompact({
         </section>
       ) : (
         <section className={`mb-card mb-panel mb-panel-${phase}`}>{panel}</section>
+      )}
+
+      {hero && (
+        <div className={`mb-hero${inGame ? ` dl-${danger}` : ''}${heroIsMe ? ' is-me' : ''}${phase === 'finished' ? ' is-winner' : ''}`}>
+          <div className="mb-hero-glow" aria-hidden="true" />
+          <div className="mb-hero-pic">
+            <Mini src={avatarOf(hero)} panic={heroPanic} />
+            {heroPanic && <img className="mb-hero-bomb" src="/bomb-laurel.webp" alt="" aria-hidden="true" />}
+            {phase === 'finished' && <span className="mb-hero-crown" role="img" aria-label="Winner">👑</span>}
+          </div>
+          <span className="mb-hero-name">{heroIsMe ? `${hero.nickname} (you)` : hero.nickname}</span>
+        </div>
       )}
 
       <div className="mb-players" aria-label="Players">
