@@ -760,6 +760,7 @@
   text-transform: uppercase;
 }
 .ga-copy {
+  white-space: nowrap;
   min-width: 6.4cqw;
   padding: 0 1cqw;
   cursor: pointer;

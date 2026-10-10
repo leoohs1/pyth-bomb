@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CharacterPicker from './CharacterPicker.jsx'
 import { CHARACTER_NAMES, avatarIndex } from './characters.js'
+import { inviteMessage } from './invite.js'
 
 const MIN_PLAYERS = 2
 
@@ -23,7 +24,7 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   async function copyCode() {
-    await copyText(room.code)
+    await copyText(inviteMessage(room.code)) // link completo + código, pronto pra colar
     setCopied(true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => setCopied(false), 1600)
@@ -38,10 +39,10 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
       <div className="ga-code-row">
         <div className="ga-code" aria-label={`Room code ${room.code.split('').join(' ')}`}>{room.code}</div>
         <button type="button" className={`ga-copy${copied ? ' is-copied' : ''}`} onClick={copyCode}>
-          {copied ? '✓ Copied' : 'Copy'}
+          {copied ? '✓ Copied' : 'Copy link'}
         </button>
       </div>
-      <p className="ga-hint">Share this code with your friends</p>
+      <p className="ga-hint">Share this link with your friends</p>
 
       {canPick && (
         <div className="ga-pick">

@@ -328,3 +328,15 @@
 @media (prefers-reduced-motion: reduce) {
   .hm-char, .hm-bomb, .hm-aura { animation: none; }
 }
+
+/* aviso de convite (entrou por um link de sala) */
+.hm-invite {
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hm-ink);
+  background: rgba(255, 224, 138, 0.35);
+  border: 1.5px solid rgba(201, 162, 74, 0.7);
+  border-radius: 10px;
+}

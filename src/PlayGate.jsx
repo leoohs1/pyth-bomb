@@ -6,8 +6,8 @@ import Landing from './Landing.jsx'
 // - Todo o resto vê a Landing com 'Coming soon'.
 // Pra ABRIR o jogo de vez: trocar LAUNCHED para true.
 // (É um portão simples de 'beta fechado', não segurança de verdade: a chave está no código do site.)
-const LAUNCHED = false
-const BETA_KEY = 'bomba-beta-7Q4K'
+export const LAUNCHED = false
+export const BETA_KEY = 'bomba-beta-7Q4K'
 const STORE = 'pb_beta'
 
 function hasAccess() {

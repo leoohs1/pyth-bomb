@@ -7,6 +7,7 @@ import GameArenaV2 from './GameArenaV2'
 import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 import { preloadCharacters } from './characters'
 import useChat from './useChat'
+import { readInviteCode } from './invite'
 
 function makeCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -19,11 +20,13 @@ export default function App() {
   const [room, setRoom] = useState(null)
   const [me, setMe] = useState(null)
   const [players, setPlayers] = useState([])
-  const [codeInput, setCodeInput] = useState('')
+  // vindo de um link de convite (?room=CODIGO): abre direto na tela de entrar, com o código preenchido
+  const [invite] = useState(() => readInviteCode())
+  const [codeInput, setCodeInput] = useState(invite)
   const [nickname, setNickname] = useState(() => loadNickname())
   // tela de modos: hoje só existe o Classic, mas a "porta de entrada" já está pronta
   // pro Solo e a Arena, que chegam mais pra frente
-  const [mode, setMode] = useState(null)
+  const [mode, setMode] = useState(invite ? 'classic' : null)
   const [error, setError] = useState(null)
   const [elapsed, setElapsed] = useState(0)
 
@@ -50,6 +53,15 @@ export default function App() {
     setAnswer('')
   }, [room?.question_expires_at])
 
+  useEffect(() => {
+    if (!invite) return
+    try {
+      const q = new URLSearchParams(window.location.search); q.delete('room')
+      const rest = q.toString()
+      window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''))
+    } catch { /* tudo bem */ }
+  }, [invite])
+
   // entra com o crachá anônimo e, se o navegador lembra de uma sala, volta direto pra
   // ela (reconexão depois de fechar a aba, recarregar a página ou trocar de app)
   useEffect(() => {
@@ -63,6 +75,7 @@ export default function App() {
 
       const code = loadRoomCode()
       if (!code) return
+      if (invite && code !== invite) return // o convite novo vale mais que a sala guardada
 
       const { data: targetRoom } = await supabase.from('rooms').select().eq('code', code).maybeSingle()
       if (!targetRoom) return clearRoomCode()
@@ -324,7 +337,7 @@ export default function App() {
       <Home
         nickname={nickname} setNickname={setNickname}
         codeInput={codeInput} setCodeInput={setCodeInput}
-        onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error}
+        onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error} invite={invite}
       />
     )
   }
