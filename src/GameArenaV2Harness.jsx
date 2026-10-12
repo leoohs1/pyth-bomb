@@ -33,6 +33,8 @@ export default function GameArenaV2Harness() {
     send: async (t) => { setFakeMsgs((m) => [...m, { id: Date.now(), player_id: 'p0', nickname: 'Halls', body: t, created_at: String(Date.now()) }]); return true },
     addOther: () => setFakeMsgs((m) => [...m, { id: Date.now(), player_id: 'p3', nickname: 'Samurai', body: 'olha a bomba!!', created_at: String(Date.now()) }]),
   }
+  const [livesMap, setLivesMap] = useState({}) // vidas de mentira (p0..p19), padrão 2
+  const [lifeFlash, setLifeFlash] = useState(null)
   const [myIdx, setMyIdx] = useState(0) // personagem escolhido por "mim" (Halls) no lobby
   const [controlsVisible, setControlsVisible] = useState(true)
   const answerRef = useRef(null)
@@ -40,7 +42,7 @@ export default function GameArenaV2Harness() {
   const [flash, setFlash] = useState(null)
   const [feedbackMsg, setFeedbackMsg] = useState(null)
 
-  const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), avatar_idx: p.id === MY_ID ? myIdx : i }))
+  const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), lives: livesMap[p.id] ?? 2, avatar_idx: p.id === MY_ID ? myIdx : i }))
   const room = {
     round_number: 3,
     current_question_text: 'Which ancient wonder was located in the city of Rhodes?',
@@ -109,6 +111,7 @@ export default function GameArenaV2Harness() {
         povFlash={povSeq || null}
         mistakes={mistakes}
         phase={phase}
+        lifeFlash={lifeFlash}
         chat={fakeChat}
         onLeave={() => window.alert('(preview) saiu da sala')}
         centerId={phase === 'finished' ? 'p3' : null}
@@ -132,6 +135,11 @@ export default function GameArenaV2Harness() {
             tela: {ph}
           </button>
         ))}
+        <button onClick={() => { setLivesMap((m) => ({ ...m, [MY_ID]: Math.max(0, (m[MY_ID] ?? 2) - 1) })); setLifeFlash({ name: 'Halls', mine: true, key: String(Date.now()) }); setTimeout(() => setLifeFlash(null), 2200) }}
+          style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#fb7185' }}>💔 eu perdi uma vida</button>
+        <button onClick={() => { setLivesMap((m) => ({ ...m, p3: Math.max(0, (m.p3 ?? 2) - 1) })); setLifeFlash({ name: 'Samurai', mine: false, key: String(Date.now()) }); setTimeout(() => setLifeFlash(null), 2200) }}
+          style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#fda4af' }}>💔 outro perdeu vida</button>
+        <button onClick={() => setLivesMap({})} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>♥♥ resetar vidas</button>
         <button onClick={fakeChat.addOther} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>💬 chegou mensagem</button>
         <button onClick={() => setAsHost((v) => !v)} style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
           sou dono da sala: {asHost ? 'sim' : 'não'}

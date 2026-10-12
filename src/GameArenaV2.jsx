@@ -9,9 +9,11 @@ import RuggedOverlay from './RuggedOverlay.jsx'
 import Confetti from './Confetti.jsx'
 import LeaveButton from './LeaveButton.jsx'
 import ChatBox from './ChatBox.jsx'
+import Hearts from './Hearts.jsx'
+import LifeToast from './LifeToast.jsx'
 import GameCompact from './GameCompact.jsx'
 
-const QUESTION_MS = 10000 // tem que ser igual ao intervalo em deal_question (supabase/007_timers2.sql)
+const QUESTION_MS = 13000 // tem que ser igual ao intervalo em deal_question (supabase/018_lives.sql)
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso,
 // repete. Visual da arte atual (banco embutido batendo com o degrau) foi
@@ -312,6 +314,8 @@ export default function GameArenaV2({
   onLeave = null,
   // chat da sala (useChat); aparece no canto de baixo à esquerda
   chat = null,
+  // aviso de "perdeu uma vida" (App): { name, mine, key }
+  lifeFlash = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -433,9 +437,9 @@ export default function GameArenaV2({
   // ---- sons do jogo ----
   const prevDangerRef = useRef(danger)
   useEffect(() => {
-    if (danger > prevDangerRef.current && danger > 1) play('danger_up', { level: danger })
+    if (iAmHolder && danger > prevDangerRef.current && danger > 1) play('danger_up', { level: danger })
     prevDangerRef.current = danger
-  }, [danger])
+  }, [danger, iAmHolder])
 
   // pulso de bomba enquanto EU seguro ela: acelera conforme o perigo sobe
   useEffect(() => {
@@ -474,7 +478,7 @@ export default function GameArenaV2({
         error={error} feedback={feedback} mistakes={mistakes} flash={flash}
         myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
         avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
-        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat}
+        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat} lifeFlash={lifeFlash}
       />
     )
   }
@@ -529,6 +533,7 @@ export default function GameArenaV2({
                   '--ga-seat-scale': s.scale * geo.sizeMultiplier,
                 }}>
                 <div className="ga-seat-shadow" aria-hidden="true" />
+                {!isOut && p.lives != null && inGame && <Hearts lives={p.lives} />}
                 {SHOW_GROUND_DEBUG && (
                   <>
                     <span className="ga-ground-line" aria-hidden="true" />
@@ -655,6 +660,7 @@ export default function GameArenaV2({
                 </div>
               </>
             )}
+            {!iAmEliminated && inGame && me.lives != null && <Hearts lives={me.lives} className="ga-hearts ga-hearts-me" />}
             <SeatAvatar
               src={avatarOf(me)}
               isHolder={iAmHolder}
@@ -757,6 +763,7 @@ export default function GameArenaV2({
 
         {chat && <ChatBox chat={chat} myPlayerId={myPlayerId} phase={phase} variant="arena" />}
 
+        <LifeToast lifeFlash={lifeFlash} />
         <RuggedOverlay flash={flash} />
 
         {povSeq > 0 && <BombPovFlash playKey={povSeq} onDone={onPovFlashDone} />}

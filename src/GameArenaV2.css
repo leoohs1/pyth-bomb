@@ -943,3 +943,62 @@
 .ga-rugged:not(.is-mine) {
   background: radial-gradient(ellipse 80% 45% at 50% 50%, rgba(70, 8, 38, 0.92) 0%, rgba(40, 5, 25, 0.78) 55%, rgba(20, 3, 14, 0) 100%);
 }
+
+/* ---------- vidas (2 corações) e aviso de "perdeu uma vida" ---------- */
+.ga-hearts {
+  position: absolute;
+  z-index: 3;
+  top: -9%;
+  left: 50%;
+  display: flex;
+  gap: 0.15cqw;
+  transform: translateX(-50%);
+  font-size: max(11px, 1.15cqw);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 0 0.25cqw rgba(10, 4, 30, 0.95), 0 0.1cqw 0.2cqw rgba(10, 4, 30, 0.9);
+}
+.ga-hearts .is-full { color: #ff4d6d; }
+.ga-hearts .is-empty { color: rgba(60, 40, 90, 0.85); text-shadow: 0 0 0.2cqw rgba(255, 255, 255, 0.35); }
+.ga-hearts-me { top: -4%; font-size: max(14px, 1.7cqw); }
+/* com a bomba flutuando em cima da cabeça, os corações sobem acima dela */
+.ga-seat.is-holder .ga-hearts { top: -48%; }
+.ga-me-stage.is-holder .ga-hearts-me { top: -34%; }
+
+.ga-lifeflash {
+  position: absolute;
+  inset: 0;
+  z-index: 250;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-top: 9%;
+  pointer-events: none;
+  animation: ga-lifeflash-life 2.2s ease-out forwards;
+}
+.ga-lifeflash-text {
+  margin: 0;
+  padding: 0.5cqw 1.8cqw;
+  font: 800 max(14px, 1.7cqw) Cinzel, Georgia, serif;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: rgba(150, 20, 60, 0.9);
+  border: 0.15cqw solid #f3e3b0;
+  border-radius: 999px;
+  box-shadow: 0 0.6cqw 1.6cqw rgba(30, 5, 20, 0.6);
+  animation: ga-lifeflash-pop 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.ga-lifeflash-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 40, 70, 0) 35%, rgba(200, 20, 50, 0.65) 100%);
+  animation: ga-lifeflash-vig 0.7s ease-out forwards;
+}
+.ga-lifeflash.is-mine { animation: ga-lifeflash-life 2.2s ease-out forwards, ga-rugged-shake 0.4s linear; }
+@keyframes ga-lifeflash-life { 0% { opacity: 0; } 8% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ga-lifeflash-pop { 0% { transform: scale(0.6); } 100% { transform: scale(1); } }
+@keyframes ga-lifeflash-vig { 0% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ga-lifeflash, .ga-lifeflash-text, .ga-lifeflash-vignette { animation: none; } }
+
+/* regras curtas no lobby */
+.ga-rules { margin: 0.6cqw 0 0; font-size: max(11px, 1.05cqw); font-weight: 700; color: rgba(46, 31, 99, 0.85); }

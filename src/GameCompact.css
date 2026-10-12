@@ -292,3 +292,12 @@
 
 /* espaço embaixo pro balão do chat (canto esquerdo) não cobrir o primeiro bonequinho */
 .mb-stage.has-chat { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+/* vidas no celular */
+.mb-hearts { display: flex; justify-content: center; gap: 2px; font-size: 13px; line-height: 1; margin-top: 1px; }
+.mb-hearts .is-full { color: #ff4d6d; }
+.mb-hearts .is-empty { color: rgba(246, 238, 255, 0.28); }
+.mb-hearts-hero { position: relative; z-index: 1; font-size: 20px; gap: 4px; margin-top: 2px; }
+.mb-stage .ga-lifeflash { position: fixed; z-index: 450; padding-top: 42dvh; }
+.mb-stage .ga-lifeflash-text { font-size: 16px; padding: 7px 16px; border-width: 2px; }
+.mb-card .ga-rules { font-size: 13px; margin-top: 8px; }

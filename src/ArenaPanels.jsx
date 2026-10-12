@@ -43,6 +43,7 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
         </button>
       </div>
       <p className="ga-hint">Share this link with your friends</p>
+      <p className="ga-rules">♥♥ 2 lives · ⏱ 13 s per question · 5 guesses</p>
 
       {canPick && (
         <div className="ga-pick">

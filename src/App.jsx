@@ -34,6 +34,9 @@ export default function App() {
   const chat = useChat(roomId) // chat da sala (supabase/014_chat.sql)
   const lastEventRef = useRef(null)
   const [flash, setFlash] = useState(null)
+  // aviso de "perdeu uma vida" (menor que a explosão, que agora só vem quando a última vida acaba)
+  const lastHitRef = useRef(null)
+  const [lifeFlash, setLifeFlash] = useState(null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
   const answerRef = useRef(null)
@@ -222,6 +225,18 @@ export default function App() {
     }
   }, [room?.last_event_at, room?.last_victim_id, players, me?.id])
 
+  // avisa quem perdeu uma vida (supabase/018_lives.sql)
+  useEffect(() => {
+    if (!room?.last_hit_at) return
+    if (lastHitRef.current && new Date(room.last_hit_at) <= new Date(lastHitRef.current)) return
+    lastHitRef.current = room.last_hit_at
+    const victim = players.find((p) => p.id === room.last_hit_id)
+    if (victim) {
+      setLifeFlash({ name: victim.nickname, mine: victim.id === me?.id, key: room.last_hit_at })
+      setTimeout(() => setLifeFlash(null), 2200)
+    }
+  }, [room?.last_hit_at, room?.last_hit_id, players, me?.id])
+
   async function joinRoom(targetRoom) {
     const user = await ensureSession()
 
@@ -320,9 +335,10 @@ export default function App() {
     setError(null)
     const { data, error: e } = await supabase.rpc('submit_answer', { p_room_id: room.id, p_answer: text })
     if (e) return setError(e.message)
-    if (data === 'wrong') setFeedback('❌ wrong, try again!')
-    else if (data === 'timeout') setFeedback('⏱ too slow!')
-    else if (data === 'exploded') setFeedback('💥 5 mistakes — boom!')
+    if (data === 'wrong') setFeedback('❌ Wrong! Try again')
+    else if (data === 'hit') setFeedback('💔 5 wrong guesses! You lost a life')
+    else if (data === 'timeout') setFeedback('⏱ Time is up! You lost a life')
+    else if (data === 'exploded') setFeedback('💥 No lives left!')
     else setFeedback(null)
     if (data !== 'correct') setTimeout(() => setFeedback(null), 1200)
     setAnswer('')
@@ -356,19 +372,18 @@ export default function App() {
     )
   }
 
-  // perigo cresce com o tempo decorrido (o tempo real continua secreto).
-  // Marcos pensados para uma bomba de 55 a 65s: "critical" só nos últimos ~5-15s.
-  const danger = elapsed < 20 ? 1 : elapsed < 35 ? 2 : elapsed < 50 ? 3 : 4
-
-  // milissegundos que faltam pra pergunta atual (o relógio da bomba continua secreto)
+  // milissegundos que faltam pro turno atual (a pessoa com a bomba tem 13 s)
   const questionMs = room.question_expires_at
     ? Math.max(0, new Date(room.question_expires_at).getTime() - Date.now())
     : 0
 
+  // perigo (batida, brilho, ritmo do tique) sobe a cada turno conforme o tempo acaba
+  const danger = questionMs > 8000 ? 1 : questionMs > 5000 ? 2 : questionMs > 3000 ? 3 : 4
+
   if (room.status === 'playing') {
     return (
       <GameArenaV2
-        room={room} players={players} alive={alive} danger={danger} questionMs={questionMs}
+        room={room} players={players} alive={alive} danger={danger} questionMs={questionMs} lifeFlash={lifeFlash}
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
         error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom} chat={chat}
         mistakes={room.holder_mistakes ?? 0}

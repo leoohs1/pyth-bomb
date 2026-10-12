@@ -5,6 +5,8 @@ import RuggedOverlay from './RuggedOverlay.jsx'
 import Confetti from './Confetti.jsx'
 import LeaveButton from './LeaveButton.jsx'
 import ChatBox from './ChatBox.jsx'
+import Hearts from './Hearts.jsx'
+import LifeToast from './LifeToast.jsx'
 
 // Layout do CELULAR EM PÉ (e tablet pequeno em pé). Mesma lógica do jogo (os sons, a bomba
 // passando, o relógio etc. continuam no GameArenaV2); aqui é só o que a pessoa VÊ, bem
@@ -26,7 +28,7 @@ export default function GameCompact({
   danger, pct, secs, urgent, questionMax,
   answer, setAnswer, answerRef, onSubmit, error, feedback, mistakes, flash,
   myPlayerId, holder, iAmHolder, iAmEliminated,
-  avatarOf, avatarRefs, flight, bombSeq, onLeave, chat,
+  avatarOf, avatarRefs, flight, bombSeq, onLeave, chat, lifeFlash,
 }) {
   const inGame = phase === 'playing'
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
@@ -114,6 +116,7 @@ export default function GameCompact({
             {phase === 'finished' && <span className="mb-hero-crown" role="img" aria-label="Winner">👑</span>}
           </div>
           <span className="mb-hero-name">{heroIsMe ? `${hero.nickname} (you)` : hero.nickname}</span>
+          {inGame && hero.lives != null && <Hearts lives={hero.lives} className="mb-hearts mb-hearts-hero" />}
         </div>
       )}
 
@@ -136,12 +139,14 @@ export default function GameCompact({
                 {isWinner && <span className="mb-crown" role="img" aria-label="Winner">👑</span>}
               </div>
               <span className="mb-name">{p.nickname}</span>
+              {inGame && !isOut && p.lives != null && <Hearts lives={p.lives} className="mb-hearts" />}
               {isMe && <span className="mb-you">you</span>}
             </div>
           )
         })}
       </div>
 
+      <LifeToast lifeFlash={lifeFlash} />
       <RuggedOverlay flash={flash} />
       {phase === 'finished' && <Confetti />}
     </main>
