@@ -4,6 +4,9 @@ const FILES = {
   player: '/solo/nysa.webp',
   playerWalk1: '/solo/nysa-walk1.webp', // passo com um pé na frente
   playerWalk2: '/solo/nysa-walk2.webp', // passo com o outro pé
+  floor: '/solo/floor.webp',
+  wall: '/solo/wall.webp',
+  block: '/solo/block.webp',
 }
 
 const images = {}

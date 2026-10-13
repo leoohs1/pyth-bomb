@@ -29,13 +29,24 @@ export function draw(ctx, s, tilePx, dpr) {
   ctx.setTransform(scale, 0, 0, scale, ox * scale, oy * scale)
 
   // chão e paredes
+  const floorImg = sprite('floor')
+  const wallImg = sprite('wall')
+  const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
-      if (t === WALL) drawWall(ctx, x, y)
+      if (t === WALL) {
+        if (wallImg) ctx.drawImage(wallImg, x, y, 1 + seam, 1 + seam)
+        else drawWall(ctx, x, y)
+      }
       else {
-        ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
-        ctx.fillRect(x, y, 1, 1)
+        if (floorImg) {
+          // um tiquinho maior que a casa, pra não aparecer risquinho entre uma e outra
+          ctx.drawImage(floorImg, x, y, 1 + seam, 1 + seam)
+        } else {
+          ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
+          ctx.fillRect(x, y, 1, 1)
+        }
         if (t === BLOCK) {
           const burn = s.burning.find((b) => b.x === x && b.y === y)
           drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0)
@@ -293,7 +304,28 @@ function drawWall(ctx, x, y) {
   ctx.fillRect(x + 0.04, y + 0.04, 0.92, 0.1)
 }
 
+// Bloco com arte: o vaso de barro. Queimando, ele encolhe, fica alaranjado e some.
+function drawBlockSprite(ctx, x, y, burn, img) {
+  const w = 0.94 * (1 - burn * 0.5)
+  const h = w * (img.naturalHeight / img.naturalWidth)
+  const left = x + 0.5 - w / 2
+  const top = y + 0.97 - h - burn * 0.1
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'
+  ctx.beginPath(); ctx.ellipse(x + 0.5, y + 0.95, w * 0.48, 0.06, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.globalAlpha = 1 - burn * 0.8
+  ctx.drawImage(img, left, top, w, h)
+  if (burn > 0) {
+    ctx.globalAlpha = burn * 0.7
+    ctx.fillStyle = C.flameOut
+    ctx.beginPath(); ctx.roundRect(left, top, w, h, 0.1); ctx.fill()
+  }
+  ctx.restore()
+}
+
 function drawBlock(ctx, x, y, burn) {
+  const img = sprite('block')
+  if (img) return drawBlockSprite(ctx, x, y, burn, img)
   // burn: 0 = inteiro, 1 = sumiu
   const shrink = burn * 0.35
   const s = 1 - shrink * 2
