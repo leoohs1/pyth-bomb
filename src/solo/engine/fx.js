@@ -66,10 +66,12 @@ function setupAmbient(level, tileset) {
   const { cols, rows } = level
   const deco = []
   const used = new Set()
-  // canos: trechos de 3 casas na parede de cima e na de baixo
+  // canos: trechos de 3 casas na parede de cima e na de baixo (um desenho só por trecho)
   for (const y of [0, rows - 1]) {
     for (let x = 1; x < cols - 1; x++) {
-      if ((x + (y ? 4 : 0)) % 8 < 3) { deco.push({ type: 'pipes', x, y }); used.add(x + ',' + y) }
+      if ((x + (y ? 4 : 0)) % 7 !== 1 || x + 3 > cols - 1) continue
+      deco.push({ type: 'pipes', x, y, len: 3 })
+      for (let i = 0; i < 3; i++) used.add(x + i + ',' + y)
     }
   }
   const spots = []
@@ -138,8 +140,12 @@ export function drawAmbient(ctx, time) {
       ctx.fillStyle = on ? `rgb(${col})` : '#5a4a2a'
       ctx.beginPath(); ctx.arc(cx, cy, 0.085, 0, Math.PI * 2); ctx.fill()
     } else if (d.type === 'pipes') {
+      // o trecho inteiro em 2 pedaços longos (menos emendas que um por casa)
       const img = decoSprite('pipes')
-      if (img) { const h = img.naturalHeight / img.naturalWidth; ctx.drawImage(img, d.x, cy - h / 2 - 0.08, 1.01, h) }
+      if (img) {
+        const seg = d.len / 2, h = 0.36
+        for (let i = 0; i < 2; i++) ctx.drawImage(img, d.x + i * seg, cy - h / 2 - 0.06, seg + 0.01, h)
+      }
     } else if (d.type === 'sign') {
       const img = decoSprite('sign')
       if (img) { const w = 0.56, h = w * img.naturalHeight / img.naturalWidth; ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h) }
