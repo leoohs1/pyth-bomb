@@ -7,8 +7,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px 12px;
+  gap: 6px;
+  padding: 8px 16px 8px;
   box-sizing: border-box;
   background: radial-gradient(ellipse at center, #2a2140 0%, #15111f 75%);
   color: #e9e3f5;
@@ -16,16 +16,22 @@
   overflow: hidden;
 }
 
+/* uma linha só: título à esquerda, placar no meio (sobra mais altura pra arena) */
 .solo-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 16px;
   width: 100%;
-  max-width: 900px;
+}
+.solo-title { display: flex; align-items: center; gap: 14px; justify-self: start; }
+@media (max-width: 1250px) {
+  .solo-top { grid-template-columns: 1fr; justify-items: center; gap: 6px; }
+  .solo-title { justify-self: center; }
 }
 .solo-top h1 {
   margin: 0;
-  font: 700 26px/1.1 Cinzel, Georgia, serif;
+  font: 700 23px/1.1 Cinzel, Georgia, serif;
   color: #f3e3b0;
   letter-spacing: 0.5px;
 }
@@ -48,12 +54,13 @@
 
 .solo-hud {
   display: flex;
-  gap: 22px;
-  font: 600 17px/1 Inter, system-ui, sans-serif;
+  align-items: center;
+  gap: 26px;
+  font: 700 20px/1 Inter, system-ui, sans-serif;
   background: rgba(20, 14, 34, 0.7);
   border: 2px solid #c9a24a;
-  border-radius: 10px;
-  padding: 8px 18px;
+  border-radius: 12px;
+  padding: 9px 24px;
 }
 
 /* barra de vida do chefe */
@@ -125,7 +132,7 @@
 /* moldura de metal em volta da arena, com rebites e lâmpadas acesas nos cantos */
 .solo-frame {
   position: relative;
-  padding: 16px; /* = FRAME_PAD no SoloGame.jsx */
+  padding: 12px; /* = FRAME_PAD no SoloGame.jsx */
   border-radius: 14px;
   background: linear-gradient(150deg, #545a68 0%, #2a2d36 35%, #3c414d 60%, #1d1f26 100%);
   box-shadow:
@@ -200,12 +207,24 @@
 
 .solo-sub { margin: 0; font-size: 14px; color: #c9b8ec; }
 
+/* legenda das teclas: flutua no rodapé (não rouba altura da arena) e some aos poucos
+   depois de uns segundos; volta ao passar o mouse */
 .solo-keys {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 5;
   display: flex;
   gap: 22px;
-  font-size: 14px;
+  font-size: 13px;
   color: #b9aed2;
+  white-space: nowrap;
+  animation: solo-keys-fade 1.5s ease 12s forwards;
+  transition: opacity 0.2s;
 }
+.solo-keys:hover { opacity: 1 !important; animation: none; }
+@keyframes solo-keys-fade { to { opacity: 0.25; } }
 .solo-keys kbd {
   display: inline-block;
   min-width: 1.4em;
@@ -300,6 +319,7 @@
 .solo-page.is-military {
   background:
     radial-gradient(ellipse at center, rgba(10, 8, 18, 0) 45%, rgba(10, 8, 18, 0.55) 100%),
+    linear-gradient(rgba(10, 8, 18, 0.18), rgba(10, 8, 18, 0.18)), /* fundo um pouco mais escuro: o olho vai pro jogo */
     url('/solo/bg-military.webp') center 58% / cover no-repeat,
     #0d0b14;
 }
@@ -313,3 +333,4 @@
   padding: 6px 16px;
 }
 .solo-page.is-military .solo-hud { background: rgba(14, 10, 26, 0.88); }
+.solo-title, .solo-title h1, .solo-back { white-space: nowrap; }

@@ -287,7 +287,11 @@ function drawPowerupBox(ctx, pu, time, lift) {
   ctx.lineWidth = 0.06
   ctx.beginPath(); ctx.roundRect(x + 0.14, y + 0.14 + lift, 0.72, 0.72, 0.12); ctx.fill(); ctx.stroke()
   const cx = x + 0.5, cy = y + 0.5 + lift
-  if (pu.kind === 'bomb') {
+  const bombImg = pu.kind === 'bomb' && sprite('bomb')
+  if (bombImg) {
+    const h = 0.56, w = h * bombImg.naturalWidth / bombImg.naturalHeight
+    ctx.drawImage(bombImg, cx - w / 2, cy - h / 2 - 0.02, w, h)
+  } else if (pu.kind === 'bomb') {
     ctx.fillStyle = C.bomb
     ctx.beginPath(); ctx.arc(cx, cy + 0.04, 0.2, 0, Math.PI * 2); ctx.fill()
     ctx.fillStyle = C.flameIn

@@ -22,7 +22,7 @@ import * as FX from './engine/fx.js'
 const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('level')) || 1) - 1
 const newRun = () => createGame(Math.random, START_LEVEL)
 
-const FRAME_PAD = 16 // espessura da moldura de metal (px), igual ao padding de .solo-frame
+const FRAME_PAD = 12 // espessura da moldura de metal (px), igual ao padding de .solo-frame
 
 const isTouchOnly = () =>
   typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
@@ -193,25 +193,27 @@ export default function SoloGame() {
     <div className={`solo-page is-${hud?.tileset ?? 'temple'}`}>
       <SoundToggle className="sound-fixed" />
       <header className="solo-top">
-        <a className="solo-back" href="/play">← Back</a>
-        <h1>Dungeon Run <span className="solo-tag">prototype</span></h1>
+        <div className="solo-title">
+          <a className="solo-back" href="/play">← Back</a>
+          <h1>Dungeon Run <span className="solo-tag">prototype</span></h1>
+        </div>
+        <div className="solo-hud">
+          <span title="Lives">❤️ <Bump v={hud?.lives ?? 3} /></span>
+          <span title="Level">Level {hud?.level ?? 1}/{LEVELS.length}</span>
+          <span title="Enemies left" className={hud?.enemies === 0 ? 'solo-hud-done' : ''}>👾 <Bump v={hud?.enemies ?? '–'} /></span>
+          {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
+          <span className="solo-hud-sep" />
+          <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
+          <span title="Explosion range">🔥 <Bump v={hud?.range ?? 2} /></span>
+          <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
+          <span title="Time">⏱ {time}</span>
+          <span className="solo-hud-sep" />
+          <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
+            🎁 <Bump v={hud?.loot ?? 0} /> PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
+          </span>
+        </div>
       </header>
 
-      <div className="solo-hud">
-        <span title="Lives">❤️ <Bump v={hud?.lives ?? 3} /></span>
-        <span title="Level">Level {hud?.level ?? 1}/{LEVELS.length}</span>
-        <span title="Enemies left" className={hud?.enemies === 0 ? 'solo-hud-done' : ''}>👾 <Bump v={hud?.enemies ?? '–'} /></span>
-        {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
-        <span className="solo-hud-sep" />
-        <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
-        <span title="Explosion range">🔥 <Bump v={hud?.range ?? 2} /></span>
-        <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
-        <span title="Time">⏱ {time}</span>
-        <span className="solo-hud-sep" />
-        <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
-          🎁 <Bump v={hud?.loot ?? 0} /> PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
-        </span>
-      </div>
 
       {hud?.boss && (
         <div className="solo-boss" title={`${hud.boss.name}: ${hud.boss.hp}/${hud.boss.max}`}>
