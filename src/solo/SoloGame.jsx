@@ -22,6 +22,8 @@ import * as FX from './engine/fx.js'
 const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('level')) || 1) - 1
 const newRun = () => createGame(Math.random, START_LEVEL)
 
+const FRAME_PAD = 16 // espessura da moldura de metal (px), igual ao padding de .solo-frame
+
 const isTouchOnly = () =>
   typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
 
@@ -132,7 +134,8 @@ export default function SoloGame() {
     // o tamanho da casa acompanha o tamanho da janela, e o canvas é redesenhado nítido
     const fit = () => {
       const r = wrapRef.current.getBoundingClientRect()
-      tilePx = Math.max(16, Math.floor(Math.min(r.width / COLS, r.height / ROWS)))
+      // desconta a moldura de metal em volta (FRAME_PAD de cada lado)
+      tilePx = Math.max(16, Math.floor(Math.min((r.width - FRAME_PAD * 2) / COLS, (r.height - FRAME_PAD * 2) / ROWS)))
       dpr = window.devicePixelRatio || 1
       canvas.style.width = `${tilePx * COLS}px`
       canvas.style.height = `${tilePx * ROWS}px`
@@ -219,7 +222,11 @@ export default function SoloGame() {
       )}
 
       <div className="solo-stage" ref={wrapRef}>
-        <canvas ref={canvasRef} className="solo-canvas" />
+        <div className="solo-frame">
+          <canvas ref={canvasRef} className="solo-canvas" />
+          <i className="solo-lamp is-tl" /><i className="solo-lamp is-tr" />
+          <i className="solo-lamp is-bl" /><i className="solo-lamp is-br" />
+        </div>
         {hud?.intro && (
           <div className="solo-banner" key={hud.level}>
             <span>Level {hud.level}</span>

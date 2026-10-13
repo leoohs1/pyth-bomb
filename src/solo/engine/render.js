@@ -92,6 +92,7 @@ export function draw(ctx, s, tilePx, dpr) {
   vg.addColorStop(1, 'rgba(0, 0, 0, 0.32)')
   ctx.fillStyle = vg
   ctx.fillRect(0, 0, level.cols, level.rows)
+  drawWarmLight(ctx, level.cols, level.rows)
   drawAmbient(ctx, s.time)
 
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time)
@@ -424,6 +425,21 @@ function drawEnemy(ctx, e, time) {
     ctx.moveTo(-0.17, -0.15); ctx.lineTo(-0.04, -0.1)
     ctx.moveTo(0.17, -0.15); ctx.lineTo(0.04, -0.1)
     ctx.stroke()
+  }
+  ctx.restore()
+}
+
+// Luz quente só nos quatro cantos (onde ficam as lâmpadas da moldura): o resto do chão
+// continua escuro e frio, pra a luz amarela chamar atenção.
+function drawWarmLight(ctx, cols, rows) {
+  ctx.save()
+  ctx.globalCompositeOperation = 'screen'
+  for (const [x, y] of [[0.4, 0.4], [cols - 0.4, 0.4], [0.4, rows - 0.4], [cols - 0.4, rows - 0.4]]) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 2.4)
+    g.addColorStop(0, 'rgba(255, 180, 90, 0.22)')
+    g.addColorStop(1, 'rgba(255, 180, 90, 0)')
+    ctx.fillStyle = g
+    ctx.fillRect(x - 2.4, y - 2.4, 4.8, 4.8)
   }
   ctx.restore()
 }

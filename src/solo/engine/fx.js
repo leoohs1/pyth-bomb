@@ -110,6 +110,14 @@ export function update(s, dt) {
   for (const m of scorch) m.t += dt
   for (let i = scorch.length - 1; i >= 0; i--) if (scorch[i].t > SCORCH_TIME) scorch.splice(i, 1)
 
+  // neblina passando devagar pelas bordas (só onde tem decoração: o quartel)
+  if (ambient.length && Math.random() < dt * 1.6) {
+    const { cols, rows } = s.level
+    const side = Math.floor(Math.random() * 4)
+    const t = Math.random()
+    const [x, y] = [[t * cols, 0.4], [t * cols, rows - 0.4], [0.4, t * rows], [cols - 0.4, t * rows]][side]
+    add({ kind: 'fog', x, y, life: rand(3, 4.5), vx: rand(-0.12, 0.12), vy: rand(-0.1, 0.05), size: rand(0.6, 1) })
+  }
   for (const d of ambient) {
     if (d.type === 'vent' && (d.next -= dt) <= 0) {
       d.next = rand(1.2, 3.2)
@@ -157,11 +165,16 @@ export function drawAmbient(ctx, time) {
       const on = Math.sin(time * 3 + d.phase) > -0.2
       const col = purple ? '190, 110, 255' : '255, 196, 60'
       if (on) {
-        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 0.7)
-        g.addColorStop(0, `rgba(${col}, 0.45)`)
+        // poça de luz que "vaza" pro chão em volta
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 1.5)
+        g.addColorStop(0, `rgba(${col}, 0.5)`)
+        g.addColorStop(0.35, `rgba(${col}, 0.18)`)
         g.addColorStop(1, `rgba(${col}, 0)`)
         ctx.fillStyle = g
-        ctx.fillRect(cx - 0.7, cy - 0.7, 1.4, 1.4)
+        ctx.fillRect(cx - 1.5, cy - 1.5, 3, 3)
+        ctx.restore()
       }
       ctx.fillStyle = '#2a2a30'
       ctx.beginPath(); ctx.roundRect(cx - 0.13, cy - 0.13, 0.26, 0.26, 0.06); ctx.fill()
@@ -235,6 +248,10 @@ export function drawParticles(ctx, cols, rows) {
     } else if (p.kind === 'steam') {
       ctx.fillStyle = `rgba(210, 215, 225, ${0.35 * (1 - k)})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.6 + k * 1.2), 0, Math.PI * 2); ctx.fill()
+    } else if (p.kind === 'fog') {
+      const a = 0.13 * Math.sin(Math.PI * k) // aparece e some devagar
+      ctx.fillStyle = `rgba(170, 160, 200, ${a})`
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.8 + k * 0.5), 0, Math.PI * 2); ctx.fill()
     } else if (p.kind === 'smoke') {
       ctx.fillStyle = `rgba(120, 100, 140, ${0.4 * (1 - k)})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.7 + k * 1.3), 0, Math.PI * 2); ctx.fill()
