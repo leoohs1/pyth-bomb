@@ -249,7 +249,7 @@ export function drawParticles(ctx, cols, rows) {
       ctx.fillStyle = `rgba(210, 215, 225, ${0.35 * (1 - k)})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.6 + k * 1.2), 0, Math.PI * 2); ctx.fill()
     } else if (p.kind === 'fog') {
-      const a = 0.13 * Math.sin(Math.PI * k) // aparece e some devagar
+      const a = 0.06 * Math.sin(Math.PI * k) // aparece e some devagar (bem sutil, pra não apagar as paredes)
       ctx.fillStyle = `rgba(170, 160, 200, ${a})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.8 + k * 0.5), 0, Math.PI * 2); ctx.fill()
     } else if (p.kind === 'smoke') {
