@@ -2,7 +2,9 @@
 
 // Tamanho da fase em casas (já contando a borda de paredes). Ímpar nos dois sentidos,
 // pra o xadrez de paredes fixas fechar certinho, como no Bomberman clássico.
-export const COLS = 15
+// Teste de mapa mais largo: /solo?cols=19 (ou 21...). Precisa ser ímpar, entre 11 e 25.
+const COLS_TEST = typeof window !== 'undefined' ? Number(new URLSearchParams(window.location.search).get('cols')) : 0
+export const COLS = COLS_TEST >= 11 && COLS_TEST <= 25 && COLS_TEST % 2 === 1 ? COLS_TEST : 15
 export const ROWS = 13
 
 // Tipos de casa da grade
