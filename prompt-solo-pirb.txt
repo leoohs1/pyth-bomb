@@ -1,0 +1,86 @@
+PIRB — PERSONAGEM DO MODO SOLO (Dungeon Run)
+============================================
+Regra da Pyth: a MÁSCARA do Pirb não pode ser alterada. Só pode mudar roupa, pose/expressão
+do corpo e o ambiente. Sempre anexe a imagem de referência da máscara (as 5 vistas).
+
+
+------------------------------------------------------------
+P1) PIRB EM PÉ — anexe a referência da máscara
+------------------------------------------------------------
+Cute chibi game character sprite: a small person wearing EXACTLY the pigeon mask from the
+reference image as their head. The mask must stay identical to the reference: same shape,
+blue-gray textured skin, orange beak, orange eyes with white rims, white patch above the beak,
+purple watermelon-striped helmet with the white Pyth "P" logo centered on the front,
+the V-shaped helmet edge over the beak. Do not redesign, recolor or simplify the mask.
+Chibi proportions: the mask-head is big (about 45% of the total height), small compact body.
+Outfit (this part can be creative): ancient Greek hero style, a short white tunic with gold
+trim and a purple sash, small purple cape, gold arm bands, brown leather Greek sandals.
+Standing upright, full body, facing the viewer, confident friendly pose, fists on the hips.
+Soft painted cartoon game-art style, clean outline, soft lighting from the top.
+Centered, feet touching the bottom of the frame, nothing cut off, square 1024x1024.
+Solid flat pure green background (#00FF00), no gradient, no shadow on the ground,
+no green anywhere on the character, no text besides the "P" logo on the helmet.
+
+
+------------------------------------------------------------
+P2) PIRB ANDANDO — 2 POSES NUMA IMAGEM SÓ
+    Anexe a referência da máscara + o Pirb em pé que você escolheu
+------------------------------------------------------------
+Game sprite sheet of the same chibi character from the reference (the person in the
+pigeon mask with the purple Pyth helmet), same mask, same outfit, colors, size and style.
+The mask must stay exactly the same in both poses.
+Two walking poses side by side, both facing the viewer (walking toward the camera),
+same height, same scale, feet on the same baseline:
+LEFT pose: mid-step with the LEFT foot forward and slightly lifted, arms swinging, cape
+swaying to one side.
+RIGHT pose: mid-step with the RIGHT foot forward and slightly lifted, arms swinging the
+other way, cape swaying to the other side.
+Chibi proportions (big mask-head, small body). The two poses must not touch or overlap,
+with empty space between them, nothing cut off.
+Wide image 2048x1024. Solid flat pure green background (#00FF00), no gradient,
+no shadow on the ground, no green on the character, no text besides the "P" logo.
+
+
+------------------------------------------------------------
+P3) PIRB ANDANDO PRA DIREITA (de lado) — 2 POSES
+    Anexe: referência da máscara (5 vistas) + Pirb em pé + Pirb andando de frente
+------------------------------------------------------------
+Game sprite sheet of the same chibi character from the references (the person in the pigeon
+mask with the purple Pyth helmet), same mask, same outfit, colors, size and style.
+SIDE VIEW (profile): the character walks to the RIGHT, the beak points to the RIGHT side of
+the image, like the side view of the mask in the reference (seen from the other side).
+The mask must stay exactly like the reference; do not mirror or distort the "P" logo.
+Two walking poses side by side, same height, same scale, feet on the same baseline:
+LEFT pose: mid-stride, front leg forward, back leg pushing off, arms swinging, cape flowing behind.
+RIGHT pose: the opposite stride (legs and arms switched), cape flowing behind.
+Both poses face RIGHT. Chibi proportions (big mask-head, small body).
+The two poses must not touch or overlap, empty space between them, nothing cut off.
+Wide image 2048x1024. Solid flat pure green background (#00FF00), no gradient,
+no shadow on the ground, no green on the character, no text besides the "P" logo.
+
+
+------------------------------------------------------------
+P4) PIRB ANDANDO PRA ESQUERDA (de lado) — 2 POSES
+    Mesmos anexos do P3 (+ o resultado do P3, se ajudar)
+------------------------------------------------------------
+(igual ao P3, trocando RIGHT por LEFT:)
+... SIDE VIEW (profile): the character walks to the LEFT, the beak points to the LEFT side of
+the image, exactly like the side view of the mask in the reference ...
+Both poses face LEFT. ...
+
+
+------------------------------------------------------------
+P5) PIRB ANDANDO PRA CIMA (de costas) — 2 POSES
+    Mesmos anexos do P3
+------------------------------------------------------------
+Game sprite sheet of the same chibi character from the references (the person in the pigeon
+mask with the purple Pyth helmet), same mask, same outfit, colors, size and style.
+BACK VIEW: the character walks AWAY from the camera, we see the back of the helmet and mask
+exactly like the back view in the reference, the purple cape on the back.
+Two walking poses side by side, same height, same scale, feet on the same baseline:
+LEFT pose: mid-step with the LEFT foot forward, arms swinging, cape swaying to one side.
+RIGHT pose: mid-step with the RIGHT foot forward, cape swaying to the other side.
+Chibi proportions (big mask-head, small body).
+The two poses must not touch or overlap, empty space between them, nothing cut off.
+Wide image 2048x1024. Solid flat pure green background (#00FF00), no gradient,
+no shadow on the ground, no green on the character, no text.

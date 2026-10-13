@@ -1,0 +1,41 @@
+CENÁRIO MILITAR — FASE 1 (Blue Barracks)
+========================================
+Mesmo esquema do cenário grego: chão e parede ocupam a casinha inteira (fundo normal);
+o bloco quebrável precisa de fundo transparente ou verde.
+Anexe o chão grego (ou a parede grega) como referência de ESTILO e ÂNGULO.
+Cores pensadas pra os Blue Marines (azuis) se destacarem: chão escuro e NÃO azul.
+
+
+------------------------------------------------------------
+C1) CHÃO — quadrado 1024x1024
+------------------------------------------------------------
+Top-down game floor tile for a military barracks: a dark gunmetal gray steel deck plate
+with a subtle diamond tread pattern, a small rivet in each corner, slightly worn edges
+and a few scratches. A thin darker seam around the border so tiles read as a grid.
+Viewed straight from above, flat, evenly lit, low contrast so characters stand out on top.
+Seamless tileable texture. Painted cartoon game-art style like the reference.
+No objects, no text, no logos, not blue.
+
+
+------------------------------------------------------------
+C2) PAREDE FIXA (não quebra) — quadrado 1024x1024
+------------------------------------------------------------
+Game wall tile for a military barracks, seen from above at a slight angle like the reference
+(you see the TOP of the block and a bit of its FRONT face at the bottom): a heavy armored
+steel block painted navy blue, thick riveted edges, a yellow-and-black hazard stripe band on
+the front face, a small white stenciled star on the top. Fills the whole square edge to edge.
+Strong, heavy and clearly indestructible, noticeably lighter on top than the dark floor.
+Painted cartoon game-art style like the reference, soft lighting from the top.
+No text, no logos, no hexagons.
+
+
+------------------------------------------------------------
+C3) BLOCO QUEBRÁVEL — quadrado 1024x1024, fundo VERDE
+------------------------------------------------------------
+Game breakable block for a military barracks, same slight top-down angle as the reference:
+a chunky wooden military supply crate in khaki / olive wood, dark metal corner brackets,
+rope handles on the side, a few cracks and splinters so it looks breakable, a simple white
+stenciled arrow on the top (no letters). Fills most of the square (small margin), sitting flat.
+Painted cartoon game-art style like the reference, soft lighting from the top, clean outline.
+Solid flat pure green background (#00FF00), no gradient, no shadow, no green on the crate,
+no text, no logos.

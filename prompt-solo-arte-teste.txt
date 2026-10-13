@@ -1,0 +1,86 @@
+TESTE DE ARTE — MODO SOLO (Dungeon Run)
+=======================================
+Objetivo: ver se a IA consegue fazer um personagem pequeno e 3 "pisos" que combinem.
+Gere em PNG (ou webp). Pode gerar 2-3 versões de cada e me mandar as que gostar mais.
+
+DICA: no prompt 1, anexe a imagem public/oracle-pilot-calm.webp como REFERÊNCIA
+(pra IA manter o mesmo rosto, cabelo e roupa da Nysa).
+
+
+------------------------------------------------------------
+1) NYSA EM PÉ (personagem do jogo)  — fundo TRANSPARENTE, quadrado 1024x1024
+------------------------------------------------------------
+Cute chibi game character sprite of the same oracle girl from the reference image:
+long wavy white-lavender hair, golden laurel crown, purple jewel on the forehead,
+white Greek dress with purple and gold trim, golden sandals.
+Standing upright, full body, facing the viewer, neutral happy pose, arms relaxed,
+small glowing purple orb floating near one hand.
+Very chibi proportions: big head (about 40% of the height), small compact body,
+so it still reads clearly when shown very small (48 pixels).
+Clean bold outline, soft cel shading, same painted style as the reference.
+Centered, feet touching the bottom of the frame, nothing cut off.
+Transparent background, no shadow on the ground, no text, single character only.
+
+
+------------------------------------------------------------
+1b) NYSA EM PÉ — VERSÃO AJUSTADA (depois do 1º teste)
+    Anexe como referência a imagem da Nysa em pé que você já gerou.
+------------------------------------------------------------
+Same cute chibi oracle girl as the reference image, same face, outfit, colors and painted style.
+Standing upright, full body, facing the viewer, small glowing purple orb in one hand.
+Make the silhouette more compact and narrow: the long wavy hair falls mostly BEHIND her back
+and close to the body, not spreading wide to the sides; the veil is shorter and close to the head.
+Keep the big head and big eyes (chibi proportions, head about 40% of the height).
+Centered, feet touching the bottom of the frame, nothing cut off, square 1024x1024.
+Solid flat pure green background (#00FF00), no gradient, no shadow on the ground,
+no green anywhere on the character, no text, single character only.
+
+
+------------------------------------------------------------
+1c) NYSA ANDANDO — 2 POSES NUMA IMAGEM SÓ (sprite de caminhada)
+    Anexe como referência a Nysa em pé com fundo verde (versão 1b).
+------------------------------------------------------------
+Game sprite sheet of the same cute chibi oracle girl from the reference image, same face,
+hair, outfit, colors, size and painted style. Two walking poses side by side, both facing
+the viewer (walking toward the camera), same height, same scale, feet on the same baseline:
+LEFT pose: mid-step with her LEFT foot forward and slightly lifted, body leaning a tiny bit,
+hair and dress swaying to one side.
+RIGHT pose: mid-step with her RIGHT foot forward and slightly lifted, hair and dress swaying
+to the other side.
+In BOTH poses she holds the small glowing purple orb in the SAME hand as the reference,
+the other arm swings gently. Keep the chibi proportions (big head, big eyes).
+The two poses must not touch or overlap, with empty space between them, nothing cut off.
+Wide image 2048x1024. Solid flat pure green background (#00FF00), no gradient,
+no shadow on the ground, no green on the character, no text.
+
+
+------------------------------------------------------------
+2) CHÃO DO CALABOUÇO — quadrado 512x512, SEM transparência
+------------------------------------------------------------
+Top-down game floor tile for a cute Greek dungeon: worn dark purple-gray stone slab
+with subtle cracks and a faint thin gold Greek-key engraving near the edges.
+Viewed straight from above, flat, evenly lit, low contrast so characters stand out on top.
+Seamless tileable texture (edges must match when repeated side by side).
+Painted cartoon style, soft colors. No objects, no shadows from outside, no text.
+
+
+------------------------------------------------------------
+3) PAREDE FIXA (não quebra) — quadrado 512x512, SEM transparência
+------------------------------------------------------------
+Game wall tile for a cute Greek dungeon, seen from above at a slight angle
+(you see the TOP of the block and a bit of its FRONT face at the bottom, like classic
+Bomberman walls). A solid square block of carved light purple-gray marble with a gold
+Greek-key band on the front face. Fills the whole square edge to edge.
+Strong, heavy and clearly indestructible. Painted cartoon style, soft lighting from the top.
+No text, no background visible.
+
+
+------------------------------------------------------------
+4) BLOCO QUEBRÁVEL — fundo TRANSPARENTE, quadrado 512x512
+------------------------------------------------------------
+Game breakable block for a cute Greek dungeon, same slight top-down angle as a classic
+Bomberman block: a chunky terracotta Greek amphora-style crate / clay block with a black
+and orange Greek pattern, a few small cracks so it looks fragile and breakable.
+Fills most of the square (small margin), sitting flat.
+Painted cartoon style, soft lighting from the top, bold clean outline.
+Transparent background, no text.

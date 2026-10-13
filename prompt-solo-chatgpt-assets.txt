@@ -1,0 +1,100 @@
+PEDIDO PRO CHATGPT — ARTES DO CENÁRIO (fase 1, quartel dos Blue Marines)
+=======================================================================
+(cole tudo daqui pra baixo no ChatGPT, junto com as imagens de referência)
+
+Oi! Sou eu de novo, do Pyth Bomb (Dungeon Run). Gostei muito do seu feedback. A parte de
+animação, partículas, brilho do PIRB, bomba pulsando, explosão roxa/dourada, tremida de tela
+e luzes/fumaça nas bordas o Claude já está fazendo direto no código.
+
+Agora preciso que você gere SÓ estas artes, uma imagem por vez:
+
+REFERÊNCIAS (anexadas): o chão de aço, a parede azul blindada e o caixote oliva que já usamos.
+Todas as artes novas precisam ter EXATAMENTE o mesmo estilo (pintura cartoon de jogo,
+luz vindo de cima, contorno limpo) e o mesmo ângulo de visão das referências.
+
+REGRAS TÉCNICAS (muito importantes, senão não dá pra usar no jogo):
+- Quadrado 1024x1024.
+- Fundo VERDE LISO puro (#00FF00), sem degradê, sem sombra no fundo, nada verde no objeto.
+- Um objeto por imagem, centralizado, sem nada cortado.
+- Sem texto, sem letras, sem números, sem logos.
+- NADA da marca Chainlink: sem hexágono, sem o nome. (Os inimigos são "Blue Marines", genéricos.)
+- Não usar o logo da Pyth em nada (o único logo que aparece no jogo é o do capacete do PIRB).
+
+LISTA:
+
+1) CAIXOTE — VARIAÇÃO A (mais quebrado)
+   O mesmo caixote militar oliva da referência, mesmo tamanho e mesmo ângulo, mas bem mais
+   detonado: tábuas rachadas, uma lasca faltando, um prego solto. Ainda inteiro (é a mesma caixa).
+
+2) CAIXOTE — VARIAÇÃO B (reforçado)
+   O mesmo caixote oliva, mesmo tamanho e ângulo, com duas cintas de metal escuro cruzando
+   por cima e uma etiqueta de papel em branco presa (sem nada escrito).
+
+3) DECORAÇÃO DE PAREDE — GRADE DE VENTILAÇÃO
+   Uma grade de ventilação de metal escuro, retangular, vista de frente, pra ser colocada
+   em cima da parede azul (ocupa uns 60% da largura da casinha).
+
+4) DECORAÇÃO DE PAREDE — CANOS
+   Dois canos de metal cinza horizontais, paralelos, com braçadeiras, atravessando a imagem
+   de ponta a ponta na horizontal (pra emendar de uma parede na outra).
+
+5) DECORAÇÃO DE PAREDE — PLACA MILITAR SEM TEXTO
+   Uma plaquinha de metal amarela com bordas pretas, com só um ícone simples pintado
+   (um raio), presa por dois parafusos.
+
+6) DECORAÇÃO DE PAREDE — RACHADURA COM ENERGIA ROXA ("a Pyth invadindo")
+   Um pedaço de parede de aço azul rachado, com a rachadura brilhando em roxo/lilás,
+   como energia roxa vazando de dentro. Bem chamativo, mas pequeno (uns 50% da casinha).
+
+Depois que eu mandar pro Claude, ele recorta o fundo verde e coloca no jogo.
+Obrigado! 💜
+
+
+=======================================================================
+PEDIDO 2 — FUNDO DA BASE MILITAR (o ambiente em volta da arena)
+=======================================================================
+Anexe: o mockup que você fez (a arena dentro da base militar) + a parede azul e o caixote.
+
+Oi! Adorei o mockup da arena dentro da base militar. Preciso agora SÓ do ambiente em volta,
+pra usar como fundo da página (a arena do jogo é desenhada por cima, no meio).
+
+- Mesma cena do mockup anexado: interior de uma base militar à noite, andaimes e passarelas
+  de aço azul dos lados, canos grandes, holofotes e lâmpadas amarelas quentes, algumas luzes
+  roxas neon, faíscas e fumaça, mesmo estilo de pintura cartoon.
+- O CENTRO da imagem precisa ficar VAZIO e ESCURO (chão escuro liso, sem caixas, sem
+  personagens, sem a arena): ocupa uns 60% da largura e 75% da altura. Os detalhes ficam só
+  nas bordas (esquerda, direita, em cima e embaixo).
+- Formato largo 16:9 (2560x1440 ou o maior que der).
+- Sem texto, sem letras, sem logos, sem hexágonos. Bandeiras podem ter só uma estrela.
+
+
+=======================================================================
+PEDIDO 3 — POWER-UPS, PORTA DE SAÍDA E BAÚ
+=======================================================================
+Anexe: a parede azul, o caixote oliva e a bomba roxa do logo (pra manter o estilo).
+
+Oi de novo! Agora preciso dos itens do jogo. MESMAS REGRAS de sempre:
+quadrado 1024x1024, fundo VERDE LISO (#00FF00), um objeto por imagem, centralizado,
+sem texto, sem letras, sem números, sem logos, sem hexágonos, mesmo estilo de pintura,
+visto de frente/levemente de cima como os caixotes.
+
+POWER-UPS (aparecem quando um caixote quebra; são pequenos, precisam ser fáceis de
+reconhecer de longe). Os 3 no mesmo formato: uma moeda/ficha grossa redonda com borda
+dourada, flutuando, com o ícone no meio:
+ 1) +1 BOMBA: ficha ROXA com uma bombinha redonda roxa com redemoinho branco (igual à do logo).
+ 2) +ALCANCE DA EXPLOSÃO: ficha LARANJA/VERMELHA com uma chama roxa e branca no meio.
+ 3) +VELOCIDADE: ficha VERDE com uma sandália grega com asinhas (estilo Hermes).
+
+PORTA DE SAÍDA (fase do quartel militar) — 2 imagens, mesmo enquadramento e tamanho:
+ 4) FECHADA: porta blindada de bunker, azul-marinho com rebites, faixa amarela e preta,
+    uma trava/cadeado grande no meio, luz vermelha apagada em cima.
+ 5) ABERTA: a mesma porta, aberta, com luz dourada/roxa forte saindo de dentro,
+    luz verde acesa em cima.
+
+BAÚ DO PRÊMIO — 2 imagens, mesmo enquadramento e tamanho:
+ 6) FECHADO: baú grego de tesouro, madeira escura com reforços dourados e uma gema roxa
+    na fechadura, um brilho roxo suave em volta.
+ 7) ABERTO: o mesmo baú, tampa aberta, cheio de moedas douradas e uma luz roxa/dourada
+    saindo de dentro.
+
+Obrigado! 💜
