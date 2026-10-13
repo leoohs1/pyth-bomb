@@ -112,6 +112,7 @@ function loadLevel(run, random) {
     tileset: cfg.tileset ?? 'temple', // cenário da fase (sprites.js TILESETS)
     time: 0,
     shake: 0,
+    events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...
   }
 }
 
@@ -139,6 +140,7 @@ function loadBossLevel(run) {
     status: 'playing',
     time: 0,
     shake: 0,
+    events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...
   }
 }
 
@@ -221,7 +223,10 @@ function explode(s, bomb) {
       const t = tileAt(s.level, x, y)
       if (t === WALL) break
       if (t === BLOCK) {
-        if (!s.burning.some((b) => b.x === x && b.y === y)) s.burning.push({ x, y, t: BURN_TIME })
+        if (!s.burning.some((b) => b.x === x && b.y === y)) {
+          s.burning.push({ x, y, t: BURN_TIME })
+          s.events.push({ type: 'blockBroken', x, y })
+        }
         break
       }
       const other = bombAt(s, x, y)
@@ -230,6 +235,7 @@ function explode(s, bomb) {
     }
   }
   s.shake = Math.min(0.25, s.shake + 0.15)
+  s.events.push({ type: 'explode', x: bomb.x, y: bomb.y, range: bomb.range })
 }
 
 const flameAt = (s, x, y) => s.flames.some((f) => f.x === x && f.y === y)
@@ -238,6 +244,8 @@ function killPlayer(s) {
   const p = s.player
   if (!p.alive) return
   p.alive = false
+  s.shake = Math.min(0.4, s.shake + 0.3)
+  s.events.push({ type: 'playerHit', x: p.x, y: p.y })
   p.moving = false
   if (s.status === 'playing') {
     s.lives--
@@ -321,6 +329,7 @@ export function update(s, controls, dt) {
       const x = Math.round(p.x), y = Math.round(p.y)
       if (s.bombs.length < p.maxBombs && !bombAt(s, x, y) && tileAt(s.level, x, y) === FLOOR) {
         s.bombs.push({ x, y, timer: FUSE_TIME, range: p.range, passable: true })
+        s.events.push({ type: 'bombPlaced', x, y })
       }
     }
   } else {
@@ -363,6 +372,7 @@ export function update(s, controls, dt) {
   for (const e of s.enemies) {
     if (!e.alive || e.hurtT > 0 || !flameAt(s, Math.round(e.x), Math.round(e.y))) continue
     e.hp--
+    s.events.push({ type: 'enemyHit', x: e.x, y: e.y, killed: e.hp <= 0 })
     if (e.hp <= 0) e.alive = false
     else { e.hurtT = 1; e.angry = true } // pisca um segundo sem levar dano e fica bravo
   }

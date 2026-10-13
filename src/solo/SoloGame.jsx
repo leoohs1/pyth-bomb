@@ -12,6 +12,7 @@ import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
 import { loadSprites } from './engine/sprites.js'
+import * as FX from './engine/fx.js'
 
 // Modo Solo (Bomberman) — protótipo com quadradinhos (inimigos, power-ups, porta, baú, chefe).
 // O React só cuida da moldura (placar, avisos). O jogo roda num laço próprio,
@@ -80,7 +81,8 @@ export default function SoloGame() {
     let last = performance.now()
     let hudKey = ''
 
-    const start = (g) => { game = g; controls.clear() }
+    let freeze = 0 // micro-pausa ("hit-stop") quando um inimigo é derrotado
+    const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0 }
     // Enter / botão da mensagem: fecha o resultado do baú, tenta de novo, próxima fase ou corrida nova
     const advance = () => {
       if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
@@ -148,7 +150,11 @@ export default function SoloGame() {
       const dt = Math.min(0.1, (now - last) / 1000) // aba escondida não acumula um "pulo" enorme
       last = now
       const n = Math.ceil(dt / STEP)
-      for (let i = 0; i < n; i++) update(game, controls, dt / n)
+      if (freeze > 0) freeze -= dt
+      else for (let i = 0; i < n; i++) update(game, controls, dt / n)
+      if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
+      FX.consumeEvents(game)
+      FX.update(game, dt)
       draw(ctx, game, tilePx, dpr)
       const h = hudOf(game)
       const key = JSON.stringify(h)

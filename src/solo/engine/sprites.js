@@ -28,9 +28,22 @@ const ENEMY_ART = {
 }
 
 // Cenários: cada fase escolhe um em levels.js (tileset). Sem escolher, usa o templo grego.
+// Uma peça pode ter variações (lista): o jogo sorteia uma por casa, sempre a mesma pro mesmo lugar.
 const TILESETS = {
   temple: { floor: '/solo/floor.webp', wall: '/solo/wall.webp', block: '/solo/block.webp' },
-  military: { floor: '/solo/military-floor.webp', wall: '/solo/military-wall.webp', block: '/solo/military-crate.webp' },
+  military: {
+    floor: '/solo/military-floor.webp',
+    wall: '/solo/military-wall.webp',
+    block: ['/solo/military-crate.webp', '/solo/military-crate-2.webp', '/solo/military-crate-3.webp'],
+  },
+}
+
+// Decoração das paredes da borda (quartel): ventilação, canos, placa e rachadura roxa
+const DECOR = {
+  vent: '/solo/deco-vent.webp',
+  pipes: '/solo/deco-pipes.webp',
+  sign: '/solo/deco-sign.webp',
+  crack: '/solo/deco-crack.webp',
 }
 
 const me = CHARACTERS[PLAYER]
@@ -43,7 +56,10 @@ const FILES = {
   ...Object.fromEntries(Object.entries(ENEMY_ART).map(([type, src]) => [`enemy_${type}`, src])),
   bomb: '/solo/bomb.webp', // a bomba do logo do Pyth Bomb
   ...Object.fromEntries(Object.entries(TILESETS).flatMap(([set, t]) =>
-    Object.entries(t).map(([kind, src]) => [`${kind}_${set}`, src]))),
+    Object.entries(t).flatMap(([kind, src]) => (Array.isArray(src)
+      ? src.map((one, i) => [`${kind}_${set}_${i}`, one])
+      : [[`${kind}_${set}`, src]])))),
+  ...Object.fromEntries(Object.entries(DECOR).map(([name, src]) => [`deco_${name}`, src])),
 }
 
 const images = {}
@@ -70,7 +86,12 @@ export function walkFrames(dir) {
   return a && b ? [a, b] : null
 }
 
-// peça do cenário ('floor' | 'wall' | 'block') do conjunto da fase; cai no templo se faltar
-export function tileSprite(set, kind) {
+// peça do cenário ('floor' | 'wall' | 'block') do conjunto da fase; cai no templo se faltar.
+// variant escolhe entre as variações da peça (se ela tiver).
+export function tileSprite(set, kind, variant = 0) {
+  const list = TILESETS[set]?.[kind]
+  if (Array.isArray(list)) return sprite(`${kind}_${set}_${variant % list.length}`) ?? sprite(`${kind}_${set}_0`)
   return sprite(`${kind}_${set}`) ?? sprite(`${kind}_temple`)
 }
+
+export const decoSprite = (name) => sprite(`deco_${name}`)

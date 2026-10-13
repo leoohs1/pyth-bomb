@@ -63,6 +63,7 @@ export function updateBoss(s, dt, random = Math.random) {
     b.hp--
     b.hurtT = BOSS.invulnerable
     s.shake = Math.min(0.35, s.shake + 0.25)
+    s.events.push({ type: 'enemyHit', x: b.x, y: b.y, killed: b.hp <= 0, boss: true })
     if (b.hp <= 0) {
       b.alive = false
       for (const e of s.enemies) e.alive = false // os FUDs somem junto com a chefe

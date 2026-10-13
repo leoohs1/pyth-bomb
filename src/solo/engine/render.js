@@ -4,6 +4,9 @@ import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
 import { sprite, tileSprite, walkFrames, playerCanFlip } from './sprites.js'
+import { drawAmbient, drawParticles } from './fx.js'
+
+let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -19,6 +22,7 @@ const C = {
 export function draw(ctx, s, tilePx, dpr) {
   const { level } = s
   const scale = tilePx * dpr
+  pxScale = scale
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
@@ -33,7 +37,6 @@ export function draw(ctx, s, tilePx, dpr) {
   // chão e paredes
   const floorImg = tileSprite(s.tileset, 'floor')
   const wallImg = tileSprite(s.tileset, 'wall')
-  const blockImg = tileSprite(s.tileset, 'block')
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
@@ -41,6 +44,11 @@ export function draw(ctx, s, tilePx, dpr) {
       if (t === WALL) {
         if (wallImg) ctx.drawImage(wallImg, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
+        // a borda da arena fica mais escura: emoldura o jogo e cansa menos a vista
+        if (x === 0 || y === 0 || x === level.cols - 1 || y === level.rows - 1) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+          ctx.fillRect(x, y, 1 + seam, 1 + seam)
+        }
       }
       else {
         if (floorImg) {
@@ -50,13 +58,41 @@ export function draw(ctx, s, tilePx, dpr) {
           ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
           ctx.fillRect(x, y, 1, 1)
         }
+        // sombrinha de quem está em cima e à esquerda (luz vem do alto): dá volume aos blocos
+        const above = level.tiles[(y - 1) * level.cols + x]
+        if (above === WALL || above === BLOCK) {
+          const g = ctx.createLinearGradient(0, y, 0, y + 0.34)
+          g.addColorStop(0, 'rgba(0, 0, 0, 0.45)')
+          g.addColorStop(1, 'rgba(0, 0, 0, 0)')
+          ctx.fillStyle = g
+          ctx.fillRect(x, y, 1 + seam, 0.34)
+        }
+        const left = level.tiles[y * level.cols + x - 1]
+        if (left === WALL || left === BLOCK) {
+          const g = ctx.createLinearGradient(x, 0, x + 0.18, 0)
+          g.addColorStop(0, 'rgba(0, 0, 0, 0.28)')
+          g.addColorStop(1, 'rgba(0, 0, 0, 0)')
+          ctx.fillStyle = g
+          ctx.fillRect(x, y, 0.18, 1 + seam)
+        }
         if (t === BLOCK) {
           const burn = s.burning.find((b) => b.x === x && b.y === y)
-          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, blockImg)
+          // variação do caixote sorteada pela posição (a comum aparece mais)
+          const variant = [0, 0, 0, 1, 2][(x * 7 + y * 11) % 5]
+          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, tileSprite(s.tileset, 'block', variant))
         }
       }
     }
   }
+
+  // vinheta: escurece de leve os cantos, puxando o olho pro meio da arena
+  const vg = ctx.createRadialGradient(level.cols / 2, level.rows / 2, level.rows * 0.32,
+    level.cols / 2, level.rows / 2, Math.hypot(level.cols, level.rows) * 0.55)
+  vg.addColorStop(0, 'rgba(0, 0, 0, 0)')
+  vg.addColorStop(1, 'rgba(0, 0, 0, 0.32)')
+  ctx.fillStyle = vg
+  ctx.fillRect(0, 0, level.cols, level.rows)
+  drawAmbient(ctx, s.time)
 
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
@@ -66,6 +102,7 @@ export function draw(ctx, s, tilePx, dpr) {
   if (s.boss) drawWhale(ctx, s.boss, s.time)
   for (const f of s.flames) drawFlame(ctx, f)
   drawPlayer(ctx, s.player, s.time)
+  drawParticles(ctx, level.cols, level.rows)
 }
 
 // The Whale: baleia azul gigante (2x2). Pisca branco quando leva dano, fica vermelha quando brava.
@@ -251,9 +288,13 @@ function drawEnemySprite(ctx, e, time, img) {
   const h = ENEMY_H[e.type] ?? 1.15
   const w = h * (img.naturalWidth / img.naturalHeight)
   const feetY = e.y + 0.92
-  const phase = e.walkT * (e.angry ? 13 : 9)
-  const hop = e.alive ? Math.abs(Math.sin(phase)) * 0.06 : 0
-  const tilt = e.alive ? Math.sin(phase) * 0.06 : 0
+  const heavy = e.type === 'sarge' // o sargento anda pesado: passo lento, pisa forte e "respira"
+  const phase = e.walkT * (heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
+  const k = Math.abs(Math.sin(phase))
+  const hop = e.alive ? k * (heavy ? 0.04 : 0.06) : 0
+  const tilt = e.alive ? Math.sin(phase) * (heavy ? 0.09 : 0.06) : 0
+  const breathe = heavy && e.alive ? 1 + Math.sin(e.walkT * 2.5) * 0.04 : 1
+  const stomp = heavy && e.alive ? 0.92 + k * 0.08 : 1 // amassa ao pisar
   const flip = e.dir === 'left' ? -1 : 1
 
   ctx.save()
@@ -261,7 +302,7 @@ function drawEnemySprite(ctx, e, time, img) {
   ctx.beginPath(); ctx.ellipse(e.x + 0.5, feetY, 0.28 * (1 - dying), 0.07, 0, 0, Math.PI * 2); ctx.fill()
   ctx.translate(e.x + 0.5, feetY - hop)
   ctx.rotate(tilt)
-  ctx.scale(flip * (1 + dying * 0.3), 1 - dying * 0.7)
+  ctx.scale(flip * (1 + dying * 0.3) * breathe / Math.sqrt(stomp), (1 - dying * 0.7) * stomp)
   const blink = Math.sin(time * 40) > 0 ? 1 : 0.35
   ctx.globalAlpha = dying ? (1 - dying) * blink : e.hurtT > 0 ? blink : 1
   ctx.imageSmoothingQuality = 'high'
@@ -418,15 +459,31 @@ function drawBombSprite(ctx, b, time, img) {
   const left = b.timer / FUSE_TIME
   const rate = 6 + (1 - left) * 18
   const pulse = 1 + 0.07 * Math.sin(time * rate)
-  const h = BOMB_H * pulse
-  const w = h * (img.naturalWidth / img.naturalHeight)
+  // ao cair no chão: amassa e quica (primeiro 0,3 s)
+  const age = FUSE_TIME - b.timer
+  const drop = age < 0.3 ? Math.sin((age / 0.3) * Math.PI) * (1 - age / 0.3) : 0
+  const h = BOMB_H * pulse * (1 - drop * 0.3)
+  const w = (BOMB_H * pulse * (img.naturalWidth / img.naturalHeight)) * (1 + drop * 0.25)
   const bottom = b.y + 0.95
   const cx = b.x + 0.5
+  const sphereY = bottom - h + h * BOMB_SPHERE_Y, sphereR = h * BOMB_SPHERE_R
   ctx.save()
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
   ctx.beginPath(); ctx.ellipse(cx, b.y + 0.9, 0.27, 0.07, 0, 0, Math.PI * 2); ctx.fill()
+  // brilho em volta que cresce conforme o pavio queima
+  const heat = 1 - left
+  const hg = ctx.createRadialGradient(cx, sphereY, 0, cx, sphereY, sphereR * (1.6 + heat))
+  hg.addColorStop(0, `rgba(${heat > 0.6 ? '255, 90, 220' : '160, 80, 255'}, ${0.15 + heat * 0.35})`)
+  hg.addColorStop(1, 'rgba(160, 80, 255, 0)')
+  ctx.fillStyle = hg
+  ctx.fillRect(cx - 1, sphereY - 1, 2, 2)
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, cx - w / 2, bottom - h, w, h)
+  // roxo -> magenta conforme vai chegando a hora
+  if (heat > 0.35) {
+    ctx.fillStyle = `rgba(255, 60, 200, ${Math.min(0.4, (heat - 0.35) * 0.7)})`
+    ctx.beginPath(); ctx.arc(cx, sphereY, sphereR, 0, Math.PI * 2); ctx.fill()
+  }
   if (b.timer < 0.6 && Math.sin(time * 40) > 0) {
     ctx.fillStyle = 'rgba(255, 240, 255, 0.45)'
     ctx.beginPath(); ctx.arc(cx, bottom - h + h * BOMB_SPHERE_Y, h * BOMB_SPHERE_R, 0, Math.PI * 2); ctx.fill()
@@ -539,6 +596,15 @@ function drawPlayerSprite(ctx, p, time, img) {
   }
 
   ctx.save()
+  // luzinha roxa no chão: o jogador sempre se destaca no meio da bagunça
+  if (!dying) {
+    const glow = 0.3 + 0.08 * Math.sin(time * 3)
+    const lg = ctx.createRadialGradient(p.x + 0.5, feetY, 0, p.x + 0.5, feetY, 0.6)
+    lg.addColorStop(0, `rgba(170, 100, 255, ${glow})`)
+    lg.addColorStop(1, 'rgba(170, 100, 255, 0)')
+    ctx.fillStyle = lg
+    ctx.beginPath(); ctx.ellipse(p.x + 0.5, feetY, 0.6, 0.26, 0, 0, Math.PI * 2); ctx.fill()
+  }
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
   const shadow = (1 - dying) * (1 - hop * 1.5)
   ctx.beginPath(); ctx.ellipse(p.x + 0.5, feetY, 0.3 * shadow, 0.08 * shadow, 0, 0, Math.PI * 2); ctx.fill()
@@ -548,6 +614,9 @@ function drawPlayerSprite(ctx, p, time, img) {
   ctx.scale(v.turn * sx * (1 - dying), sy * (1 - dying))
   if (dying) ctx.globalAlpha = Math.sin(time * 40) > 0 ? 0.5 : 1
   ctx.imageSmoothingQuality = 'high'
+  // contorno roxo bem sutil em volta do personagem
+  ctx.shadowColor = 'rgba(180, 110, 255, 0.85)'
+  ctx.shadowBlur = Math.max(2, 0.09 * pxScale)
   ctx.drawImage(img, -w / 2, -h, w, h)
   ctx.restore()
 }
