@@ -12,7 +12,7 @@ const CHARACTERS = {
       down: ['/solo/pirb-walk1.webp', '/solo/pirb-walk2.webp'],
       right: ['/solo/pirb-right1.webp', '/solo/pirb-right2.webp'],
       left: ['/solo/pirb-left1.webp', '/solo/pirb-left2.webp'],
-      // up: ['/solo/pirb-up1.webp', '/solo/pirb-up2.webp'],
+      up: ['/solo/pirb-up1.webp', '/solo/pirb-up2.webp'],
     },
     noFlip: true,
   },
