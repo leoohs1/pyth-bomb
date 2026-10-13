@@ -43,6 +43,7 @@ function hudOf(s) {
     status: s.status,
     level: s.levelIndex + 1,
     levelName: levelInfo(s).name,
+    tagline: levelInfo(s).tagline ?? '',
     lives: s.lives,
     enemies: enemiesLeft(s),
     door: s.door.revealed ? (doorOpen(s) ? 'open' : 'locked') : null,
@@ -217,6 +218,7 @@ export default function SoloGame() {
           <div className="solo-banner" key={hud.level}>
             <span>Level {hud.level}</span>
             <strong>{hud.levelName}</strong>
+            {hud.tagline && <em>{hud.tagline}</em>}
           </div>
         )}
         {hud?.hint && <div className="solo-hint">{hud.hint}</div>}

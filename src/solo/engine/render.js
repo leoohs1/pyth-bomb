@@ -239,8 +239,55 @@ function drawPowerup(ctx, pu, time) {
 }
 
 // FUD = fantasminha cinza; Bear = urso marrom; Rug Pull = tapete vermelho com franja
+// Inimigo com arte: marchinha (pulinho duro + balanço), espelha quando anda pra esquerda,
+// e ao morrer pisca branco, achata e some.
+const ENEMY_H = { marine: 1.15, sarge: 1.25 } // o sargento é maior
+
+function drawEnemySprite(ctx, e, time, img) {
+  const dying = e.alive ? 0 : Math.min(1, e.deathT / 0.6)
+  const h = ENEMY_H[e.type] ?? 1.15
+  const w = h * (img.naturalWidth / img.naturalHeight)
+  const feetY = e.y + 0.92
+  const phase = e.walkT * (e.angry ? 13 : 9)
+  const hop = e.alive ? Math.abs(Math.sin(phase)) * 0.06 : 0
+  const tilt = e.alive ? Math.sin(phase) * 0.06 : 0
+  const flip = e.dir === 'left' ? -1 : 1
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(e.x + 0.5, feetY, 0.28 * (1 - dying), 0.07, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.translate(e.x + 0.5, feetY - hop)
+  ctx.rotate(tilt)
+  ctx.scale(flip * (1 + dying * 0.3), 1 - dying * 0.7)
+  const blink = Math.sin(time * 40) > 0 ? 1 : 0.35
+  ctx.globalAlpha = dying ? (1 - dying) * blink : e.hurtT > 0 ? blink : 1
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img, -w / 2, -h, w, h)
+  ctx.restore()
+
+  // bravo: sinalzinho vermelho de raiva em cima da cabeça
+  if (e.angry && e.alive) {
+    const ax = e.x + 0.5 + w * 0.32, ay = feetY - hop - h * 0.95
+    const pulse = 1 + Math.sin(time * 10) * 0.12
+    ctx.save()
+    ctx.translate(ax, ay)
+    ctx.scale(pulse, pulse)
+    ctx.strokeStyle = '#e8303f'
+    ctx.lineWidth = 0.045
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      ctx.moveTo(sx * 0.03, sy * 0.1); ctx.quadraticCurveTo(sx * 0.03, sy * 0.03, sx * 0.1, sy * 0.03)
+    }
+    ctx.stroke()
+    ctx.restore()
+  }
+}
+
 function drawEnemy(ctx, e, time) {
   if (!e.alive && e.deathT > 0.6) return
+  const art = sprite(`enemy_${e.type}`)
+  if (art) return drawEnemySprite(ctx, e, time, art)
   const dying = e.alive ? 0 : e.deathT / 0.6
   const bob = Math.sin(e.walkT * 8) * 0.04
   const cx = e.x + 0.5, cy = e.y + 0.52 + bob
@@ -249,7 +296,16 @@ function drawEnemy(ctx, e, time) {
   ctx.translate(cx, cy)
   ctx.scale(1 + dying * 0.4, 1 - dying * 0.6)
 
-  if (e.type === 'fud') {
+  if (e.type === 'marine') {
+    // Blue Marine (provisório): ovinho azul com quepe branco de marinheiro
+    ctx.fillStyle = dying ? '#fff' : '#2f5fd0'
+    ctx.beginPath(); ctx.ellipse(0, 0.04, 0.28, 0.3, 0, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#f2f4fa'
+    ctx.beginPath(); ctx.ellipse(0, -0.26, 0.2, 0.07, 0, 0, Math.PI * 2); ctx.fill()
+    ctx.fillRect(-0.15, -0.36, 0.3, 0.1)
+    ctx.fillStyle = '#1b2f6b'
+    ctx.fillRect(-0.15, -0.29, 0.3, 0.04)
+  } else if (e.type === 'fud') {
     ctx.fillStyle = dying ? '#fff' : '#9a93b8'
     ctx.beginPath()
     ctx.arc(0, -0.06, 0.3, Math.PI, 0)

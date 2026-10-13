@@ -357,9 +357,12 @@ export function update(s, controls, dt) {
   // --- porta aberta: aparece o baú
   if (!s.chest && doorOpen(s)) s.chest = spawnChest(s)
 
-  // --- fogo mata inimigos
+  // --- fogo machuca inimigos (a maioria morre na hora; o Chain Sarge aguenta 2)
   for (const e of s.enemies) {
-    if (e.alive && flameAt(s, Math.round(e.x), Math.round(e.y))) e.alive = false
+    if (!e.alive || e.hurtT > 0 || !flameAt(s, Math.round(e.x), Math.round(e.y))) continue
+    e.hp--
+    if (e.hp <= 0) e.alive = false
+    else { e.hurtT = 1; e.angry = true } // pisca um segundo sem levar dano e fica bravo
   }
 
   if (p.alive) {

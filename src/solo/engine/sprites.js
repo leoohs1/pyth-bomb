@@ -20,6 +20,13 @@ const CHARACTERS = {
 }
 const PLAYER = 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
 
+// Inimigos com arte (uma imagem de frente; o jogo faz a marchinha e espelha pro lado).
+// Tipo sem imagem aqui continua com o desenho provisório.
+const ENEMY_ART = {
+  marine: '/solo/marine.webp',
+  sarge: '/solo/sarge.webp',
+}
+
 const me = CHARACTERS[PLAYER]
 export const playerCanFlip = !me.noFlip
 const FILES = {
@@ -27,6 +34,7 @@ const FILES = {
   ...Object.fromEntries(Object.entries(me.walk ?? {}).flatMap(([dir, [a, b]]) => [
     [`walk_${dir}_1`, a], [`walk_${dir}_2`, b],
   ])),
+  ...Object.fromEntries(Object.entries(ENEMY_ART).map(([type, src]) => [`enemy_${type}`, src])),
   floor: '/solo/floor.webp',
   wall: '/solo/wall.webp',
   block: '/solo/block.webp',

@@ -1,4 +1,7 @@
 // Inimigos do modo Solo (humor cripto). Andam de casa em casa; bombas e blocos os bloqueiam.
+// - Blue Marine: marcha em linha reta, como soldado em patrulha; só vira quando bate em algo.
+// - Chain Sarge: o sargento. Lento, persegue quem chega perto e aguenta 2 explosões
+//   (depois da primeira pisca e fica bravo: anda mais rápido).
 // - FUD: lento, vaga sem rumo.
 // - Bear: persegue o jogador quando ele está por perto.
 // - Rug Pull: rápido e imprevisível.
@@ -6,6 +9,8 @@ import { FLOOR } from './constants.js'
 import { tileAt } from './level.js'
 
 export const ENEMY_TYPES = {
+  marine: { name: 'Blue Marine', speed: 1.8, turnChance: 0, chase: 0 },
+  sarge: { name: 'Chain Sarge', speed: 1.3, turnChance: 0.3, chase: 0.8, chaseRange: 5, hp: 2 },
   fud: { name: 'FUD', speed: 1.5, turnChance: 0.3, chase: 0 },
   bear: { name: 'Bear', speed: 1.9, turnChance: 0.3, chase: 0.75 },
   rug: { name: 'Rug Pull', speed: 2.7, turnChance: 0.5, chase: 0 },
@@ -20,7 +25,8 @@ const DIRS = {
 const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' }
 
 export function makeEnemy(type, x, y) {
-  return { type, x, y, tx: x, ty: y, dir: null, alive: true, deathT: 0, walkT: Math.random() * 10 }
+  const hp = ENEMY_TYPES[type].hp ?? 1
+  return { type, x, y, tx: x, ty: y, dir: null, alive: true, deathT: 0, walkT: Math.random() * 10, hp, hurtT: 0, angry: false }
 }
 
 function open(s, x, y) {
@@ -36,7 +42,8 @@ function chooseDir(s, e, random) {
   const pool = forward.length ? forward : options
 
   const p = s.player
-  if (kind.chase && p.alive && Math.abs(p.x - e.tx) + Math.abs(p.y - e.ty) <= 7 && random() < kind.chase) {
+  const range = kind.chaseRange ?? 7
+  if (kind.chase && p.alive && Math.abs(p.x - e.tx) + Math.abs(p.y - e.ty) <= range && random() < kind.chase) {
     const dist = (d) => Math.abs(p.x - (e.tx + DIRS[d].dx)) + Math.abs(p.y - (e.ty + DIRS[d].dy))
     return options.reduce((best, d) => (dist(d) < dist(best) ? d : best))
   }
@@ -47,7 +54,8 @@ function chooseDir(s, e, random) {
 export function updateEnemy(s, e, dt, random = Math.random) {
   if (!e.alive) { e.deathT += dt; return }
   e.walkT += dt
-  let step = ENEMY_TYPES[e.type].speed * dt
+  e.hurtT = Math.max(0, e.hurtT - dt)
+  let step = ENEMY_TYPES[e.type].speed * (e.angry ? 1.4 : 1) * dt
 
   // chegou no centro de uma casa: escolhe pra onde ir
   if (e.x === e.tx && e.y === e.ty) {

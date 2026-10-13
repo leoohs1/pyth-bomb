@@ -99,6 +99,7 @@
 }
 .solo-banner span { font: 600 14px/1 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 2px; color: #c9a24a; }
 .solo-banner strong { font: 800 34px/1.1 Cinzel, Georgia, serif; color: #f3e3b0; }
+.solo-banner em { font: italic 500 15px/1.2 Inter, system-ui, sans-serif; color: #c9b8ec; }
 @keyframes solo-banner {
   0% { opacity: 0; scale: 0.9; }
   12%, 75% { opacity: 1; scale: 1; }
