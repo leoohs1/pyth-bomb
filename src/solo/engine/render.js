@@ -78,7 +78,7 @@ export function draw(ctx, s, tilePx, dpr) {
         if (t === BLOCK) {
           const burn = s.burning.find((b) => b.x === x && b.y === y)
           // variação do caixote sorteada pela posição (a comum aparece mais)
-          const variant = [0, 0, 0, 1, 2][(x * 7 + y * 11) % 5]
+          const variant = [0, 0, 0, 1, 2, 3][(x * 7 + y * 11) % 6]
           drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, tileSprite(s.tileset, 'block', variant))
         }
       }

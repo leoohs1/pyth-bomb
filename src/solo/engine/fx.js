@@ -189,9 +189,9 @@ export function drawAmbient(ctx, time) {
       }
     } else if (d.type === 'sign') {
       const img = decoSprite('sign')
-      if (img) { const w = 0.56, h = w * img.naturalHeight / img.naturalWidth; ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h) }
+      if (img) { const w = 0.62, h = w * img.naturalHeight / img.naturalWidth; ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h) }
     } else if (d.type === 'vent' && decoSprite('vent')) {
-      const img = decoSprite('vent'), w = 0.64, h = w * img.naturalHeight / img.naturalWidth
+      const img = decoSprite('vent'), w = 0.68, h = w * img.naturalHeight / img.naturalWidth
       ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h)
     } else if (d.type === 'vent') {
       ctx.fillStyle = '#1d2128'
@@ -211,8 +211,8 @@ export function drawAmbient(ctx, time) {
       ctx.fillRect(cx - 0.6, cy - 0.6, 1.2, 1.2)
       const img = decoSprite('crack')
       if (img) {
-        const w = 0.6, h = w * img.naturalHeight / img.naturalWidth
-        ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h)
+        const w = 0.74, h = w * img.naturalHeight / img.naturalWidth
+        ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.05, w, h)
         continue
       }
       ctx.strokeStyle = `rgba(230, 200, 255, ${0.6 + 0.4 * glow})`

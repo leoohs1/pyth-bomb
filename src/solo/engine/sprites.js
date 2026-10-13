@@ -34,7 +34,7 @@ const TILESETS = {
   military: {
     floor: '/solo/military-floor.webp',
     wall: '/solo/military-wall.webp',
-    block: ['/solo/military-crate.webp', '/solo/military-crate-2.webp', '/solo/military-crate-3.webp'],
+    block: ['/solo/military-crate.webp', '/solo/military-crate-2.webp', '/solo/military-crate-3.webp', '/solo/military-crate-4.webp'],
   },
 }
 
