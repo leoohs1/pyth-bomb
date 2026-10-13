@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, playerCanFlip } from './sprites.js'
+import { sprite, walkFrames, playerCanFlip } from './sprites.js'
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -403,10 +403,13 @@ function drawPlayerSprite(ctx, p, time, img) {
   v.t = time
 
   // giro de papel: vai de 1 até -1 passando por 0
-  const turnTo = p.flip && playerCanFlip ? -1 : 1
+  // tem arte própria pra direção (ex.: Pirb de lado)? então não espelha nem gira
+  const ownArt = p.moving && p.facing !== 'down' && !!walkFrames(p.facing)
+  const turnTo = p.flip && playerCanFlip && !ownArt ? -1 : 1
   v.turn += Math.sign(turnTo - v.turn) * Math.min(Math.abs(turnTo - v.turn), dt * 9)
   // inclinação suave na direção do movimento
-  const leanTo = !p.moving ? 0 : p.facing === 'left' ? -0.12 : p.facing === 'right' ? 0.12 : 0
+  const leanAmt = ownArt ? 0.04 : 0.12 // a arte de lado já vem inclinada
+  const leanTo = !p.moving ? 0 : p.facing === 'left' ? -leanAmt : p.facing === 'right' ? leanAmt : 0
   v.lean += (leanTo - v.lean) * Math.min(1, dt * 12)
 
   const dying = !p.alive ? Math.min(1, p.deathT / 0.8) : 0
@@ -419,9 +422,9 @@ function drawPlayerSprite(ctx, p, time, img) {
     const step = Math.floor(phase / Math.PI)
     // com as 2 imagens de passo, alterna uma por passo (as pernas mexem de verdade)
     // sem as imagens de passo, o pulinho e o rebolado são mais fortes pra compensar
-    const w1 = sprite('playerWalk1'), w2 = sprite('playerWalk2')
-    const frames = !!(w1 && w2)
-    if (frames) img = step % 2 ? w2 : w1
+    const pair = walkFrames(p.facing) ?? walkFrames('down')
+    const frames = !!pair
+    if (frames) img = pair[step % 2]
     hop = k * (frames ? 0.07 : 0.1)
     sy = frames ? 0.94 + k * 0.08 : 0.9 + k * 0.14 // amassa no chão, estica no ar
     const vertical = p.facing === 'up' || p.facing === 'down'
