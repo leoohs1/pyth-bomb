@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite } from './sprites.js'
+import { sprite, playerCanFlip } from './sprites.js'
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -398,12 +398,12 @@ const looks = new WeakMap()
 
 function drawPlayerSprite(ctx, p, time, img) {
   let v = looks.get(p)
-  if (!v) { v = { t: time, turn: p.flip ? -1 : 1, lean: 0, lastStep: 0, dust: [] }; looks.set(p, v) }
+  if (!v) { v = { t: time, turn: p.flip && playerCanFlip ? -1 : 1, lean: 0, lastStep: 0, dust: [] }; looks.set(p, v) }
   const dt = Math.min(0.1, Math.max(0, time - v.t))
   v.t = time
 
   // giro de papel: vai de 1 até -1 passando por 0
-  const turnTo = p.flip ? -1 : 1
+  const turnTo = p.flip && playerCanFlip ? -1 : 1
   v.turn += Math.sign(turnTo - v.turn) * Math.min(Math.abs(turnTo - v.turn), dt * 9)
   // inclinação suave na direção do movimento
   const leanTo = !p.moving ? 0 : p.facing === 'left' ? -0.12 : p.facing === 'right' ? 0.12 : 0
@@ -418,11 +418,14 @@ function drawPlayerSprite(ctx, p, time, img) {
     const k = Math.abs(Math.sin(phase))       // 0 = pé no chão, 1 = no alto
     const step = Math.floor(phase / Math.PI)
     // com as 2 imagens de passo, alterna uma por passo (as pernas mexem de verdade)
+    // sem as imagens de passo, o pulinho e o rebolado são mais fortes pra compensar
     const w1 = sprite('playerWalk1'), w2 = sprite('playerWalk2')
-    if (w1 && w2) img = step % 2 ? w2 : w1
-    hop = k * 0.07
-    sy = 0.94 + k * 0.08                       // amassa no chão, estica no ar
-    wobble = Math.sin(phase) * (p.facing === 'up' || p.facing === 'down' ? 0.05 : 0.03)
+    const frames = !!(w1 && w2)
+    if (frames) img = step % 2 ? w2 : w1
+    hop = k * (frames ? 0.07 : 0.1)
+    sy = frames ? 0.94 + k * 0.08 : 0.9 + k * 0.14 // amassa no chão, estica no ar
+    const vertical = p.facing === 'up' || p.facing === 'down'
+    wobble = Math.sin(phase) * (frames ? (vertical ? 0.05 : 0.03) : (vertical ? 0.09 : 0.04))
     // poeirinha cada vez que pisa
     if (step !== v.lastStep) {
       v.lastStep = step

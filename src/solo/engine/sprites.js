@@ -1,9 +1,20 @@
 // Imagens do modo Solo. Enquanto uma imagem não carregou (ou não existe ainda), o jogo
 // continua desenhando o quadradinho de antes — dá pra ir trocando a arte aos poucos.
+
+// Personagens jogáveis: parado + 2 passos de caminhada (opcionais; sem eles, só o pulinho).
+// noFlip: nunca espelhar a imagem (o Pirb tem o logo P da Pyth no capacete — espelhado
+// ficaria ao contrário, e a regra da Pyth é não alterar a máscara).
+const CHARACTERS = {
+  pirb: { idle: '/solo/pirb.webp', walk1: '/solo/pirb-walk1.webp', walk2: '/solo/pirb-walk2.webp', noFlip: true },
+  nysa: { idle: '/solo/nysa.webp', walk1: '/solo/nysa-walk1.webp', walk2: '/solo/nysa-walk2.webp' },
+}
+const PLAYER = 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
+
+const me = CHARACTERS[PLAYER]
+export const playerCanFlip = !me.noFlip
 const FILES = {
-  player: '/solo/nysa.webp',
-  playerWalk1: '/solo/nysa-walk1.webp', // passo com um pé na frente
-  playerWalk2: '/solo/nysa-walk2.webp', // passo com o outro pé
+  player: me.idle,
+  ...(me.walk1 && me.walk2 ? { playerWalk1: me.walk1, playerWalk2: me.walk2 } : {}),
   floor: '/solo/floor.webp',
   wall: '/solo/wall.webp',
   block: '/solo/block.webp',
