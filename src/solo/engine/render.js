@@ -95,7 +95,7 @@ export function draw(ctx, s, tilePx, dpr) {
   drawWarmLight(ctx, level.cols, level.rows)
   drawAmbient(ctx, s.time)
 
-  if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time)
+  if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
   if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
   for (const b of s.bombs) drawBomb(ctx, b, s.time)
@@ -173,7 +173,9 @@ function drawWhale(ctx, b, time) {
   ctx.restore()
 }
 
-function drawDoor(ctx, d, open, time) {
+function drawDoor(ctx, d, open, time, tileset) {
+  const art = sprite(`door_${tileset}_${open ? 'open' : 'closed'}`)
+  if (art) return drawDoorSprite(ctx, d, open, time, art)
   const { x, y } = d
   ctx.fillStyle = '#7a5c1c'
   ctx.beginPath(); ctx.roundRect(x + 0.12, y + 0.08, 0.76, 0.86, [0.38, 0.38, 0.04, 0.04]); ctx.fill()
@@ -192,6 +194,21 @@ function drawDoor(ctx, d, open, time) {
     for (const gx of [0.36, 0.5, 0.64]) { ctx.moveTo(x + gx, y + 0.22); ctx.lineTo(x + gx, y + 0.94) }
     ctx.stroke()
   }
+}
+
+// Porta com arte: fechada ou aberta (aberta, a luz de dentro pulsa e brilha no chão)
+function drawDoorSprite(ctx, d, open, time, img) {
+  const w = 1.0, h = w * img.naturalHeight / img.naturalWidth
+  const cx = d.x + 0.5, bottom = d.y + 0.98
+  if (open) {
+    const a = 0.4 + 0.15 * Math.sin(time * 5)
+    const g = ctx.createRadialGradient(cx, bottom - 0.3, 0, cx, bottom - 0.3, 1)
+    g.addColorStop(0, `rgba(255, 210, 120, ${a})`)
+    g.addColorStop(1, 'rgba(255, 210, 120, 0)')
+    ctx.fillStyle = g
+    ctx.fillRect(cx - 1, bottom - 1.3, 2, 2)
+  }
+  ctx.drawImage(img, cx - w / 2, bottom - h, w, h)
 }
 
 // Baú: fechado (brilha quando o jogador chega perto), tremendo enquanto abre, aberto depois.
@@ -217,6 +234,14 @@ function drawChest(ctx, c, time, near) {
 
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
   ctx.beginPath(); ctx.ellipse(0, 0.38, 0.36, 0.08, 0, 0, Math.PI * 2); ctx.fill()
+
+  const art = sprite(opened ? 'chest_open' : 'chest_closed')
+  if (art) {
+    const w = 0.94, h = w * art.naturalHeight / art.naturalWidth
+    ctx.drawImage(art, -w / 2, 0.42 - h, w, h)
+    ctx.restore()
+    return
+  }
 
   // caixa
   ctx.fillStyle = '#7a4a1f'
@@ -266,7 +291,17 @@ function drawPowerup(ctx, pu, time) {
   ctx.translate(x + 0.5, y + 0.5)
   ctx.scale(pop, pop)
   ctx.translate(-(x + 0.5), -(y + 0.5))
-  drawPowerupBox(ctx, pu, time, lift)
+  const token = sprite(`pu_${pu.kind}`)
+  if (token) {
+    // ficha flutuando: sombrinha no chão + leve giro de moeda (estreita e volta)
+    const spin = 0.82 + 0.18 * Math.abs(Math.cos(time * 2.2 + x))
+    const w = 0.86, h = w * token.naturalHeight / token.naturalWidth
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'
+    ctx.beginPath(); ctx.ellipse(x + 0.5, y + 0.9, 0.26, 0.06, 0, 0, Math.PI * 2); ctx.fill()
+    ctx.drawImage(token, x + 0.5 - (w * spin) / 2, y + 0.5 - h / 2 + lift - 0.04, w * spin, h)
+  } else {
+    drawPowerupBox(ctx, pu, time, lift)
+  }
   ctx.restore()
   // estrelinha piscando
   const tw = Math.max(0, Math.sin(time * 3 + x * 2))

@@ -55,6 +55,14 @@ const FILES = {
   ])),
   ...Object.fromEntries(Object.entries(ENEMY_ART).map(([type, src]) => [`enemy_${type}`, src])),
   bomb: '/solo/bomb.webp', // a bomba do logo do Pyth Bomb
+  // fichas de power-up, baú (vale pra todas as fases) e porta (só a do quartel, por enquanto)
+  pu_bomb: '/solo/pu-bomb.webp',
+  pu_fire: '/solo/pu-fire.webp',
+  pu_speed: '/solo/pu-speed.webp',
+  chest_closed: '/solo/chest-closed.webp',
+  chest_open: '/solo/chest-open.webp',
+  door_military_closed: '/solo/door-closed.webp',
+  door_military_open: '/solo/door-open.webp',
   ...Object.fromEntries(Object.entries(TILESETS).flatMap(([set, t]) =>
     Object.entries(t).flatMap(([kind, src]) => (Array.isArray(src)
       ? src.map((one, i) => [`${kind}_${set}_${i}`, one])

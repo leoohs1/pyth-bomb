@@ -284,7 +284,7 @@ function ChestModal({ chest, onClose }) {
   if (chest.state === 'opening') {
     return (
       <div className="solo-over solo-chest">
-        <div className="solo-chest-icon is-shaking">🎁</div>
+        <img className="solo-chest-img is-shaking" src="/solo/chest-closed-big.webp" alt="" />
         <h2>Opening the chest...</h2>
       </div>
     )
@@ -292,7 +292,9 @@ function ChestModal({ chest, onClose }) {
   const r = chest.result
   return (
     <div className={`solo-over solo-chest${r.win ? ' is-win' : ''}`}>
-      <div className="solo-chest-icon">{r.win ? '💰' : '🕸️'}</div>
+      {r.win
+        ? <img className="solo-chest-img is-win" src="/solo/chest-open-big.webp" alt="" />
+        : <div className="solo-chest-icon">🕸️</div>}
       <h2>{r.win ? `You found ${r.amount} ${r.token}!` : 'Empty chest...'}</h2>
       <p className="solo-sub">{r.win ? 'Nice loot!' : 'Better luck in the next one'}</p>
       {r.demo && <p className="solo-demo-note">Demo prize: not real PYTH</p>}
