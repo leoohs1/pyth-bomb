@@ -102,15 +102,38 @@
   border: 2px solid #c9a24a;
   border-radius: 12px;
   pointer-events: none;
-  animation: solo-banner 2.2s ease forwards;
+  animation: solo-banner 3.4s ease forwards; /* = INTRO_SECS no SoloGame.jsx */
 }
 .solo-banner span { font: 600 14px/1 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 2px; color: #c9a24a; }
 .solo-banner strong { font: 800 34px/1.1 Cinzel, Georgia, serif; color: #f3e3b0; }
 .solo-banner em { font: italic 500 15px/1.2 Inter, system-ui, sans-serif; color: #c9b8ec; }
 @keyframes solo-banner {
   0% { opacity: 0; scale: 0.9; }
-  12%, 75% { opacity: 1; scale: 1; }
+  8%, 82% { opacity: 1; scale: 1; }
   100% { opacity: 0; }
+}
+/* controles na abertura da primeira fase (no lugar da legenda fixa do rodapé) */
+.solo-controls {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid rgba(201, 162, 74, 0.35);
+  display: flex;
+  gap: 18px;
+  font: 600 13px/1 Inter, system-ui, sans-serif;
+  color: #d8cff0;
+  white-space: nowrap;
+}
+.solo-controls kbd {
+  display: inline-block;
+  padding: 3px 6px;
+  margin-right: 2px;
+  font: 700 11px/1.2 Inter, system-ui, sans-serif;
+  color: #f3e3b0;
+  background: #3b3350;
+  border: 1px solid #6b5f86;
+  border-bottom-width: 3px;
+  border-radius: 5px;
 }
 
 .solo-stage {

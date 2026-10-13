@@ -22,6 +22,7 @@ import * as FX from './engine/fx.js'
 const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('level')) || 1) - 1
 const newRun = () => createGame(Math.random, START_LEVEL)
 
+const INTRO_SECS = 3.4 // quanto tempo a faixa de abertura da fase fica na tela (igual ao CSS .solo-banner)
 const FRAME_PAD = 12 // espessura da moldura de metal (px), igual ao padding de .solo-frame
 
 const isTouchOnly = () =>
@@ -55,7 +56,8 @@ function hudOf(s) {
     range: p.range,
     boots: Math.round((p.speed - PLAYER_SPEED) / SPEED_STEP),
     secs: Math.floor(s.runTime),
-    intro: s.status === 'playing' && s.time < 2.2,
+    intro: s.status === 'playing' && s.time < INTRO_SECS,
+    firstLevel: s.levelIndex === 0,
     boss: s.boss ? { name: BOSS.name, hp: Math.max(0, s.boss.hp), max: BOSS.hp } : null,
     loot: s.loot,
     hint: hintOf(s),
@@ -235,6 +237,13 @@ export default function SoloGame() {
             <span>Level {hud.level}</span>
             <strong>{hud.levelName}</strong>
             {hud.tagline && <em>{hud.tagline}</em>}
+            {hud.firstLevel && (
+              <ul className="solo-controls">
+                <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> Move</li>
+                <li><kbd>Space</kbd> Drop bomb</li>
+                <li><kbd>Click</kbd> Open chest</li>
+              </ul>
+            )}
           </div>
         )}
         {hud?.hint && <div className="solo-hint">{hud.hint}</div>}
@@ -257,13 +266,6 @@ export default function SoloGame() {
         )}
       </div>
 
-      <footer className="solo-keys">
-        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows: move</span>
-        <span><kbd>Space</kbd>: drop a bomb</span>
-        <span>🖱️ Click: open chest</span>
-        <span><kbd>Enter</kbd>: continue</span>
-        <span><kbd>R</kbd>: restart run</span>
-      </footer>
     </div>
   )
 }

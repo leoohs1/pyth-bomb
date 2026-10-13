@@ -44,9 +44,9 @@ export function draw(ctx, s, tilePx, dpr) {
       if (t === WALL) {
         if (wallImg) ctx.drawImage(wallImg, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
-        // a borda da arena fica mais escura: emoldura o jogo e cansa menos a vista
+        // a borda da arena fica só um tiquinho mais escura, pra fechar a arena
         if (x === 0 || y === 0 || x === level.cols - 1 || y === level.rows - 1) {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
           ctx.fillRect(x, y, 1 + seam, 1 + seam)
         }
       }
