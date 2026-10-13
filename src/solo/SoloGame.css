@@ -55,12 +55,12 @@
 .solo-hud {
   display: flex;
   align-items: center;
-  gap: 26px;
-  font: 700 20px/1 Inter, system-ui, sans-serif;
+  gap: 30px;
+  font: 700 22px/1 Inter, system-ui, sans-serif;
   background: rgba(20, 14, 34, 0.7);
   border: 2px solid #c9a24a;
   border-radius: 12px;
-  padding: 9px 24px;
+  padding: 10px 26px;
 }
 
 /* barra de vida do chefe */
@@ -319,7 +319,7 @@
 .solo-page.is-military {
   background:
     radial-gradient(ellipse at center, rgba(10, 8, 18, 0) 45%, rgba(10, 8, 18, 0.55) 100%),
-    linear-gradient(rgba(10, 8, 18, 0.18), rgba(10, 8, 18, 0.18)), /* fundo um pouco mais escuro: o olho vai pro jogo */
+    linear-gradient(rgba(10, 8, 18, 0.33), rgba(10, 8, 18, 0.33)), /* fundo mais escuro: o olho vai pro jogo */
     url('/solo/bg-military.webp') center 58% / cover no-repeat,
     #0d0b14;
 }
