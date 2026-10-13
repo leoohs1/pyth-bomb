@@ -6,6 +6,7 @@ import { tileAt } from './level.js'
 import { decoSprite } from './sprites.js'
 
 const parts = []        // partículas soltas
+const scorch = []       // marcas de queimado no chão (somem devagar)
 let flash = 0           // clarão da tela inteira (quando o jogador é atingido)
 let ambient = null      // decoração das bordas da fase atual
 let ambientLevel = null
@@ -34,6 +35,20 @@ export function consumeEvents(s) {
         })
       }
       add({ kind: 'ring', x: cx, y: cy, life: 0.3, color: '255, 255, 255', big: true })
+      add({ kind: 'burst', x: cx, y: cy, life: 0.14 }) // clarão branco no centro
+      // fumaça subindo e marca de queimado em cada casa que pegou fogo agora
+      for (const f of s.flames) {
+        if (f.t < 0.4) continue // só as chamas novas desta explosão
+        if (!scorch.some((m) => m.x === f.x && m.y === f.y)) scorch.push({ x: f.x, y: f.y, t: 0, r: rand(0.32, 0.42) })
+        else scorch.find((m) => m.x === f.x && m.y === f.y).t = 0
+        if (Math.random() < 0.6) add({ kind: 'smoke', x: f.x + 0.5 + rand(-0.2, 0.2), y: f.y + 0.5, life: rand(0.7, 1.1), vx: rand(-0.15, 0.15), vy: -rand(0.3, 0.6), size: rand(0.16, 0.26) })
+      }
+    } else if (ev.type === 'powerup') {
+      add({ kind: 'ring', x: cx, y: cy, life: 0.4, color: '255, 230, 150', big: true })
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2
+        add({ kind: 'spark', x: cx, y: cy, life: rand(0.3, 0.5), vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, color: '255, 240, 180' })
+      }
     } else if (ev.type === 'blockBroken') {
       // pedaços voando + poeira + faísca
       for (let i = 0; i < 5; i++) {
@@ -92,6 +107,8 @@ function setupAmbient(level, tileset) {
 export function update(s, dt) {
   if (ambientLevel !== s.level) { ambient = setupAmbient(s.level, s.tileset); ambientLevel = s.level }
   flash = Math.max(0, flash - dt)
+  for (const m of scorch) m.t += dt
+  for (let i = scorch.length - 1; i >= 0; i--) if (scorch[i].t > SCORCH_TIME) scorch.splice(i, 1)
 
   for (const d of ambient) {
     if (d.type === 'vent' && (d.next -= dt) <= 0) {
@@ -118,8 +135,19 @@ export function update(s, dt) {
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].age >= parts[i].life) parts.splice(i, 1)
 }
 
-// luzes e rachaduras desenhadas nas paredes da borda (fica embaixo dos personagens)
+const SCORCH_TIME = 2.5
+
+// luzes e rachaduras desenhadas nas paredes da borda (fica embaixo dos personagens),
+// e as marcas de queimado no chão
 export function drawAmbient(ctx, time) {
+  for (const m of scorch) {
+    const a = 0.45 * (1 - m.t / SCORCH_TIME)
+    const g = ctx.createRadialGradient(m.x + 0.5, m.y + 0.5, 0, m.x + 0.5, m.y + 0.5, m.r)
+    g.addColorStop(0, `rgba(20, 10, 30, ${a})`)
+    g.addColorStop(1, 'rgba(20, 10, 30, 0)')
+    ctx.fillStyle = g
+    ctx.fillRect(m.x, m.y, 1, 1)
+  }
   if (!ambient) return
   for (const d of ambient) {
     const cx = d.x + 0.5, cy = d.y + 0.5
@@ -207,6 +235,12 @@ export function drawParticles(ctx, cols, rows) {
     } else if (p.kind === 'steam') {
       ctx.fillStyle = `rgba(210, 215, 225, ${0.35 * (1 - k)})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.6 + k * 1.2), 0, Math.PI * 2); ctx.fill()
+    } else if (p.kind === 'smoke') {
+      ctx.fillStyle = `rgba(120, 100, 140, ${0.4 * (1 - k)})`
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.7 + k * 1.3), 0, Math.PI * 2); ctx.fill()
+    } else if (p.kind === 'burst') {
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * (1 - k)})`
+      ctx.beginPath(); ctx.arc(p.x, p.y, 0.45 + k * 0.5, 0, Math.PI * 2); ctx.fill()
     } else if (p.kind === 'mote') {
       ctx.fillStyle = `rgba(200, 140, 255, ${1 - k})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill()
@@ -226,5 +260,6 @@ export function drawParticles(ctx, cols, rows) {
 // nova corrida/fase: limpa o que estava voando
 export function reset() {
   parts.length = 0
+  scorch.length = 0
   flash = 0
 }

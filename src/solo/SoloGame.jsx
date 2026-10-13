@@ -194,18 +194,18 @@ export default function SoloGame() {
       </header>
 
       <div className="solo-hud">
-        <span title="Lives">❤️ {hud?.lives ?? 3}</span>
+        <span title="Lives">❤️ <Bump v={hud?.lives ?? 3} /></span>
         <span title="Level">Level {hud?.level ?? 1}/{LEVELS.length}</span>
-        <span title="Enemies left">👾 {hud?.enemies ?? '–'}</span>
+        <span title="Enemies left" className={hud?.enemies === 0 ? 'solo-hud-done' : ''}>👾 <Bump v={hud?.enemies ?? '–'} /></span>
         {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
         <span className="solo-hud-sep" />
-        <span title="Bombs at once">💣 {hud?.bombs ?? 1}</span>
-        <span title="Explosion range">🔥 {hud?.range ?? 2}</span>
-        <span title="Speed boosts">👟 {hud?.boots ?? 0}</span>
+        <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
+        <span title="Explosion range">🔥 <Bump v={hud?.range ?? 2} /></span>
+        <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
         <span title="Time">⏱ {time}</span>
         <span className="solo-hud-sep" />
         <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
-          🎁 {hud?.loot ?? 0} PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
+          🎁 <Bump v={hud?.loot ?? 0} /> PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
         </span>
       </div>
 
@@ -290,4 +290,9 @@ function ChestModal({ chest, onClose }) {
       <p className="solo-sub">or press Enter</p>
     </div>
   )
+}
+
+// número do placar que dá um "pulinho" quando muda (a key nova refaz a animação)
+function Bump({ v }) {
+  return <b className="solo-bump" key={v}>{v}</b>
 }

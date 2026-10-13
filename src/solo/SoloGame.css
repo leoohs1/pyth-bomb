@@ -237,3 +237,17 @@
   color: #f3e3b0;
   opacity: 0.75;
 }
+
+/* placar: o número dá um pulinho dourado quando muda */
+.solo-bump {
+  display: inline-block;
+  font-weight: inherit;
+  animation: solo-bump 0.45s ease-out;
+}
+@keyframes solo-bump {
+  0% { scale: 1.7; color: #ffe08a; }
+  60% { scale: 0.92; }
+  100% { scale: 1; }
+}
+/* todos os inimigos derrotados: contador fica verde */
+.solo-hud-done { color: #8ff0a8; }

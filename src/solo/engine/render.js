@@ -245,9 +245,42 @@ function drawChest(ctx, c, time, near) {
   ctx.restore()
 }
 
+const PU_COLOR = { bomb: '59, 111, 216', fire: '216, 87, 43', speed: '47, 174, 106' }
+
+// Power-up: ao aparecer dá um "pop" (cresce passando do tamanho e volta), depois flutua com
+// um brilho da cor dele e uma estrelinha piscando no canto.
 function drawPowerup(ctx, pu, time) {
   const { x, y } = pu
-  const lift = Math.sin(time * 4 + x) * 0.03
+  const age = time - (pu.revealedAt ?? -9)
+  const t = Math.min(1, age / 0.35)
+  const pop = t >= 1 ? 1 : 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2) // vai até ~1.1 e volta
+  const lift = Math.sin(time * 4 + x) * 0.04
+  const col = PU_COLOR[pu.kind]
+  const g = ctx.createRadialGradient(x + 0.5, y + 0.5, 0, x + 0.5, y + 0.5, 0.62)
+  g.addColorStop(0, `rgba(${col}, ${0.45 + 0.15 * Math.sin(time * 5)})`)
+  g.addColorStop(1, `rgba(${col}, 0)`)
+  ctx.fillStyle = g
+  ctx.fillRect(x - 0.15, y - 0.15, 1.3, 1.3)
+  ctx.save()
+  ctx.translate(x + 0.5, y + 0.5)
+  ctx.scale(pop, pop)
+  ctx.translate(-(x + 0.5), -(y + 0.5))
+  drawPowerupBox(ctx, pu, time, lift)
+  ctx.restore()
+  // estrelinha piscando
+  const tw = Math.max(0, Math.sin(time * 3 + x * 2))
+  if (tw > 0.6) {
+    const sx = x + 0.78, sy = y + 0.2 + lift, r = 0.09 * (tw - 0.6) / 0.4
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+    ctx.beginPath()
+    ctx.moveTo(sx, sy - r); ctx.lineTo(sx + r * 0.3, sy - r * 0.3); ctx.lineTo(sx + r, sy); ctx.lineTo(sx + r * 0.3, sy + r * 0.3)
+    ctx.lineTo(sx, sy + r); ctx.lineTo(sx - r * 0.3, sy + r * 0.3); ctx.lineTo(sx - r, sy); ctx.lineTo(sx - r * 0.3, sy - r * 0.3)
+    ctx.closePath(); ctx.fill()
+  }
+}
+
+function drawPowerupBox(ctx, pu, time, lift) {
+  const { x, y } = pu
   ctx.fillStyle = { bomb: '#3b6fd8', fire: '#d8572b', speed: '#2fae6a' }[pu.kind]
   ctx.strokeStyle = '#f3e3b0'
   ctx.lineWidth = 0.06

@@ -357,7 +357,7 @@ export function update(s, controls, dt) {
     if (b.t <= 0) {
       setTile(s.level, b.x, b.y, FLOOR)
       if (s.door.x === b.x && s.door.y === b.y) s.door.revealed = true
-      for (const pu of s.powerups) if (pu.x === b.x && pu.y === b.y) pu.revealed = true
+      for (const pu of s.powerups) if (pu.x === b.x && pu.y === b.y) { pu.revealed = true; pu.revealedAt = s.time }
     }
   }
   s.burning = s.burning.filter((b) => b.t > 0)
@@ -389,6 +389,7 @@ export function update(s, controls, dt) {
       if (p.alive && pu.revealed && !pu.taken && pu.x === px && pu.y === py) {
         pu.taken = true
         applyPowerup(p, pu.kind)
+        s.events.push({ type: 'powerup', x: pu.x, y: pu.y, kind: pu.kind })
       }
     }
 
