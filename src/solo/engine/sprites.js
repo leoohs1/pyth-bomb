@@ -35,6 +35,7 @@ const FILES = {
     [`walk_${dir}_1`, a], [`walk_${dir}_2`, b],
   ])),
   ...Object.fromEntries(Object.entries(ENEMY_ART).map(([type, src]) => [`enemy_${type}`, src])),
+  bomb: '/solo/bomb.webp', // a bomba do logo do Pyth Bomb
   floor: '/solo/floor.webp',
   wall: '/solo/wall.webp',
   block: '/solo/block.webp',

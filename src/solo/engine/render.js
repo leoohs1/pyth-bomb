@@ -406,7 +406,35 @@ function drawBlock(ctx, x, y, burn) {
   ctx.restore()
 }
 
+// Bomba com arte: a mesma bomba do logo do Pyth Bomb (esfera roxa com redemoinho + chamas).
+// Pulsa cada vez mais rápido e, no finzinho, pisca clarão branco.
+const BOMB_H = 1.0          // altura do desenho em casas (as chamas passam um pouco da casa)
+const BOMB_SPHERE_Y = 0.70  // centro da esfera, a partir do topo da imagem (fração da altura)
+const BOMB_SPHERE_R = 0.30  // raio da esfera (fração da altura)
+
+function drawBombSprite(ctx, b, time, img) {
+  const left = b.timer / FUSE_TIME
+  const rate = 6 + (1 - left) * 18
+  const pulse = 1 + 0.07 * Math.sin(time * rate)
+  const h = BOMB_H * pulse
+  const w = h * (img.naturalWidth / img.naturalHeight)
+  const bottom = b.y + 0.95
+  const cx = b.x + 0.5
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(cx, b.y + 0.9, 0.27, 0.07, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img, cx - w / 2, bottom - h, w, h)
+  if (b.timer < 0.6 && Math.sin(time * 40) > 0) {
+    ctx.fillStyle = 'rgba(255, 240, 255, 0.45)'
+    ctx.beginPath(); ctx.arc(cx, bottom - h + h * BOMB_SPHERE_Y, h * BOMB_SPHERE_R, 0, Math.PI * 2); ctx.fill()
+  }
+  ctx.restore()
+}
+
 function drawBomb(ctx, b, time) {
+  const img = sprite('bomb')
+  if (img) return drawBombSprite(ctx, b, time, img)
   // pulsa mais rápido e fica vermelha perto de explodir
   const left = b.timer / FUSE_TIME
   const rate = 6 + (1 - left) * 18
