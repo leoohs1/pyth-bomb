@@ -1,0 +1,332 @@
+// Desenha o estado do jogo num <canvas>, por enquanto só com formas simples (sem arte).
+// Tudo é desenhado em "casas": 1 unidade = 1 casa da grade; a escala vem de fora.
+import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
+import { doorOpen } from './game.js'
+import { BOSS } from './boss.js'
+
+const C = {
+  floorA: '#2b2440', floorB: '#2f2846',
+  wallDark: '#3a3155', wallMid: '#5f5381', wallLight: '#8a7cb0',
+  blockDark: '#6b4423', blockMid: '#a26c39', blockLight: '#c99257',
+  bomb: '#17131f', bombHot: '#7a1d1d',
+  flameOut: '#ff7a1a', flameIn: '#ffe066',
+  player: '#47c2ff', playerDark: '#1d6f99', eye: '#0d0b14',
+}
+
+export function draw(ctx, s, tilePx, dpr) {
+  const { level } = s
+  const scale = tilePx * dpr
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+
+  // tremidinha da tela nas explosões
+  let ox = 0, oy = 0
+  if (s.shake > 0) {
+    ox = (Math.random() - 0.5) * s.shake * 0.25
+    oy = (Math.random() - 0.5) * s.shake * 0.25
+  }
+  ctx.setTransform(scale, 0, 0, scale, ox * scale, oy * scale)
+
+  // chão e paredes
+  for (let y = 0; y < level.rows; y++) {
+    for (let x = 0; x < level.cols; x++) {
+      const t = level.tiles[y * level.cols + x]
+      if (t === WALL) drawWall(ctx, x, y)
+      else {
+        ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
+        ctx.fillRect(x, y, 1, 1)
+        if (t === BLOCK) {
+          const burn = s.burning.find((b) => b.x === x && b.y === y)
+          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0)
+        }
+      }
+    }
+  }
+
+  if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time)
+  for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
+  for (const b of s.bombs) drawBomb(ctx, b, s.time)
+  for (const e of s.enemies) drawEnemy(ctx, e, s.time)
+  if (s.boss) drawWhale(ctx, s.boss, s.time)
+  for (const f of s.flames) drawFlame(ctx, f)
+  drawPlayer(ctx, s.player, s.time)
+}
+
+// The Whale: baleia azul gigante (2x2). Pisca branco quando leva dano, fica vermelha quando brava.
+function drawWhale(ctx, b, time) {
+  if (!b.alive && b.deathT > 1.2) return
+  const dying = b.alive ? 0 : b.deathT / 1.2
+  const angry = b.hp <= BOSS.hp / 2
+  const flash = b.hurtT > 0 && Math.sin(time * 40) > 0
+  const bob = Math.sin(b.walkT * 4) * 0.05
+
+  ctx.save()
+  ctx.translate(b.x + 0.5, b.y + 0.5 + bob)
+  ctx.globalAlpha = 1 - dying
+  ctx.rotate(dying * 1.5)
+  ctx.scale(1 - dying * 0.5, 1 - dying * 0.5)
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(0, 0.85, 0.85, 0.14, 0, 0, Math.PI * 2); ctx.fill()
+
+  const body = flash ? '#ffffff' : angry ? '#5b2a6e' : '#2b4f8f'
+  const belly = flash ? '#ffffff' : angry ? '#d7a3e0' : '#a9c6ee'
+
+  // rabo
+  ctx.fillStyle = body
+  ctx.beginPath()
+  ctx.moveTo(0.7, 0.1)
+  ctx.quadraticCurveTo(1.0, -0.2, 1.0, -0.55)
+  ctx.quadraticCurveTo(0.85, -0.3, 0.7, -0.35)
+  ctx.closePath(); ctx.fill()
+  // corpo
+  ctx.beginPath(); ctx.ellipse(0, 0.1, 0.9, 0.7, 0, 0, Math.PI * 2); ctx.fill()
+  // barriga
+  ctx.fillStyle = belly
+  ctx.beginPath(); ctx.ellipse(-0.05, 0.38, 0.62, 0.32, 0, 0, Math.PI); ctx.fill()
+
+  // jato d'água (quando para pra soltar FUD)
+  if (b.pauseT > 0 && b.alive) {
+    ctx.fillStyle = '#7fd3ff'
+    const h = 0.5 + Math.sin(time * 30) * 0.08
+    ctx.fillRect(-0.06, -0.6 - h, 0.12, h)
+    ctx.beginPath(); ctx.arc(-0.15, -0.65 - h, 0.12, 0, Math.PI * 2); ctx.arc(0.15, -0.65 - h, 0.12, 0, Math.PI * 2); ctx.fill()
+  }
+
+  // coroa dourada
+  ctx.fillStyle = '#e6c25a'
+  ctx.beginPath()
+  ctx.moveTo(-0.3, -0.5); ctx.lineTo(-0.3, -0.8); ctx.lineTo(-0.15, -0.65); ctx.lineTo(0, -0.88)
+  ctx.lineTo(0.15, -0.65); ctx.lineTo(0.3, -0.8); ctx.lineTo(0.3, -0.5)
+  ctx.closePath(); ctx.fill()
+
+  // olhos bravos
+  if (!dying) {
+    for (const ex of [-0.38, 0.12]) {
+      ctx.fillStyle = '#fff'
+      ctx.beginPath(); ctx.arc(ex, -0.05, 0.13, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = angry ? '#c4314b' : C.eye
+      ctx.beginPath(); ctx.arc(ex + 0.02, -0.03, 0.07, 0, Math.PI * 2); ctx.fill()
+    }
+    ctx.strokeStyle = C.eye
+    ctx.lineWidth = 0.06
+    ctx.beginPath()
+    ctx.moveTo(-0.55, -0.25); ctx.lineTo(-0.28, -0.15)
+    ctx.moveTo(0.29, -0.25); ctx.lineTo(0.02, -0.15)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawDoor(ctx, d, open, time) {
+  const { x, y } = d
+  ctx.fillStyle = '#7a5c1c'
+  ctx.beginPath(); ctx.roundRect(x + 0.12, y + 0.08, 0.76, 0.86, [0.38, 0.38, 0.04, 0.04]); ctx.fill()
+  if (open) {
+    const glow = 0.75 + 0.25 * Math.sin(time * 5)
+    ctx.fillStyle = `rgba(255, 224, 120, ${glow})`
+  } else {
+    ctx.fillStyle = '#120e1c'
+  }
+  ctx.beginPath(); ctx.roundRect(x + 0.22, y + 0.18, 0.56, 0.76, [0.28, 0.28, 0, 0]); ctx.fill()
+  if (!open) {
+    // grades fechadas enquanto ainda tem inimigo
+    ctx.strokeStyle = '#c9a24a'
+    ctx.lineWidth = 0.05
+    ctx.beginPath()
+    for (const gx of [0.36, 0.5, 0.64]) { ctx.moveTo(x + gx, y + 0.22); ctx.lineTo(x + gx, y + 0.94) }
+    ctx.stroke()
+  }
+}
+
+function drawPowerup(ctx, pu, time) {
+  const { x, y } = pu
+  const lift = Math.sin(time * 4 + x) * 0.03
+  ctx.fillStyle = { bomb: '#3b6fd8', fire: '#d8572b', speed: '#2fae6a' }[pu.kind]
+  ctx.strokeStyle = '#f3e3b0'
+  ctx.lineWidth = 0.06
+  ctx.beginPath(); ctx.roundRect(x + 0.14, y + 0.14 + lift, 0.72, 0.72, 0.12); ctx.fill(); ctx.stroke()
+  const cx = x + 0.5, cy = y + 0.5 + lift
+  if (pu.kind === 'bomb') {
+    ctx.fillStyle = C.bomb
+    ctx.beginPath(); ctx.arc(cx, cy + 0.04, 0.2, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = C.flameIn
+    ctx.beginPath(); ctx.arc(cx + 0.13, cy - 0.17, 0.05, 0, Math.PI * 2); ctx.fill()
+  } else if (pu.kind === 'fire') {
+    ctx.fillStyle = C.flameIn
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - 0.26)
+    ctx.quadraticCurveTo(cx + 0.24, cy, cx + 0.14, cy + 0.2)
+    ctx.quadraticCurveTo(cx, cy + 0.27, cx - 0.14, cy + 0.2)
+    ctx.quadraticCurveTo(cx - 0.24, cy, cx, cy - 0.26)
+    ctx.fill()
+  } else {
+    // botinha = duas setinhas pra direita
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 0.08
+    ctx.beginPath()
+    for (const ox of [-0.12, 0.06]) {
+      ctx.moveTo(cx + ox - 0.06, cy - 0.16); ctx.lineTo(cx + ox + 0.08, cy); ctx.lineTo(cx + ox - 0.06, cy + 0.16)
+    }
+    ctx.stroke()
+  }
+}
+
+// FUD = fantasminha cinza; Bear = urso marrom; Rug Pull = tapete vermelho com franja
+function drawEnemy(ctx, e, time) {
+  if (!e.alive && e.deathT > 0.6) return
+  const dying = e.alive ? 0 : e.deathT / 0.6
+  const bob = Math.sin(e.walkT * 8) * 0.04
+  const cx = e.x + 0.5, cy = e.y + 0.52 + bob
+  ctx.save()
+  ctx.globalAlpha = 1 - dying
+  ctx.translate(cx, cy)
+  ctx.scale(1 + dying * 0.4, 1 - dying * 0.6)
+
+  if (e.type === 'fud') {
+    ctx.fillStyle = dying ? '#fff' : '#9a93b8'
+    ctx.beginPath()
+    ctx.arc(0, -0.06, 0.3, Math.PI, 0)
+    ctx.lineTo(0.3, 0.3)
+    for (let i = 0; i < 4; i++) {
+      const wx = 0.3 - (i + 0.5) * 0.15
+      ctx.quadraticCurveTo(wx, 0.3 - 0.12 * (i % 2 ? -1 : 1) + Math.sin(time * 8 + i) * 0.03, 0.3 - (i + 1) * 0.15, 0.3)
+    }
+    ctx.closePath(); ctx.fill()
+  } else if (e.type === 'bear') {
+    ctx.fillStyle = dying ? '#fff' : '#8a5a33'
+    ctx.beginPath(); ctx.arc(-0.22, -0.24, 0.1, 0, Math.PI * 2); ctx.arc(0.22, -0.24, 0.1, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.roundRect(-0.32, -0.28, 0.64, 0.6, 0.2); ctx.fill()
+    ctx.fillStyle = '#d9b48a'
+    ctx.beginPath(); ctx.ellipse(0, 0.12, 0.13, 0.09, 0, 0, Math.PI * 2); ctx.fill()
+  } else {
+    ctx.rotate(Math.sin(e.walkT * 10) * 0.12)
+    ctx.fillStyle = dying ? '#fff' : '#c4314b'
+    ctx.fillRect(-0.32, -0.26, 0.64, 0.52)
+    ctx.fillStyle = '#f3e3b0'
+    ctx.fillRect(-0.24, -0.18, 0.48, 0.06)
+    ctx.fillRect(-0.24, 0.12, 0.48, 0.06)
+    ctx.strokeStyle = '#f3e3b0'
+    ctx.lineWidth = 0.03
+    ctx.beginPath()
+    for (let i = 0; i < 6; i++) { const fx = -0.3 + i * 0.12; ctx.moveTo(fx, 0.26); ctx.lineTo(fx, 0.34) }
+    ctx.stroke()
+  }
+
+  // olhos bravos
+  if (!dying) {
+    ctx.fillStyle = '#fff'
+    for (const ex of [-0.1, 0.1]) { ctx.beginPath(); ctx.arc(ex, -0.04, 0.065, 0, Math.PI * 2); ctx.fill() }
+    ctx.fillStyle = C.eye
+    for (const ex of [-0.1, 0.1]) { ctx.beginPath(); ctx.arc(ex, -0.03, 0.035, 0, Math.PI * 2); ctx.fill() }
+    ctx.strokeStyle = C.eye
+    ctx.lineWidth = 0.035
+    ctx.beginPath()
+    ctx.moveTo(-0.17, -0.15); ctx.lineTo(-0.04, -0.1)
+    ctx.moveTo(0.17, -0.15); ctx.lineTo(0.04, -0.1)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawWall(ctx, x, y) {
+  ctx.fillStyle = C.wallDark
+  ctx.fillRect(x, y, 1, 1)
+  ctx.fillStyle = C.wallMid
+  ctx.fillRect(x + 0.04, y + 0.04, 0.92, 0.78)
+  ctx.fillStyle = C.wallLight
+  ctx.fillRect(x + 0.04, y + 0.04, 0.92, 0.1)
+}
+
+function drawBlock(ctx, x, y, burn) {
+  // burn: 0 = inteiro, 1 = sumiu
+  const shrink = burn * 0.35
+  const s = 1 - shrink * 2
+  ctx.save()
+  ctx.globalAlpha = 1 - burn * 0.7
+  ctx.fillStyle = burn > 0 ? C.flameOut : C.blockDark
+  ctx.fillRect(x + 0.05 + shrink, y + 0.05 + shrink, 0.9 * s, 0.9 * s)
+  ctx.fillStyle = burn > 0 ? C.flameIn : C.blockMid
+  ctx.fillRect(x + 0.1 + shrink, y + 0.1 + shrink, 0.8 * s, 0.72 * s)
+  if (!burn) {
+    ctx.fillStyle = C.blockLight
+    ctx.fillRect(x + 0.1, y + 0.1, 0.8, 0.08)
+    ctx.strokeStyle = C.blockDark
+    ctx.lineWidth = 0.05
+    ctx.beginPath()
+    ctx.moveTo(x + 0.1, y + 0.46); ctx.lineTo(x + 0.9, y + 0.46)
+    ctx.moveTo(x + 0.5, y + 0.1); ctx.lineTo(x + 0.5, y + 0.46)
+    ctx.moveTo(x + 0.3, y + 0.46); ctx.lineTo(x + 0.3, y + 0.82)
+    ctx.moveTo(x + 0.7, y + 0.46); ctx.lineTo(x + 0.7, y + 0.82)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawBomb(ctx, b, time) {
+  // pulsa mais rápido e fica vermelha perto de explodir
+  const left = b.timer / FUSE_TIME
+  const rate = 6 + (1 - left) * 18
+  const r = 0.32 * (1 + 0.07 * Math.sin(time * rate))
+  const cx = b.x + 0.5, cy = b.y + 0.55
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(cx, b.y + 0.88, 0.28, 0.08, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = b.timer < 0.6 && Math.sin(time * 40) > 0 ? C.bombHot : C.bomb
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'
+  ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.35, r * 0.25, 0, Math.PI * 2); ctx.fill()
+  // faísca do pavio
+  ctx.fillStyle = Math.sin(time * 50) > 0 ? C.flameIn : C.flameOut
+  ctx.beginPath(); ctx.arc(cx + r * 0.6, cy - r * 0.95, 0.07, 0, Math.PI * 2); ctx.fill()
+}
+
+function drawFlame(ctx, f) {
+  const k = f.t / FLAME_TIME           // 1 = acabou de explodir, 0 = sumindo
+  const w = 0.35 + 0.45 * Math.min(1, k * 1.6)
+  const inner = w * 0.5
+  const { x, y } = f
+  const rect = (color, ww) => {
+    ctx.fillStyle = color
+    if (f.kind === 'h') ctx.fillRect(x, y + 0.5 - ww / 2, 1, ww)
+    else if (f.kind === 'v') ctx.fillRect(x + 0.5 - ww / 2, y, ww, 1)
+    else {
+      ctx.fillRect(x, y + 0.5 - ww / 2, 1, ww)
+      ctx.fillRect(x + 0.5 - ww / 2, y, ww, 1)
+    }
+  }
+  rect(C.flameOut, w)
+  rect(C.flameIn, inner)
+}
+
+function drawPlayer(ctx, p, time) {
+  if (!p.alive && p.deathT > 0.8) return
+  const bob = p.moving ? Math.abs(Math.sin(p.walkT * 12)) * 0.07 : 0
+  const dying = !p.alive ? Math.min(1, p.deathT / 0.8) : 0
+  const size = 0.7 * (1 - dying)
+  const cx = p.x + 0.5, cy = p.y + 0.5 - bob
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(p.x + 0.5, p.y + 0.88, 0.28 * (1 - dying), 0.08, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.translate(cx, cy)
+  ctx.rotate(dying * Math.PI * 2)
+  ctx.fillStyle = dying ? (Math.sin(time * 40) > 0 ? '#ff4d4d' : C.player) : C.player
+  ctx.strokeStyle = C.playerDark
+  ctx.lineWidth = 0.06
+  ctx.beginPath()
+  ctx.roundRect(-size / 2, -size / 2, size, size, 0.14)
+  ctx.fill(); ctx.stroke()
+
+  // olhinhos mostram pra onde ele está virado
+  if (!dying) {
+    const look = { up: [0, -0.1], down: [0, 0.08], left: [-0.1, 0], right: [0.1, 0] }[p.facing]
+    ctx.fillStyle = C.eye
+    if (p.facing !== 'up') {
+      for (const ex of [-0.12, 0.12]) {
+        ctx.beginPath(); ctx.arc(ex + look[0], -0.05 + look[1], 0.06, 0, Math.PI * 2); ctx.fill()
+      }
+    }
+  }
+  ctx.restore()
+}

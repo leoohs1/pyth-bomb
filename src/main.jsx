@@ -7,6 +7,7 @@ import Landing from './Landing.jsx'
 import PlayGate from './PlayGate.jsx'
 import ArenaPreview from './ArenaPreview.jsx'
 import GameArenaV2Harness from './GameArenaV2Harness.jsx'
+import SoloGame from './solo/SoloGame.jsx'
 
 const path = window.location.pathname
 // rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
@@ -15,6 +16,7 @@ const path = window.location.pathname
 // sobrescrevia o fundo quando entrava no mesmo bundle.)
 const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/game-arena-v2-preview') ? <GameArenaV2Harness />
+  : path.startsWith('/solo') ? <PlayGate><SoloGame /></PlayGate> // modo Solo (protótipo, fechado como o /play)
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing />
 

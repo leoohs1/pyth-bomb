@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@500;600&display=swap');
+
+/* Modo Solo: ocupa a janela inteira (o #root do index.css tem largura fixa, por isso o fixed). */
+.solo-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  box-sizing: border-box;
+  background: radial-gradient(ellipse at center, #2a2140 0%, #15111f 75%);
+  color: #e9e3f5;
+  font-family: Inter, system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.solo-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+}
+.solo-top h1 {
+  margin: 0;
+  font: 700 26px/1.1 Cinzel, Georgia, serif;
+  color: #f3e3b0;
+  letter-spacing: 0.5px;
+}
+.solo-tag {
+  font: 600 11px/1 Inter, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #c9a24a;
+  border: 1px solid #c9a24a;
+  border-radius: 6px;
+  padding: 3px 6px;
+  vertical-align: middle;
+}
+.solo-back {
+  color: #c9b8ec;
+  text-decoration: none;
+  font-size: 15px;
+}
+.solo-back:hover { color: #fff; }
+
+.solo-hud {
+  display: flex;
+  gap: 22px;
+  font: 600 17px/1 Inter, system-ui, sans-serif;
+  background: rgba(20, 14, 34, 0.7);
+  border: 2px solid #c9a24a;
+  border-radius: 10px;
+  padding: 8px 18px;
+}
+
+/* barra de vida do chefe */
+.solo-boss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 700 16px/1 Cinzel, Georgia, serif;
+  color: #f3e3b0;
+}
+.solo-boss-bar {
+  width: min(320px, 50vw);
+  height: 14px;
+  background: #2a1d33;
+  border: 2px solid #c9a24a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.solo-boss-bar > div {
+  height: 100%;
+  background: linear-gradient(180deg, #ff6b7d, #c4314b);
+  transition: width 0.3s ease;
+}
+
+.solo-hud-sep { width: 2px; align-self: stretch; background: rgba(201, 162, 74, 0.45); }
+
+/* faixa "Level 2 · Bear Market" no começo de cada fase */
+.solo-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 40px;
+  background: rgba(20, 14, 34, 0.85);
+  border: 2px solid #c9a24a;
+  border-radius: 12px;
+  pointer-events: none;
+  animation: solo-banner 2.2s ease forwards;
+}
+.solo-banner span { font: 600 14px/1 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 2px; color: #c9a24a; }
+.solo-banner strong { font: 800 34px/1.1 Cinzel, Georgia, serif; color: #f3e3b0; }
+@keyframes solo-banner {
+  0% { opacity: 0; scale: 0.9; }
+  12%, 75% { opacity: 1; scale: 1; }
+  100% { opacity: 0; }
+}
+
+.solo-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.solo-canvas {
+  display: block;
+  border: 3px solid #c9a24a;
+  border-radius: 6px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+
+.solo-over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(60, 8, 12, 0.55);
+  animation: solo-fade 0.4s ease;
+}
+.solo-over.is-win { background: rgba(10, 40, 30, 0.55); }
+.solo-over h2 {
+  margin: 0;
+  font: 800 44px/1.1 Cinzel, Georgia, serif;
+  color: #fff;
+  text-shadow: 0 3px 0 #000, 0 0 20px rgba(0, 0, 0, 0.6);
+}
+@keyframes solo-fade { from { opacity: 0; } }
+
+.solo-btn {
+  font: 700 17px/1 Cinzel, Georgia, serif;
+  color: #2a1d05;
+  background: linear-gradient(180deg, #f3e3b0, #c9a24a);
+  border: 2px solid #7a5c1c;
+  border-radius: 10px;
+  padding: 11px 26px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.solo-btn:hover { filter: brightness(1.08); }
+
+.solo-sub { margin: 0; font-size: 14px; color: #c9b8ec; }
+
+.solo-keys {
+  display: flex;
+  gap: 22px;
+  font-size: 14px;
+  color: #b9aed2;
+}
+.solo-keys kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 2px 5px;
+  margin-right: 3px;
+  font: 600 12px/1.3 Inter, system-ui, sans-serif;
+  text-align: center;
+  color: #f3e3b0;
+  background: #3b3350;
+  border: 1px solid #6b5f86;
+  border-bottom-width: 3px;
+  border-radius: 5px;
+}
+
+/* celular: aviso pra jogar no computador */
+.solo-touch { justify-content: center; }
+.solo-card {
+  text-align: center;
+  background: rgba(20, 14, 34, 0.85);
+  border: 3px solid #c9a24a;
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 340px;
+}
+.solo-card h1 { margin: 0 0 10px; font: 800 30px/1.1 Cinzel, Georgia, serif; color: #f3e3b0; }
+.solo-card p { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+.solo-card .solo-sub { margin-bottom: 18px; font-size: 14px; font-weight: 500; }
