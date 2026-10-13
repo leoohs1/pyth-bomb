@@ -30,6 +30,7 @@ export function createGame(random = Math.random, startLevel = 0) {
     lives: START_LIVES,
     stats: { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE },
     runTime: 0,
+    loot: 0, // prêmios (de mentira, por enquanto) somados na corrida
   }, random)
 }
 
@@ -53,6 +54,7 @@ function carry(s) {
     lives: s.lives,
     stats: { speed: p.speed, maxBombs: p.maxBombs, range: p.range },
     runTime: s.runTime,
+    loot: s.loot,
   }
 }
 
@@ -100,6 +102,7 @@ function loadLevel(run, random) {
     },
     enemies,
     boss: null,
+    chest: null, // aparece quando a porta abre: { x, y, state: 'closed'|'opening'|'opened', result, dismissed }
     door: { x: doorCell[0], y: doorCell[1], revealed: false },
     powerups,
     bombs: [],    // { x, y, timer, range, passable }
@@ -125,6 +128,7 @@ function loadBossLevel(run) {
     },
     enemies: [],
     boss: makeBoss((level.cols - 1) / 2, (level.rows - 1) / 2),
+    chest: null,
     door: { x: -1, y: -1, revealed: false },
     powerups: [],
     bombs: [],
@@ -248,8 +252,50 @@ function applyPowerup(p, kind) {
 export const enemiesLeft = (s) => s.enemies.filter((e) => e.alive).length
 export const doorOpen = (s) => s.door.revealed && enemiesLeft(s) === 0 && !s.boss?.alive
 
+// ---- baú (o sorteio em si fica fora do motor, em src/solo/chest/)
+export const chestDone = (s) => s.chest?.state === 'opened' && s.chest.dismissed
+export const chestNear = (s) => !!s.chest && s.player.alive &&
+  Math.abs(s.player.x - s.chest.x) <= 1.2 && Math.abs(s.player.y - s.chest.y) <= 1.2
+// o jogo para enquanto o baú abre e enquanto o resultado está na tela
+export const isPaused = (s) => s.chest?.state === 'opening' || (s.chest?.state === 'opened' && !s.chest.dismissed)
+
+// tenta abrir: só se o jogador estiver do lado e o baú ainda fechado
+export function beginChest(s) {
+  if (s.status !== 'playing' || !chestNear(s) || s.chest.state !== 'closed') return false
+  s.chest.state = 'opening'
+  return true
+}
+export function finishChest(s, result) {
+  s.chest.state = 'opened'
+  s.chest.result = result
+  if (result.win) s.loot += result.amount
+}
+export function dismissChest(s) {
+  if (s.chest?.state === 'opened') s.chest.dismissed = true
+}
+
+// o baú aparece numa casa livre do lado da porta (busca em largura a partir dela)
+function spawnChest(s) {
+  const { door, level } = s
+  const seen = new Set([door.x + ',' + door.y])
+  const queue = [[door.x, door.y]]
+  while (queue.length) {
+    const [x, y] = queue.shift()
+    for (const d of Object.values(DIRS)) {
+      const nx = x + d.dx, ny = y + d.dy
+      const k = nx + ',' + ny
+      if (seen.has(k) || tileAt(level, nx, ny) !== FLOOR) continue
+      seen.add(k)
+      if (!bombAt(s, nx, ny)) return { x: nx, y: ny, state: 'closed', result: null, dismissed: false }
+      queue.push([nx, ny])
+    }
+  }
+  return { x: door.x, y: door.y, state: 'closed', result: null, dismissed: false }
+}
+
 export function update(s, controls, dt) {
   s.time += dt
+  if (isPaused(s)) { controls.takeBomb(); return } // baú abrindo: o mundo espera
   if (s.status === 'playing') s.runTime += dt
   s.shake = Math.max(0, s.shake - dt * 1.5)
   const p = s.player
@@ -306,6 +352,9 @@ export function update(s, controls, dt) {
   // --- chefe
   if (s.boss) updateBoss(s, dt)
 
+  // --- porta aberta: aparece o baú
+  if (!s.chest && doorOpen(s)) s.chest = spawnChest(s)
+
   // --- fogo mata inimigos
   for (const e of s.enemies) {
     if (e.alive && flameAt(s, Math.round(e.x), Math.round(e.y))) e.alive = false
@@ -326,8 +375,8 @@ export function update(s, controls, dt) {
       }
     }
 
-    // porta aberta (sem inimigos) + jogador em cima = fase concluída
-    if (p.alive && s.status === 'playing' && doorOpen(s) && s.door.x === px && s.door.y === py) {
+    // porta aberta (sem inimigos) + baú já aberto + jogador em cima = fase concluída
+    if (p.alive && s.status === 'playing' && doorOpen(s) && chestDone(s) && s.door.x === px && s.door.y === py) {
       s.status = isLastLevel(s) ? 'won' : 'cleared'
     }
   } else {

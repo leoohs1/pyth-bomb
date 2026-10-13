@@ -1,7 +1,7 @@
 // Desenha o estado do jogo num <canvas>, por enquanto só com formas simples (sem arte).
 // Tudo é desenhado em "casas": 1 unidade = 1 casa da grade; a escala vem de fora.
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
-import { doorOpen } from './game.js'
+import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
 
 const C = {
@@ -45,6 +45,7 @@ export function draw(ctx, s, tilePx, dpr) {
 
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
+  if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
   for (const b of s.bombs) drawBomb(ctx, b, s.time)
   for (const e of s.enemies) drawEnemy(ctx, e, s.time)
   if (s.boss) drawWhale(ctx, s.boss, s.time)
@@ -138,6 +139,58 @@ function drawDoor(ctx, d, open, time) {
     for (const gx of [0.36, 0.5, 0.64]) { ctx.moveTo(x + gx, y + 0.22); ctx.lineTo(x + gx, y + 0.94) }
     ctx.stroke()
   }
+}
+
+// Baú: fechado (brilha quando o jogador chega perto), tremendo enquanto abre, aberto depois.
+function drawChest(ctx, c, time, near) {
+  const { x, y } = c
+  const opening = c.state === 'opening'
+  const opened = c.state === 'opened'
+  const shakeX = opening ? Math.sin(time * 45) * 0.05 : 0
+  const pop = c.state === 'closed' ? Math.abs(Math.sin(time * 3)) * 0.04 : 0
+  ctx.save()
+  ctx.translate(x + 0.5 + shakeX, y + 0.5 - pop)
+
+  // brilho em volta: chamando o jogador
+  if (c.state === 'closed' || opening) {
+    const a = near ? 0.55 + 0.25 * Math.sin(time * 8) : 0.25 + 0.15 * Math.sin(time * 4)
+    ctx.fillStyle = `rgba(255, 214, 102, ${a})`
+    ctx.beginPath(); ctx.arc(0, 0.05, 0.55, 0, Math.PI * 2); ctx.fill()
+  }
+  if (opened && c.result?.win) {
+    ctx.fillStyle = `rgba(255, 230, 120, ${0.5 + 0.2 * Math.sin(time * 6)})`
+    ctx.beginPath(); ctx.arc(0, -0.05, 0.5, 0, Math.PI * 2); ctx.fill()
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(0, 0.38, 0.36, 0.08, 0, 0, Math.PI * 2); ctx.fill()
+
+  // caixa
+  ctx.fillStyle = '#7a4a1f'
+  ctx.beginPath(); ctx.roundRect(-0.36, -0.05, 0.72, 0.42, 0.06); ctx.fill()
+  ctx.fillStyle = '#a5672c'
+  ctx.fillRect(-0.32, 0, 0.64, 0.32)
+  // tampa (fechada ou aberta pra trás)
+  if (opened) {
+    ctx.fillStyle = '#2a1a0c'
+    ctx.fillRect(-0.32, -0.08, 0.64, 0.1)
+    ctx.fillStyle = '#7a4a1f'
+    ctx.beginPath(); ctx.roundRect(-0.36, -0.42, 0.72, 0.3, 0.1); ctx.fill()
+  } else {
+    ctx.fillStyle = '#8c5524'
+    ctx.beginPath(); ctx.roundRect(-0.38, -0.32, 0.76, 0.3, [0.16, 0.16, 0.03, 0.03]); ctx.fill()
+  }
+  // faixas e fechadura douradas
+  ctx.fillStyle = '#e6c25a'
+  ctx.fillRect(-0.24, opened ? -0.42 : -0.32, 0.07, opened ? 0.3 : 0.69)
+  ctx.fillRect(0.17, opened ? -0.42 : -0.32, 0.07, opened ? 0.3 : 0.69)
+  if (opened) { ctx.fillRect(-0.24, -0.05, 0.07, 0.42); ctx.fillRect(0.17, -0.05, 0.07, 0.42) }
+  if (!opened) {
+    ctx.beginPath(); ctx.roundRect(-0.08, -0.1, 0.16, 0.18, 0.03); ctx.fill()
+    ctx.fillStyle = '#2a1a0c'
+    ctx.fillRect(-0.02, -0.05, 0.04, 0.08)
+  }
+  ctx.restore()
 }
 
 function drawPowerup(ctx, pu, time) {

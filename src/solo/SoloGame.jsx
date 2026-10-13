@@ -5,12 +5,14 @@ import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP } from './engine/constants.j
 import { LEVELS } from './engine/levels.js'
 import {
   createGame, nextLevel, retryLevel, update, enemiesLeft, doorOpen, levelInfo,
+  chestNear, chestDone, beginChest, finishChest, dismissChest,
 } from './engine/game.js'
+import { openChest, CHEST_IS_DEMO } from './chest/index.js'
 import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
 
-// Modo Solo (Bomberman) — protótipo com quadradinhos (inimigos, power-ups, porta, 3 fases).
+// Modo Solo (Bomberman) — protótipo com quadradinhos (inimigos, power-ups, porta, baú, chefe).
 // O React só cuida da moldura (placar, avisos). O jogo roda num laço próprio,
 // ~60 vezes por segundo, fora do React, e desenha direto no <canvas>.
 
@@ -20,6 +22,19 @@ const newRun = () => createGame(Math.random, START_LEVEL)
 
 const isTouchOnly = () =>
   typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
+
+// aviso curto embaixo do placar, guiando o jogador
+function hintOf(s) {
+  if (s.status !== 'playing') return null
+  if (s.time < s.noteUntil) return s.note
+  const c = s.chest
+  if (c?.state === 'closed') return chestNear(s) ? 'Click the chest to open it!' : 'A chest appeared! Walk up to it and click it'
+  if (c && chestDone(s)) return 'The door is open! Step on it to leave'
+  if (s.boss?.alive) return null
+  if (s.door.revealed && !doorOpen(s)) return 'Defeat all enemies to open the door'
+  if (!s.door.revealed && enemiesLeft(s) === 0) return 'All enemies down! Find the hidden door under a block'
+  return null
+}
 
 function hudOf(s) {
   const p = s.player
@@ -36,6 +51,10 @@ function hudOf(s) {
     secs: Math.floor(s.runTime),
     intro: s.status === 'playing' && s.time < 2.2,
     boss: s.boss ? { name: BOSS.name, hp: Math.max(0, s.boss.hp), max: BOSS.hp } : null,
+    loot: s.loot,
+    hint: hintOf(s),
+    chest: s.chest && !s.chest.dismissed && s.chest.state !== 'closed'
+      ? { state: s.chest.state, result: s.chest.result } : null,
   }
 }
 
@@ -43,7 +62,7 @@ export default function SoloGame() {
   const [touch] = useState(isTouchOnly)
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
-  const advanceRef = useRef(() => {})
+  const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const [hud, setHud] = useState(null)
 
   useEffect(() => {
@@ -59,13 +78,46 @@ export default function SoloGame() {
     let hudKey = ''
 
     const start = (g) => { game = g; controls.clear() }
-    // Enter / botão da mensagem: tentar de novo, próxima fase ou corrida nova
+    // Enter / botão da mensagem: fecha o resultado do baú, tenta de novo, próxima fase ou corrida nova
     const advance = () => {
-      if (game.status === 'dead') start(retryLevel(game))
+      if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
+      else if (game.status === 'dead') start(retryLevel(game))
       else if (game.status === 'cleared') start(nextLevel(game))
       else if (game.status === 'gameover' || game.status === 'won') start(newRun())
     }
-    advanceRef.current = advance
+    actionsRef.current = { advance, dismissChest: () => dismissChest(game) }
+
+    // clique no canvas: abre o baú (se clicou nele e está do lado)
+    const tileUnder = (e) => {
+      const r = canvas.getBoundingClientRect()
+      return {
+        x: Math.floor((e.clientX - r.left - canvas.clientLeft) / tilePx),
+        y: Math.floor((e.clientY - r.top - canvas.clientTop) / tilePx),
+      }
+    }
+    const onChest = (e) => {
+      const c = game.chest
+      if (!c) return false
+      const t = tileUnder(e)
+      return t.x === c.x && t.y === c.y
+    }
+    const onClick = (e) => {
+      if (!onChest(e) || game.chest.state !== 'closed') return
+      const g = game
+      if (!beginChest(g)) {
+        g.note = 'Get closer to the chest first!'
+        g.noteUntil = g.time + 1.6
+        return
+      }
+      openChest({ level: g.levelIndex + 1, boss: !!g.boss })
+        .then((result) => finishChest(g, result))
+        .catch(() => finishChest(g, { win: false, amount: 0, token: 'PYTH', demo: true, error: true }))
+    }
+    const onMove = (e) => {
+      canvas.style.cursor = onChest(e) && game.chest.state === 'closed' ? 'pointer' : ''
+    }
+    canvas.addEventListener('click', onClick)
+    canvas.addEventListener('mousemove', onMove)
 
     const unbind = bindKeyboard(controls, (e) => {
       if (e.code === 'Enter') advance()
@@ -102,7 +154,11 @@ export default function SoloGame() {
     }
     raf = requestAnimationFrame(frame)
 
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); unbind() }
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect(); unbind()
+      canvas.removeEventListener('click', onClick)
+      canvas.removeEventListener('mousemove', onMove)
+    }
   }, [touch])
 
   if (touch) {
@@ -138,6 +194,10 @@ export default function SoloGame() {
         <span title="Explosion range">🔥 {hud?.range ?? 2}</span>
         <span title="Speed boosts">👟 {hud?.boots ?? 0}</span>
         <span title="Time">⏱ {time}</span>
+        <span className="solo-hud-sep" />
+        <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
+          🎁 {hud?.loot ?? 0} PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
+        </span>
       </div>
 
       {hud?.boss && (
@@ -157,27 +217,30 @@ export default function SoloGame() {
             <strong>{hud.levelName}</strong>
           </div>
         )}
+        {hud?.hint && <div className="solo-hint">{hud.hint}</div>}
+        {hud?.chest && <ChestModal chest={hud.chest} onClose={() => actionsRef.current.dismissChest()} />}
         {hud?.status === 'dead' && (
           <Overlay title="You got rugged!" button="Try again"
-            text={`${hud.lives} ${hud.lives === 1 ? 'life' : 'lives'} left`} onClick={() => advanceRef.current()} />
+            text={`${hud.lives} ${hud.lives === 1 ? 'life' : 'lives'} left`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'gameover' && (
           <Overlay title="Game over" button="Play again"
-            text={`You reached level ${hud.level}`} onClick={() => advanceRef.current()} />
+            text={`You reached level ${hud.level}`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'cleared' && (
           <Overlay win title={`Level ${hud.level} clear!`} button="Next level"
-            text={`Next: ${LEVELS[hud.level].name}`} onClick={() => advanceRef.current()} />
+            text={`Next: ${LEVELS[hud.level].name} · Prizes so far: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'won' && (
           <Overlay win title="You escaped the dungeon!" button="Play again"
-            text={`All ${LEVELS.length} levels in ${time}`} onClick={() => advanceRef.current()} />
+            text={`All ${LEVELS.length} levels in ${time} · Prizes: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
         )}
       </div>
 
       <footer className="solo-keys">
         <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows: move</span>
         <span><kbd>Space</kbd>: drop a bomb</span>
+        <span>🖱️ Click: open chest</span>
         <span><kbd>Enter</kbd>: continue</span>
         <span><kbd>R</kbd>: restart run</span>
       </footer>
@@ -191,6 +254,29 @@ function Overlay({ title, text, button, onClick, win = false }) {
       <h2>{title}</h2>
       <p className="solo-sub">{text}</p>
       <button type="button" className="solo-btn" onClick={onClick}>{button}</button>
+      <p className="solo-sub">or press Enter</p>
+    </div>
+  )
+}
+
+// Abrindo o baú / resultado do sorteio
+function ChestModal({ chest, onClose }) {
+  if (chest.state === 'opening') {
+    return (
+      <div className="solo-over solo-chest">
+        <div className="solo-chest-icon is-shaking">🎁</div>
+        <h2>Opening the chest...</h2>
+      </div>
+    )
+  }
+  const r = chest.result
+  return (
+    <div className={`solo-over solo-chest${r.win ? ' is-win' : ''}`}>
+      <div className="solo-chest-icon">{r.win ? '💰' : '🕸️'}</div>
+      <h2>{r.win ? `You found ${r.amount} ${r.token}!` : 'Empty chest...'}</h2>
+      <p className="solo-sub">{r.win ? 'Nice loot!' : 'Better luck in the next one'}</p>
+      {r.demo && <p className="solo-demo-note">Demo prize: not real PYTH</p>}
+      <button type="button" className="solo-btn" onClick={onClose}>Continue</button>
       <p className="solo-sub">or press Enter</p>
     </div>
   )
