@@ -310,6 +310,8 @@ export function update(s, controls, dt) {
       if (d.dx) moveAxis(s, p, 'x', 'y', d.dx, p.speed * dt)
       else moveAxis(s, p, 'y', 'x', d.dy, p.speed * dt)
       p.facing = dir
+      if (dir === 'left') p.flip = true // a arte fica espelhada indo pra esquerda
+      else if (dir === 'right') p.flip = false
       p.moving = p.x !== bx || p.y !== by
       if (p.moving) p.walkT += dt
     }

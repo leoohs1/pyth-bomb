@@ -11,6 +11,7 @@ import { openChest, CHEST_IS_DEMO } from './chest/index.js'
 import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
+import { loadSprites } from './engine/sprites.js'
 
 // Modo Solo (Bomberman) — protótipo com quadradinhos (inimigos, power-ups, porta, baú, chefe).
 // O React só cuida da moldura (placar, avisos). O jogo roda num laço próprio,
@@ -69,6 +70,7 @@ export default function SoloGame() {
     if (touch) return
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
+    loadSprites()
     const controls = createControls()
     let game = newRun()
     let tilePx = 40

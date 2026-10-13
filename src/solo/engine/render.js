@@ -3,6 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
+import { sprite } from './sprites.js'
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -352,8 +353,84 @@ function drawFlame(ctx, f) {
   rect(C.flameIn, inner)
 }
 
+// Personagem com arte: uma imagem só, de frente. A "vida" vem daqui:
+// - cada passo é um pulinho que ESTICA no ar e AMASSA ao pisar (squash & stretch);
+// - inclina o corpo pro lado em que está andando e rebola de leve subindo/descendo;
+// - ao virar de lado, gira como papel (fica fininha e abre do outro lado);
+// - solta poeirinha a cada passo; parada, respira e balança bem de leve.
+const PLAYER_H = 1.3 // altura do desenho em casas (a cabeça passa um pouco da casa de cima)
+const STEP_RATE = 10 // velocidade do ciclo de passos
+
+// estado só visual (não muda o jogo): giro de papel, inclinação suave, poeira
+const looks = new WeakMap()
+
+function drawPlayerSprite(ctx, p, time, img) {
+  let v = looks.get(p)
+  if (!v) { v = { t: time, turn: p.flip ? -1 : 1, lean: 0, lastStep: 0, dust: [] }; looks.set(p, v) }
+  const dt = Math.min(0.1, Math.max(0, time - v.t))
+  v.t = time
+
+  // giro de papel: vai de 1 até -1 passando por 0
+  const turnTo = p.flip ? -1 : 1
+  v.turn += Math.sign(turnTo - v.turn) * Math.min(Math.abs(turnTo - v.turn), dt * 9)
+  // inclinação suave na direção do movimento
+  const leanTo = !p.moving ? 0 : p.facing === 'left' ? -0.12 : p.facing === 'right' ? 0.12 : 0
+  v.lean += (leanTo - v.lean) * Math.min(1, dt * 12)
+
+  const dying = !p.alive ? Math.min(1, p.deathT / 0.8) : 0
+  const feetY = p.y + 0.92
+
+  let hop = 0, sy = 1, wobble = 0
+  if (p.moving) {
+    const phase = p.walkT * STEP_RATE
+    const k = Math.abs(Math.sin(phase))       // 0 = pé no chão, 1 = no alto
+    const step = Math.floor(phase / Math.PI)
+    // com as 2 imagens de passo, alterna uma por passo (as pernas mexem de verdade)
+    const w1 = sprite('playerWalk1'), w2 = sprite('playerWalk2')
+    if (w1 && w2) img = step % 2 ? w2 : w1
+    hop = k * 0.07
+    sy = 0.94 + k * 0.08                       // amassa no chão, estica no ar
+    wobble = Math.sin(phase) * (p.facing === 'up' || p.facing === 'down' ? 0.05 : 0.03)
+    // poeirinha cada vez que pisa
+    if (step !== v.lastStep) {
+      v.lastStep = step
+      const back = p.facing === 'left' ? 0.25 : p.facing === 'right' ? -0.25 : (step % 2 ? 0.2 : -0.2)
+      v.dust.push({ x: p.x + 0.5 + back, y: feetY - 0.02, t: 0 })
+    }
+  } else if (p.alive) {
+    sy = 1 + Math.sin(time * 3) * 0.02        // respirando
+    wobble = Math.sin(time * 1.6) * 0.025
+  }
+  const sx = 1 / Math.sqrt(sy)                 // amassou embaixo = engorda dos lados
+  const h = PLAYER_H
+  const w = h * (img.naturalWidth / img.naturalHeight)
+
+  // poeira
+  v.dust = v.dust.filter((d) => (d.t += dt) < 0.35)
+  for (const d of v.dust) {
+    const k = d.t / 0.35
+    ctx.fillStyle = `rgba(210, 200, 230, ${0.45 * (1 - k)})`
+    ctx.beginPath(); ctx.arc(d.x, d.y - k * 0.08, 0.06 + k * 0.08, 0, Math.PI * 2); ctx.fill()
+  }
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  const shadow = (1 - dying) * (1 - hop * 1.5)
+  ctx.beginPath(); ctx.ellipse(p.x + 0.5, feetY, 0.3 * shadow, 0.08 * shadow, 0, 0, Math.PI * 2); ctx.fill()
+
+  ctx.translate(p.x + 0.5, feetY - hop)
+  ctx.rotate(v.lean + wobble + dying * Math.PI * 2)
+  ctx.scale(v.turn * sx * (1 - dying), sy * (1 - dying))
+  if (dying) ctx.globalAlpha = Math.sin(time * 40) > 0 ? 0.5 : 1
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img, -w / 2, -h, w, h)
+  ctx.restore()
+}
+
 function drawPlayer(ctx, p, time) {
   if (!p.alive && p.deathT > 0.8) return
+  const img = sprite('player')
+  if (img) return drawPlayerSprite(ctx, p, time, img)
   const bob = p.moving ? Math.abs(Math.sin(p.walkT * 12)) * 0.07 : 0
   const dying = !p.alive ? Math.min(1, p.deathT / 0.8) : 0
   const size = 0.7 * (1 - dying)
