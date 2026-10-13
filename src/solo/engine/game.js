@@ -109,6 +109,7 @@ function loadLevel(run, random) {
     flames: [],   // { x, y, t, kind: 'center' | 'h' | 'v' }
     burning: [],  // blocos queimando: { x, y, t }
     status: 'playing', // 'playing' | 'dead' | 'gameover' | 'cleared' | 'won'
+    tileset: cfg.tileset ?? 'temple', // cenário da fase (sprites.js TILESETS)
     time: 0,
     shake: 0,
   }
@@ -128,6 +129,7 @@ function loadBossLevel(run) {
     },
     enemies: [],
     boss: makeBoss((level.cols - 1) / 2, (level.rows - 1) / 2),
+    tileset: LEVELS[run.levelIndex].tileset ?? 'temple',
     chest: null,
     door: { x: -1, y: -1, revealed: false },
     powerups: [],

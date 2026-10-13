@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, walkFrames, playerCanFlip } from './sprites.js'
+import { sprite, tileSprite, walkFrames, playerCanFlip } from './sprites.js'
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -11,6 +11,8 @@ const C = {
   blockDark: '#6b4423', blockMid: '#a26c39', blockLight: '#c99257',
   bomb: '#17131f', bombHot: '#7a1d1d',
   flameOut: '#ff7a1a', flameIn: '#ffe066',
+  // explosão roxa com miolo branco, nas cores da bomba do logo
+  blastGlow: 'rgba(150, 60, 255, 0.35)', blastOut: '#8b2cf5', blastMid: '#c77dff', blastIn: '#ffffff',
   player: '#47c2ff', playerDark: '#1d6f99', eye: '#0d0b14',
 }
 
@@ -29,8 +31,9 @@ export function draw(ctx, s, tilePx, dpr) {
   ctx.setTransform(scale, 0, 0, scale, ox * scale, oy * scale)
 
   // chão e paredes
-  const floorImg = sprite('floor')
-  const wallImg = sprite('wall')
+  const floorImg = tileSprite(s.tileset, 'floor')
+  const wallImg = tileSprite(s.tileset, 'wall')
+  const blockImg = tileSprite(s.tileset, 'block')
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
@@ -49,7 +52,7 @@ export function draw(ctx, s, tilePx, dpr) {
         }
         if (t === BLOCK) {
           const burn = s.burning.find((b) => b.x === x && b.y === y)
-          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0)
+          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, blockImg)
         }
       }
     }
@@ -373,14 +376,13 @@ function drawBlockSprite(ctx, x, y, burn, img) {
   ctx.drawImage(img, left, top, w, h)
   if (burn > 0) {
     ctx.globalAlpha = burn * 0.7
-    ctx.fillStyle = C.flameOut
+    ctx.fillStyle = C.blastOut
     ctx.beginPath(); ctx.roundRect(left, top, w, h, 0.1); ctx.fill()
   }
   ctx.restore()
 }
 
-function drawBlock(ctx, x, y, burn) {
-  const img = sprite('block')
+function drawBlock(ctx, x, y, burn, img) {
   if (img) return drawBlockSprite(ctx, x, y, burn, img)
   // burn: 0 = inteiro, 1 = sumiu
   const shrink = burn * 0.35
@@ -454,7 +456,6 @@ function drawBomb(ctx, b, time) {
 function drawFlame(ctx, f) {
   const k = f.t / FLAME_TIME           // 1 = acabou de explodir, 0 = sumindo
   const w = 0.35 + 0.45 * Math.min(1, k * 1.6)
-  const inner = w * 0.5
   const { x, y } = f
   const rect = (color, ww) => {
     ctx.fillStyle = color
@@ -465,8 +466,10 @@ function drawFlame(ctx, f) {
       ctx.fillRect(x + 0.5 - ww / 2, y, ww, 1)
     }
   }
-  rect(C.flameOut, w)
-  rect(C.flameIn, inner)
+  rect(C.blastGlow, Math.min(1, w * 1.35))
+  rect(C.blastOut, w)
+  rect(C.blastMid, w * 0.62)
+  rect(C.blastIn, w * 0.3)
 }
 
 // Personagem com arte: uma imagem só, de frente. A "vida" vem daqui:

@@ -4,8 +4,9 @@
 // - blockChance: quantos blocos quebráveis (0 a 1)
 // - boss: fase de chefe numa arena aberta (a porta só aparece quando o chefe morre)
 // - tagline: frase curta que aparece embaixo do nome da fase
+// - tileset: cenário ('temple' = templo grego, o padrão; 'military' = quartel)
 export const LEVELS = [
-  { name: 'Blue Barracks', tagline: 'The Blue Marines are on patrol', enemies: { marine: 2, sarge: 1 }, powerups: ['bomb', 'fire'], blockChance: 0.5 },
+  { name: 'Blue Barracks', tagline: 'The Blue Marines are on patrol', tileset: 'military', enemies: { marine: 2, sarge: 1 }, powerups: ['bomb', 'fire'], blockChance: 0.5 },
   { name: 'Bear Market', tagline: 'Bears everywhere', enemies: { fud: 2, bear: 2 }, powerups: ['bomb', 'fire', 'speed'], blockChance: 0.55 },
   { name: 'Rug Row', tagline: 'Watch your step', enemies: { fud: 1, bear: 2, rug: 2 }, powerups: ['bomb', 'fire', 'speed', 'fire'], blockChance: 0.6 },
   { name: "The Whale's Lair", tagline: 'The Whale awaits', boss: 'whale', enemies: {}, powerups: [] },

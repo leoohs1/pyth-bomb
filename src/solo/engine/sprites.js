@@ -27,6 +27,12 @@ const ENEMY_ART = {
   sarge: '/solo/sarge.webp',
 }
 
+// Cenários: cada fase escolhe um em levels.js (tileset). Sem escolher, usa o templo grego.
+const TILESETS = {
+  temple: { floor: '/solo/floor.webp', wall: '/solo/wall.webp', block: '/solo/block.webp' },
+  military: { floor: '/solo/military-floor.webp', wall: '/solo/military-wall.webp', block: '/solo/military-crate.webp' },
+}
+
 const me = CHARACTERS[PLAYER]
 export const playerCanFlip = !me.noFlip
 const FILES = {
@@ -36,9 +42,8 @@ const FILES = {
   ])),
   ...Object.fromEntries(Object.entries(ENEMY_ART).map(([type, src]) => [`enemy_${type}`, src])),
   bomb: '/solo/bomb.webp', // a bomba do logo do Pyth Bomb
-  floor: '/solo/floor.webp',
-  wall: '/solo/wall.webp',
-  block: '/solo/block.webp',
+  ...Object.fromEntries(Object.entries(TILESETS).flatMap(([set, t]) =>
+    Object.entries(t).map(([kind, src]) => [`${kind}_${set}`, src]))),
 }
 
 const images = {}
@@ -63,4 +68,9 @@ export function sprite(name) {
 export function walkFrames(dir) {
   const a = sprite(`walk_${dir}_1`), b = sprite(`walk_${dir}_2`)
   return a && b ? [a, b] : null
+}
+
+// peça do cenário ('floor' | 'wall' | 'block') do conjunto da fase; cai no templo se faltar
+export function tileSprite(set, kind) {
+  return sprite(`${kind}_${set}`) ?? sprite(`${kind}_temple`)
 }
