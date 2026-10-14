@@ -16,9 +16,12 @@ const CHARACTERS = {
     },
     noFlip: true,
   },
+  // TESTE pixel art: /solo?char=pixel (ainda só a imagem parada, de frente)
+  pirbPixel: { idle: '/solo/pixel/pirb.png', noFlip: true, pixelArt: true },
   nysa: { idle: '/solo/nysa.webp', walk: { down: ['/solo/nysa-walk1.webp', '/solo/nysa-walk2.webp'] } },
 }
-const PLAYER = 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
+const CHAR_TEST = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('char') === 'pixel'
+const PLAYER = CHAR_TEST ? 'pirbPixel' : 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
 
 // Inimigos com arte (uma imagem de frente; o jogo faz a marchinha e espelha pro lado).
 // Tipo sem imagem aqui continua com o desenho provisório.
@@ -48,6 +51,7 @@ const DECOR = {
 
 const me = CHARACTERS[PLAYER]
 export const playerCanFlip = !me.noFlip
+export const playerIsPixelArt = !!me.pixelArt // desenhar sem suavizar (pixels quadrados)
 const FILES = {
   player: me.idle,
   ...Object.fromEntries(Object.entries(me.walk ?? {}).flatMap(([dir, [a, b]]) => [

@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, walkFrames, playerCanFlip } from './sprites.js'
+import { sprite, tileSprite, walkFrames, playerCanFlip, playerIsPixelArt } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -702,6 +702,7 @@ function drawPlayerSprite(ctx, p, time, img) {
   ctx.scale(v.turn * sx * (1 - dying), sy * (1 - dying))
   if (dying) ctx.globalAlpha = Math.sin(time * 40) > 0 ? 0.5 : 1
   ctx.imageSmoothingQuality = 'high'
+  if (playerIsPixelArt) ctx.imageSmoothingEnabled = false
   // contorno roxo bem sutil em volta do personagem
   ctx.shadowColor = 'rgba(180, 110, 255, 0.85)'
   ctx.shadowBlur = Math.max(2, 0.09 * pxScale)
