@@ -18,12 +18,12 @@ export const BLOCK_CHANCE = 0.62
 // Jogador
 export const PLAYER_SPEED = 3.4    // casas por segundo (Halls pediu 20% mais lento que 4.2)
 export const START_BOMBS = 1       // quantas bombas ao mesmo tempo
-export const START_RANGE = 2       // alcance da explosão, em casas pra cada lado
+export const START_RANGE = 1       // alcance da explosão, em casas pra cada lado (Halls pediu 50% menos: era 2)
 export const START_LIVES = 3
 
 // Power-ups (limites máximos)
 export const MAX_BOMBS = 6
-export const MAX_RANGE = 7
+export const MAX_RANGE = 4         // teto com power-ups de fogo (era 7, também cortado pela metade)
 export const SPEED_STEP = 0.4      // cada bota soma isso na velocidade
 export const MAX_SPEED = 4.6
 

@@ -240,7 +240,7 @@ export default function SoloGame() {
           {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
           <span className="solo-hud-sep" />
           <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
-          <span title="Explosion range">🔥 <Bump v={hud?.range ?? 2} /></span>
+          <span title="Explosion range">🔥 <Bump v={hud?.range ?? 1} /></span>
           <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
           <span title="Time">⏱ {time}</span>
           <span className="solo-hud-sep" />
