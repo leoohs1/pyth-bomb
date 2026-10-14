@@ -101,7 +101,8 @@ for (let ty = 0; ty < TH; ty++) {
   for (let tx = 0; tx < TW; tx++) {
     // cor mais frequente no miolo do bloco (ignora as bordas, onde fica o borrado)
     const counts = new Map()
-    const m = Math.max(1, Math.floor(scale * 0.2))
+    // margem pra fugir do borrado das bordas (só quando o quadradinho é grande o bastante)
+    const m = scale >= 6 ? Math.max(1, Math.floor(scale * 0.2)) : 0
     for (let y = Math.floor(top + ty * scaleY) + m; y < Math.floor(top + (ty + 1) * scaleY) - m; y++) {
       for (let x = Math.floor(left + tx * scaleX) + m; x < Math.floor(left + (tx + 1) * scaleX) - m; x++) {
         if (x < 0 || y < 0 || x >= W || y >= H) continue
@@ -112,6 +113,13 @@ for (let ty = 0; ty < TH; ty++) {
         c.n++; c.r += r; c.g += g; c.b += b
         counts.set(key, c)
       }
+    }
+    if (!counts.size) {
+      // quadradinho pequeno demais pra ter miolo: usa o pixel do centro
+      const x = Math.min(W - 1, Math.floor(left + (tx + 0.5) * scaleX)), y = Math.min(H - 1, Math.floor(top + (ty + 0.5) * scaleY))
+      const i = (y * W + x) * 4
+      const r = raw[i], g = raw[i + 1], b2 = raw[i + 2]
+      if (raw[i + 3] >= 20 && !isGreen(r, g, b2)) counts.set(`${r >> 3},${g >> 3},${b2 >> 3}`, { n: 1, r, g, b: b2 })
     }
     let best = null, bestKey = 'none'
     for (const [k, c] of counts) if (!best || c.n > best.n) { best = c; bestKey = k }

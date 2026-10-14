@@ -372,7 +372,7 @@
 .solo-page.is-military.is-pixel {
   background:
     linear-gradient(rgba(10, 8, 18, 0.33), rgba(10, 8, 18, 0.33)),
-    url('/solo/bg-military-pixel.webp') center 58% / cover no-repeat,
+    url('/solo/pixel/bg-military.png') center 58% / cover no-repeat, /* fundo em pixel art de verdade (418x235) */
     #0d0b14;
   image-rendering: pixelated;
 }
