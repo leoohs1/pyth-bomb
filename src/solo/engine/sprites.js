@@ -97,7 +97,7 @@ const PIXEL_FILES = {
   walk_right_2: '/solo/pixel/pirb-right2.png',
   walk_left_1: '/solo/pixel/pirb-left1.png',
   walk_left_2: '/solo/pixel/pirb-left2.png',
-  walk_up_1: '/solo/pixel/pirb-up1.png', // provisório: convertido do de costas pintado
+  walk_up_1: '/solo/pixel/pirb-up1.png',
   walk_up_2: '/solo/pixel/pirb-up2.png',
   bomb: '/solo/pixel/bomb.png',
   floor_military: '/solo/pixel/floor-military.png',
