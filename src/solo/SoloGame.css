@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@500;600&family=Press+Start+2P&display=swap');
 
 /* Modo Solo: ocupa a janela inteira (o #root do index.css tem largura fixa, por isso o fixed). */
 .solo-page {
@@ -363,3 +363,29 @@
 .solo-chest-img.is-shaking { animation: solo-chest-shake 0.25s ease-in-out infinite; }
 .solo-chest-img.is-win { animation: solo-chest-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 26px rgba(255, 200, 90, 0.7)); }
 @keyframes solo-chest-pop { from { scale: 0.6; } }
+
+/* ---- TESTE "cara de pixel" (/solo?pixel=1) ---- */
+.is-pixel .solo-canvas { image-rendering: pixelated; filter: saturate(1.25) contrast(1.08); border-radius: 0; }
+.is-pixel .solo-frame { border-radius: 0; }
+.is-pixel .solo-frame::before { border-radius: 0; border-style: dashed; }
+.is-pixel .solo-lamp { border-radius: 0; }
+.solo-page.is-military.is-pixel {
+  background:
+    linear-gradient(rgba(10, 8, 18, 0.33), rgba(10, 8, 18, 0.33)),
+    url('/solo/bg-military-pixel.webp') center 58% / cover no-repeat,
+    #0d0b14;
+  image-rendering: pixelated;
+}
+.is-pixel .solo-top h1, .is-pixel .solo-hud, .is-pixel .solo-banner strong, .is-pixel .solo-banner span,
+.is-pixel .solo-over h2, .is-pixel .solo-btn, .is-pixel .solo-hint, .is-pixel .solo-boss {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0;
+}
+.is-pixel .solo-top h1 { font-size: 15px; }
+.is-pixel .solo-hud { font-size: 15px; border-radius: 0; }
+.is-pixel .solo-banner { border-radius: 0; }
+.is-pixel .solo-banner strong { font-size: 22px; }
+.is-pixel .solo-banner span { font-size: 10px; }
+.is-pixel .solo-over h2 { font-size: 26px; line-height: 1.4; }
+.is-pixel .solo-btn { font-size: 12px; border-radius: 0; }
+.is-pixel .solo-hint { font-size: 10px; border-radius: 0; line-height: 1.5; }

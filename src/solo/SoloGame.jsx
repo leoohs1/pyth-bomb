@@ -23,6 +23,27 @@ const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('lev
 const newRun = () => createGame(Math.random, START_LEVEL)
 
 const INTRO_SECS = 3.4 // quanto tempo a faixa de abertura da fase fica na tela (igual ao CSS .solo-banner)
+// TESTE "cara de pixel": /solo?pixel=1 desenha cada casinha com só 16 pixels e amplia com
+// pixels quadrados (pixel=12, 20, 24... muda quantos pixels por casinha). Cores com menos tons.
+const PIXEL = (() => {
+  const v = Number(new URLSearchParams(window.location.search).get('pixel'))
+  if (!v) return 0
+  return v === 1 ? 16 : Math.max(8, Math.min(32, Math.round(v)))
+})()
+
+// diminui a quantidade de tons de cada cor (efeito de paleta retrô)
+function posterize(ctx) {
+  const { width, height } = ctx.canvas
+  const img = ctx.getImageData(0, 0, width, height)
+  const d = img.data
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = (d[i] >> 5) * 36 + 18
+    d[i + 1] = (d[i + 1] >> 5) * 36 + 18
+    d[i + 2] = (d[i + 2] >> 5) * 36 + 18
+  }
+  ctx.putImageData(img, 0, 0)
+}
+
 const FRAME_PAD = 12 // espessura da moldura de metal (px), igual ao padding de .solo-frame
 
 const isTouchOnly = () =>
@@ -76,7 +97,7 @@ export default function SoloGame() {
   useEffect(() => {
     if (touch) return
     const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: !!PIXEL }) // o modo pixel lê a imagem toda a cada quadro
     loadSprites()
     const controls = createControls()
     let game = newRun()
@@ -142,8 +163,8 @@ export default function SoloGame() {
       dpr = window.devicePixelRatio || 1
       canvas.style.width = `${tilePx * COLS}px`
       canvas.style.height = `${tilePx * ROWS}px`
-      canvas.width = Math.round(tilePx * COLS * dpr)
-      canvas.height = Math.round(tilePx * ROWS * dpr)
+      canvas.width = PIXEL ? PIXEL * COLS : Math.round(tilePx * COLS * dpr)
+      canvas.height = PIXEL ? PIXEL * ROWS : Math.round(tilePx * ROWS * dpr)
     }
     const ro = new ResizeObserver(fit)
     ro.observe(wrapRef.current)
@@ -161,7 +182,7 @@ export default function SoloGame() {
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
       FX.consumeEvents(game)
       FX.update(game, dt)
-      draw(ctx, game, tilePx, dpr)
+      if (PIXEL) { draw(ctx, game, PIXEL, 1); posterize(ctx) } else draw(ctx, game, tilePx, dpr)
       const h = hudOf(game)
       const key = JSON.stringify(h)
       if (key !== hudKey) { hudKey = key; setHud(h) }
@@ -192,7 +213,7 @@ export default function SoloGame() {
   const time = hud ? `${Math.floor(hud.secs / 60)}:${String(hud.secs % 60).padStart(2, '0')}` : '0:00'
 
   return (
-    <div className={`solo-page is-${hud?.tileset ?? 'temple'}`}>
+    <div className={`solo-page is-${hud?.tileset ?? 'temple'}${PIXEL ? ' is-pixel' : ''}`}>
       <SoundToggle className="sound-fixed" />
       <header className="solo-top">
         <div className="solo-title">
