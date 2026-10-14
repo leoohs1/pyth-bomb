@@ -91,6 +91,15 @@ export function setStyle(style) {
 // versões pixel (mesmos nomes de FILES). Vai crescendo conforme as artes chegam.
 const PIXEL_FILES = {
   player: '/solo/pixel/pirb.png',
+  walk_down_1: '/solo/pixel/pirb-down1.png',
+  walk_down_2: '/solo/pixel/pirb-down2.png',
+  walk_right_1: '/solo/pixel/pirb-right1.png',
+  walk_right_2: '/solo/pixel/pirb-right2.png',
+  walk_left_1: '/solo/pixel/pirb-left1.png',
+  walk_left_2: '/solo/pixel/pirb-left2.png',
+  walk_up_1: '/solo/pixel/pirb-up1.png', // provisório: convertido do de costas pintado
+  walk_up_2: '/solo/pixel/pirb-up2.png',
+  bomb: '/solo/pixel/bomb.png',
   floor_military: '/solo/pixel/floor-military.png',
   wall_military: '/solo/pixel/wall-military.png',
   block_military_0: '/solo/pixel/crate-military.png',
