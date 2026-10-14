@@ -91,13 +91,24 @@ export function setStyle(style) {
 // versões pixel (mesmos nomes de FILES). Vai crescendo conforme as artes chegam.
 const PIXEL_FILES = {
   player: '/solo/pixel/pirb.png',
+  floor_military: '/solo/pixel/floor-military.png',
+  wall_military: '/solo/pixel/wall-military.png',
+  block_military_0: '/solo/pixel/crate-military.png',
 }
 // enquanto o Pirb pixel só tem a imagem parada, não usa os passos pintados
 const PIXEL_DROPS = STYLE === 'pixel' && !PIXEL_FILES.walk_down_1
   ? Object.keys(FILES).filter((k) => k.startsWith('walk_'))
   : []
+// peça com variações (caixotes): se já tem a versão pixel da primeira, as outras variações
+// pintadas saem (o jogo repete a pixel até chegarem as outras)
+const VARIANT_DROPS = STYLE === 'pixel'
+  ? Object.keys(PIXEL_FILES).filter((k) => k.endsWith('_0')).flatMap((k) => {
+    const base = k.slice(0, -1)
+    return Object.keys(FILES).filter((f) => f.startsWith(base) && f !== k && !PIXEL_FILES[f])
+  })
+  : []
 if (STYLE === 'pixel') {
-  for (const k of PIXEL_DROPS) delete FILES[k]
+  for (const k of [...PIXEL_DROPS, ...VARIANT_DROPS]) delete FILES[k]
   Object.assign(FILES, PIXEL_FILES)
 }
 const pixelImgs = new WeakSet()
