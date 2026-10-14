@@ -3,10 +3,29 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, walkFrames, playerCanFlip, playerIsPixelArt } from './sprites.js'
+import { sprite, tileSprite, walkFrames, playerCanFlip, isPixel, PX_TILE } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
+
+// Tamanho (em casas) de uma imagem: arte pixel usa o tamanho nativo (1 pixel da arte =
+// 1/PX_TILE de casa); arte pintada usa a altura (ou largura) pedida, mantendo a proporção.
+function sizeByH(img, wantH) {
+  if (isPixel(img)) return [img.naturalWidth / PX_TILE, img.naturalHeight / PX_TILE]
+  return [wantH * img.naturalWidth / img.naturalHeight, wantH]
+}
+function sizeByW(img, wantW) {
+  if (isPixel(img)) return [img.naturalWidth / PX_TILE, img.naturalHeight / PX_TILE]
+  return [wantW, wantW * img.naturalHeight / img.naturalWidth]
+}
+// desenha a imagem; arte pixel sai sem suavizar (pixels quadrados)
+function blit(ctx, img, x, y, w, h) {
+  if (!isPixel(img)) return ctx.drawImage(img, x, y, w, h)
+  const smooth = ctx.imageSmoothingEnabled
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(img, x, y, w, h)
+  ctx.imageSmoothingEnabled = smooth
+}
 
 const C = {
   floorA: '#2b2440', floorB: '#2f2846',
@@ -42,7 +61,7 @@ export function draw(ctx, s, tilePx, dpr) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
       if (t === WALL) {
-        if (wallImg) ctx.drawImage(wallImg, x, y, 1 + seam, 1 + seam)
+        if (wallImg) blit(ctx, wallImg, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
         // a borda da arena fica só um tiquinho mais escura, pra fechar a arena
         if (x === 0 || y === 0 || x === level.cols - 1 || y === level.rows - 1) {
@@ -53,7 +72,7 @@ export function draw(ctx, s, tilePx, dpr) {
       else {
         if (floorImg) {
           // um tiquinho maior que a casa, pra não aparecer risquinho entre uma e outra
-          ctx.drawImage(floorImg, x, y, 1 + seam, 1 + seam)
+          blit(ctx, floorImg, x, y, 1 + seam, 1 + seam)
         } else {
           ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
           ctx.fillRect(x, y, 1, 1)
@@ -198,7 +217,7 @@ function drawDoor(ctx, d, open, time, tileset) {
 
 // Porta com arte: fechada ou aberta (aberta, a luz de dentro pulsa e brilha no chão)
 function drawDoorSprite(ctx, d, open, time, img) {
-  const w = 1.0, h = w * img.naturalHeight / img.naturalWidth
+  const [w, h] = sizeByW(img, 1.0)
   const cx = d.x + 0.5, bottom = d.y + 0.98
   if (open) {
     const a = 0.4 + 0.15 * Math.sin(time * 5)
@@ -208,7 +227,7 @@ function drawDoorSprite(ctx, d, open, time, img) {
     ctx.fillStyle = g
     ctx.fillRect(cx - 1, bottom - 1.3, 2, 2)
   }
-  ctx.drawImage(img, cx - w / 2, bottom - h, w, h)
+  blit(ctx, img, cx - w / 2, bottom - h, w, h)
 }
 
 // Baú: fechado (brilha quando o jogador chega perto), tremendo enquanto abre, aberto depois.
@@ -237,8 +256,8 @@ function drawChest(ctx, c, time, near) {
 
   const art = sprite(opened ? 'chest_open' : 'chest_closed')
   if (art) {
-    const w = 0.94, h = w * art.naturalHeight / art.naturalWidth
-    ctx.drawImage(art, -w / 2, 0.42 - h, w, h)
+    const [w, h] = sizeByW(art, 0.94)
+    blit(ctx, art, -w / 2, 0.42 - h, w, h)
     ctx.restore()
     return
   }
@@ -295,10 +314,10 @@ function drawPowerup(ctx, pu, time) {
   if (token) {
     // ficha flutuando: sombrinha no chão + leve giro de moeda (estreita e volta)
     const spin = 0.82 + 0.18 * Math.abs(Math.cos(time * 2.2 + x))
-    const w = 0.86, h = w * token.naturalHeight / token.naturalWidth
+    const [w, h] = sizeByW(token, 0.86)
     ctx.fillStyle = 'rgba(0,0,0,0.3)'
     ctx.beginPath(); ctx.ellipse(x + 0.5, y + 0.9, 0.26, 0.06, 0, 0, Math.PI * 2); ctx.fill()
-    ctx.drawImage(token, x + 0.5 - (w * spin) / 2, y + 0.5 - h / 2 + lift - 0.04, w * spin, h)
+    blit(ctx, token, x + 0.5 - (w * spin) / 2, y + 0.5 - h / 2 + lift - 0.04, w * spin, h)
   } else {
     drawPowerupBox(ctx, pu, time, lift)
   }
@@ -358,8 +377,7 @@ const ENEMY_H = { marine: 1.15, sarge: 1.25 } // o sargento é maior
 
 function drawEnemySprite(ctx, e, time, img) {
   const dying = e.alive ? 0 : Math.min(1, e.deathT / 0.6)
-  const h = ENEMY_H[e.type] ?? 1.15
-  const w = h * (img.naturalWidth / img.naturalHeight)
+  const [w, h] = sizeByH(img, ENEMY_H[e.type] ?? 1.15)
   const feetY = e.y + 0.92
   const heavy = e.type === 'sarge' // o sargento anda pesado: passo lento, pisa forte e "respira"
   const phase = e.walkT * (heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
@@ -379,7 +397,7 @@ function drawEnemySprite(ctx, e, time, img) {
   const blink = Math.sin(time * 40) > 0 ? 1 : 0.35
   ctx.globalAlpha = dying ? (1 - dying) * blink : e.hurtT > 0 ? blink : 1
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(img, -w / 2, -h, w, h)
+  blit(ctx, img, -w / 2, -h, w, h)
   ctx.restore()
 
   // bravo: sinalzinho vermelho de raiva em cima da cabeça
@@ -494,15 +512,16 @@ function drawWall(ctx, x, y) {
 
 // Bloco com arte: o vaso de barro. Queimando, ele encolhe, fica alaranjado e some.
 function drawBlockSprite(ctx, x, y, burn, img) {
-  const w = 0.94 * (1 - burn * 0.5)
-  const h = w * (img.naturalHeight / img.naturalWidth)
+  const [bw, bh] = sizeByW(img, 0.94)
+  const w = bw * (1 - burn * 0.5)
+  const h = bh * (1 - burn * 0.5)
   const left = x + 0.5 - w / 2
   const top = y + 0.97 - h - burn * 0.1
   ctx.save()
   ctx.fillStyle = 'rgba(0,0,0,0.25)'
   ctx.beginPath(); ctx.ellipse(x + 0.5, y + 0.95, w * 0.48, 0.06, 0, 0, Math.PI * 2); ctx.fill()
   ctx.globalAlpha = 1 - burn * 0.8
-  ctx.drawImage(img, left, top, w, h)
+  blit(ctx, img, left, top, w, h)
   if (burn > 0) {
     ctx.globalAlpha = burn * 0.7
     ctx.fillStyle = C.blastOut
@@ -550,8 +569,9 @@ function drawBombSprite(ctx, b, time, img) {
   // ao cair no chão: amassa e quica (primeiro 0,3 s)
   const age = FUSE_TIME - b.timer
   const drop = age < 0.3 ? Math.sin((age / 0.3) * Math.PI) * (1 - age / 0.3) : 0
-  const h = BOMB_H * pulse * (1 - drop * 0.3)
-  const w = (BOMB_H * pulse * (img.naturalWidth / img.naturalHeight)) * (1 + drop * 0.25)
+  const [bw, bh] = sizeByH(img, BOMB_H)
+  const h = bh * pulse * (1 - drop * 0.3)
+  const w = bw * pulse * (1 + drop * 0.25)
   const bottom = b.y + 0.95
   const cx = b.x + 0.5
   const sphereY = bottom - h + h * BOMB_SPHERE_Y, sphereR = h * BOMB_SPHERE_R
@@ -566,7 +586,7 @@ function drawBombSprite(ctx, b, time, img) {
   ctx.fillStyle = hg
   ctx.fillRect(cx - 1, sphereY - 1, 2, 2)
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(img, cx - w / 2, bottom - h, w, h)
+  blit(ctx, img, cx - w / 2, bottom - h, w, h)
   // roxo -> magenta conforme vai chegando a hora
   if (heat > 0.35) {
     ctx.fillStyle = `rgba(255, 60, 200, ${Math.min(0.4, (heat - 0.35) * 0.7)})`
@@ -672,8 +692,7 @@ function drawPlayerSprite(ctx, p, time, img) {
     wobble = Math.sin(time * 1.6) * 0.025
   }
   const sx = 1 / Math.sqrt(sy)                 // amassou embaixo = engorda dos lados
-  const h = PLAYER_H
-  const w = h * (img.naturalWidth / img.naturalHeight)
+  const [w, h] = sizeByH(img, PLAYER_H)
 
   // poeira
   v.dust = v.dust.filter((d) => (d.t += dt) < 0.35)
@@ -702,11 +721,10 @@ function drawPlayerSprite(ctx, p, time, img) {
   ctx.scale(v.turn * sx * (1 - dying), sy * (1 - dying))
   if (dying) ctx.globalAlpha = Math.sin(time * 40) > 0 ? 0.5 : 1
   ctx.imageSmoothingQuality = 'high'
-  if (playerIsPixelArt) ctx.imageSmoothingEnabled = false
   // contorno roxo bem sutil em volta do personagem
   ctx.shadowColor = 'rgba(180, 110, 255, 0.85)'
   ctx.shadowBlur = Math.max(2, 0.09 * pxScale)
-  ctx.drawImage(img, -w / 2, -h, w, h)
+  blit(ctx, img, -w / 2, -h, w, h)
   ctx.restore()
 }
 

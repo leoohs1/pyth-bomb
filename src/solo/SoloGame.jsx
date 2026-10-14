@@ -11,7 +11,7 @@ import { openChest, CHEST_IS_DEMO } from './chest/index.js'
 import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
-import { loadSprites } from './engine/sprites.js'
+import { loadSprites, STYLE, setStyle, PX_TILE } from './engine/sprites.js'
 import * as FX from './engine/fx.js'
 
 // Modo Solo (Bomberman) — protótipo com quadradinhos (inimigos, power-ups, porta, baú, chefe).
@@ -23,13 +23,16 @@ const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('lev
 const newRun = () => createGame(Math.random, START_LEVEL)
 
 const INTRO_SECS = 3.4 // quanto tempo a faixa de abertura da fase fica na tela (igual ao CSS .solo-banner)
-// TESTE "cara de pixel": /solo?pixel=1 desenha cada casinha com só 16 pixels e amplia com
-// pixels quadrados (pixel=12, 20, 24... muda quantos pixels por casinha). Cores com menos tons.
-const PIXEL = (() => {
+// Estilo pixel (botão no topo): o jogo é desenhado com PX_TILE pixels por casinha e ampliado
+// com pixels quadrados. TESTE antigo: /solo?pixel=16 (ou 12, 24...) espreme a arte pintada em
+// poucos pixels e com menos tons de cor (POSTER).
+const PIXEL_TEST = (() => {
   const v = Number(new URLSearchParams(window.location.search).get('pixel'))
   if (!v) return 0
-  return v === 1 ? 16 : Math.max(8, Math.min(32, Math.round(v)))
+  return v === 1 ? 16 : Math.max(8, Math.min(48, Math.round(v)))
 })()
+const PIXEL = PIXEL_TEST || (STYLE === 'pixel' ? PX_TILE : 0)
+const POSTER = !!PIXEL_TEST
 
 // diminui a quantidade de tons de cada cor (efeito de paleta retrô)
 function posterize(ctx) {
@@ -97,7 +100,7 @@ export default function SoloGame() {
   useEffect(() => {
     if (touch) return
     const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d', { willReadFrequently: !!PIXEL }) // o modo pixel lê a imagem toda a cada quadro
+    const ctx = canvas.getContext('2d', { willReadFrequently: POSTER }) // o teste de pixel lê a imagem toda a cada quadro
     loadSprites()
     const controls = createControls()
     let game = newRun()
@@ -182,7 +185,7 @@ export default function SoloGame() {
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
       FX.consumeEvents(game)
       FX.update(game, dt)
-      if (PIXEL) { draw(ctx, game, PIXEL, 1); posterize(ctx) } else draw(ctx, game, tilePx, dpr)
+      if (PIXEL) { draw(ctx, game, PIXEL, 1); if (POSTER) posterize(ctx) } else draw(ctx, game, tilePx, dpr)
       const h = hudOf(game)
       const key = JSON.stringify(h)
       if (key !== hudKey) { hudKey = key; setHud(h) }
@@ -219,6 +222,16 @@ export default function SoloGame() {
         <div className="solo-title">
           <a className="solo-back" href="/play">← Back</a>
           <h1>Dungeon Run <span className="solo-tag">prototype</span></h1>
+          <button type="button" className="solo-style" title="Switch art style"
+            onClick={() => {
+              setStyle(STYLE === 'pixel' ? 'painted' : 'pixel')
+              const u = new URL(window.location.href)
+              u.searchParams.delete('style') // senão o link força o estilo antigo de novo
+              window.location.href = u.toString()
+            }}>
+            <span className={STYLE === 'painted' ? 'is-on' : ''}>Painted</span>
+            <span className={STYLE === 'pixel' ? 'is-on' : ''}>Pixel</span>
+          </button>
         </div>
         <div className="solo-hud">
           <span title="Lives">❤️ <Bump v={hud?.lives ?? 3} /></span>

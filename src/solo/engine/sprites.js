@@ -16,12 +16,9 @@ const CHARACTERS = {
     },
     noFlip: true,
   },
-  // TESTE pixel art: /solo?char=pixel (ainda só a imagem parada, de frente)
-  pirbPixel: { idle: '/solo/pixel/pirb.png', noFlip: true, pixelArt: true },
   nysa: { idle: '/solo/nysa.webp', walk: { down: ['/solo/nysa-walk1.webp', '/solo/nysa-walk2.webp'] } },
 }
-const CHAR_TEST = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('char') === 'pixel'
-const PLAYER = CHAR_TEST ? 'pirbPixel' : 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
+const PLAYER = 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
 
 // Inimigos com arte (uma imagem de frente; o jogo faz a marchinha e espelha pro lado).
 // Tipo sem imagem aqui continua com o desenho provisório.
@@ -51,7 +48,6 @@ const DECOR = {
 
 const me = CHARACTERS[PLAYER]
 export const playerCanFlip = !me.noFlip
-export const playerIsPixelArt = !!me.pixelArt // desenhar sem suavizar (pixels quadrados)
 const FILES = {
   player: me.idle,
   ...Object.fromEntries(Object.entries(me.walk ?? {}).flatMap(([dir, [a, b]]) => [
@@ -74,6 +70,40 @@ const FILES = {
   ...Object.fromEntries(Object.entries(DECOR).map(([name, src]) => [`deco_${name}`, src])),
 }
 
+// ---- ESTILO DA ARTE: 'painted' (pintado, o original) ou 'pixel' (pixel art).
+// Troca pelo botão no topo da tela (fica guardado no navegador) ou por /solo?style=pixel.
+// No estilo pixel, cada imagem que tiver versão em PIXEL_FILES aparece em pixel; o resto
+// continua com a arte pintada. Arte pixel é desenhada no tamanho nativo:
+// PX_TILE pixels da arte = 1 casinha.
+export const PX_TILE = 48
+const STYLE_KEY = 'solo-art-style'
+export const STYLE = (() => {
+  try {
+    const q = new URLSearchParams(window.location.search).get('style')
+    if (q === 'pixel' || q === 'painted') { localStorage.setItem(STYLE_KEY, q); return q }
+    return localStorage.getItem(STYLE_KEY) === 'pixel' ? 'pixel' : 'painted'
+  } catch { return 'painted' }
+})()
+export function setStyle(style) {
+  try { localStorage.setItem(STYLE_KEY, style) } catch { /* sem localStorage: só nesta visita */ }
+}
+
+// versões pixel (mesmos nomes de FILES). Vai crescendo conforme as artes chegam.
+const PIXEL_FILES = {
+  player: '/solo/pixel/pirb.png',
+}
+// enquanto o Pirb pixel só tem a imagem parada, não usa os passos pintados
+const PIXEL_DROPS = STYLE === 'pixel' && !PIXEL_FILES.walk_down_1
+  ? Object.keys(FILES).filter((k) => k.startsWith('walk_'))
+  : []
+if (STYLE === 'pixel') {
+  for (const k of PIXEL_DROPS) delete FILES[k]
+  Object.assign(FILES, PIXEL_FILES)
+}
+const pixelImgs = new WeakSet()
+// essa imagem é pixel art? (desenhar sem suavizar e no tamanho nativo)
+export const isPixel = (img) => !!img && pixelImgs.has(img)
+
 const images = {}
 
 export function loadSprites() {
@@ -82,6 +112,7 @@ export function loadSprites() {
     const img = new Image()
     img.decoding = 'async'
     img.src = src
+    if (STYLE === 'pixel' && PIXEL_FILES[name] === src) pixelImgs.add(img)
     images[name] = img
   }
 }

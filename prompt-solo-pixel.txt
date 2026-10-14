@@ -20,3 +20,39 @@ True pixel art: every pixel is a hard square, NO anti-aliasing, NO blur, NO grad
 limited palette of about 24 colors, 1-pixel dark outline around the character.
 Deliver it upscaled 16x with nearest-neighbor (final image 384x512), so each pixel is a
 clean 16x16 block. Solid flat pure green background (#00FF00), no shadow, no text.
+
+
+=======================================================================
+PEDIDO PIXEL 1 — o resto da fase 1 em pixel (cole no ChatGPT)
+=======================================================================
+Anexe SEMPRE: o Pirb pixel aprovado (o de quadradinhos grandes) como referência de estilo
+e TAMANHO DE PIXEL. Uma imagem por pedido.
+
+Oi! O Pirb pixel ficou ótimo. Agora preciso do resto no MESMO estilo e com o MESMO tamanho
+de pixel (os quadradinhos precisam ter o mesmo tamanho que os do Pirb anexado).
+Regras de sempre: pixel art de verdade, cada quadradinho uma cor só, sem anti-aliasing, sem
+degradê, contorno escuro de 1 pixel, fundo VERDE LISO (#00FF00), sem texto, sem logos,
+sem hexágonos.
+
+Medida: no Pirb, o personagem tem ~27 pixels de largura e ~53 de altura.
+Uma CASINHA do mapa tem 48x48 pixels (um pouco menos que a altura do Pirb).
+
+PIRB ANDANDO (2 poses lado a lado em cada imagem, mesmo tamanho do Pirb parado,
+pés na mesma linha; poses BEM diferentes: uma com as pernas abertas, outra com as
+pernas juntas e um joelho levantado):
+ 1) de frente (andando pra baixo)
+ 2) de costas (andando pra cima) — SEM logo atrás, só listras roxas
+ 3) de perfil olhando pra DIREITA — o "P" na frente do capacete, sem espelhar
+ 4) de perfil olhando pra ESQUERDA — o "P" na frente do capacete, sem espelhar
+
+INIMIGOS (parados, de frente, mesmo tamanho de pixel):
+ 5) BLUE MARINE: soldadinho marinheiro azul (como o da versão pintada), ~27x50 pixels
+ 6) CHAIN SARGE: o ovo azul de quepe e barba, maior e mais largo, ~36x50 pixels
+
+CENÁRIO DO QUARTEL (cada um ocupa exatamente 48x48 pixels):
+ 7) CHÃO: chapa de aço escura com textura antiderrapante (sem nada em cima)
+ 8) PAREDE: bloco blindado azul com estrela branca e faixa amarela e preta embaixo
+ 9) CAIXOTE: caixote de madeira verde-oliva com cantos de metal e uma seta branca
+
+ITENS:
+10) BOMBA: a bomba roxa do logo (esfera roxa com redemoinho branco e chamas no topo), ~40x48
