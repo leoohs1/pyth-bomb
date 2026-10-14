@@ -88,3 +88,43 @@ Deliver upscaled with nearest-neighbor. Solid flat pure green background (#00FF0
              of the helmet, never mirrored.
  - ESQUERDA: View: SIDE PROFILE facing LEFT, the beak points LEFT, the "P" logo on the front
              of the helmet, never mirrored.
+
+
+=======================================================================
+PEDIDO PIXEL 3 — FICHAS, PORTA E BAÚ ("converter" as pintadas)
+=======================================================================
+Anexe sempre: a arte PINTADA correspondente + o Pirb pixel (tamanho do quadradinho).
+Lição: pedir pra CONVERTER a imagem anexada funciona melhor que pedir pra desenhar.
+
+1) FICHAS (3 numa imagem):
+Convert the attached painted power-up tokens (purple bomb, orange flame, green winged sandal)
+into pixel art. Copy their design: thick round coin with a gold rim and the icon in the
+middle. Use the attached pixel Pirb ONLY for pixel size and style (squares the same size as
+his pixels). Each token about 40x40 pixels. Put the 3 tokens side by side in one image,
+not touching, same size, in this order: bomb, flame, sandal.
+For the sandal token use a DARK EMERALD green face (much darker than the background).
+True pixel art: every pixel one solid color, no anti-aliasing, no blur, dark 1-pixel
+outline. Deliver upscaled with nearest-neighbor. Solid flat pure green background
+(#00FF00), no text, no logos.
+
+2) PORTA fechada + aberta:
+Convert the attached painted bunker doors (closed and open) into pixel art. Copy their
+design exactly: navy blue armored frame with rivets, yellow-and-black hazard stripes, a lock
+in the middle when closed; when open, the two doors swing aside and golden-purple light pours
+out. Use the attached pixel Pirb ONLY for pixel size and style. Each door about 48 pixels
+wide x 46 pixels tall (one map tile). Put CLOSED on the left and OPEN on the right, side by
+side, not touching, same size and framing.
+The small lamp above the door: RED when closed, bright CYAN (not green) when open.
+True pixel art: every pixel one solid color, no anti-aliasing, no blur, dark 1-pixel
+outline. Deliver upscaled with nearest-neighbor. Solid flat pure green background
+(#00FF00), no text, no logos, no hexagons.
+
+3) BAÚ fechado + aberto:
+Convert the attached painted treasure chests (closed and open) into pixel art. Copy their
+design exactly: dark wood with gold bands and a purple swirl gem on the lock; when open, the
+lid is up, it is full of gold coins and golden-purple light comes out. Use the attached pixel
+Pirb ONLY for pixel size and style. Each chest about 44 pixels wide x 40 pixels tall. Put
+CLOSED on the left and OPEN on the right, side by side, not touching, same size and framing.
+True pixel art: every pixel one solid color, no anti-aliasing, no blur, dark 1-pixel
+outline. Deliver upscaled with nearest-neighbor. Solid flat pure green background
+(#00FF00), no text, no logos.
