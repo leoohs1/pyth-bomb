@@ -3,7 +3,19 @@
 // (game.js) e aqui eles viram efeito. Tudo em casas (1 = uma casa), como no render.js.
 import { WALL } from './constants.js'
 import { tileAt } from './level.js'
-import { decoSprite } from './sprites.js'
+import { decoSprite, isPixel, PX_TILE } from './sprites.js'
+
+// tamanho da decoração: arte pixel no tamanho nativo; pintada na largura pedida
+const decoSize = (img, wantW) => (isPixel(img)
+  ? [img.naturalWidth / PX_TILE, img.naturalHeight / PX_TILE]
+  : [wantW, wantW * img.naturalHeight / img.naturalWidth])
+// desenha sem suavizar quando é pixel art
+function put(ctx, img, x, y, w, h) {
+  const smooth = ctx.imageSmoothingEnabled
+  if (isPixel(img)) ctx.imageSmoothingEnabled = false
+  ctx.drawImage(img, x, y, w, h)
+  ctx.imageSmoothingEnabled = smooth
+}
 
 const parts = []        // partículas soltas
 const scorch = []       // marcas de queimado no chão (somem devagar)
@@ -184,15 +196,27 @@ export function drawAmbient(ctx, time) {
       // o trecho inteiro em 2 pedaços longos (menos emendas que um por casa)
       const img = decoSprite('pipes')
       if (img) {
-        const seg = d.len / 2, h = 0.36
-        for (let i = 0; i < 2; i++) ctx.drawImage(img, d.x + i * seg, cy - h / 2 - 0.06, seg + 0.01, h)
+        if (isPixel(img)) {
+          // pixel: repete o pedaço de cano no tamanho nativo até cobrir o trecho
+          const [w, h] = decoSize(img, 1)
+          for (let x = d.x; x < d.x + d.len - 0.01; x += w) {
+            const part = Math.min(w, d.x + d.len - x)
+            const smooth = ctx.imageSmoothingEnabled
+            ctx.imageSmoothingEnabled = false
+            ctx.drawImage(img, 0, 0, img.naturalWidth * (part / w), img.naturalHeight, x, cy - h / 2 - 0.06, part, h)
+            ctx.imageSmoothingEnabled = smooth
+          }
+        } else {
+          const seg = d.len / 2, h = 0.36
+          for (let i = 0; i < 2; i++) ctx.drawImage(img, d.x + i * seg, cy - h / 2 - 0.06, seg + 0.01, h)
+        }
       }
     } else if (d.type === 'sign') {
       const img = decoSprite('sign')
-      if (img) { const w = 0.62, h = w * img.naturalHeight / img.naturalWidth; ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h) }
+      if (img) { const [w, h] = decoSize(img, 0.62); put(ctx, img, cx - w / 2, cy - h / 2 - 0.06, w, h) }
     } else if (d.type === 'vent' && decoSprite('vent')) {
-      const img = decoSprite('vent'), w = 0.68, h = w * img.naturalHeight / img.naturalWidth
-      ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.06, w, h)
+      const img = decoSprite('vent'), [w, h] = decoSize(img, 0.68)
+      put(ctx, img, cx - w / 2, cy - h / 2 - 0.06, w, h)
     } else if (d.type === 'vent') {
       ctx.fillStyle = '#1d2128'
       ctx.beginPath(); ctx.roundRect(cx - 0.22, cy - 0.15, 0.44, 0.3, 0.05); ctx.fill()
@@ -211,8 +235,8 @@ export function drawAmbient(ctx, time) {
       ctx.fillRect(cx - 0.6, cy - 0.6, 1.2, 1.2)
       const img = decoSprite('crack')
       if (img) {
-        const w = 0.74, h = w * img.naturalHeight / img.naturalWidth
-        ctx.drawImage(img, cx - w / 2, cy - h / 2 - 0.05, w, h)
+        const [w, h] = decoSize(img, 0.74)
+        put(ctx, img, cx - w / 2, cy - h / 2 - 0.05, w, h)
         continue
       }
       ctx.strokeStyle = `rgba(230, 200, 255, ${0.6 + 0.4 * glow})`
