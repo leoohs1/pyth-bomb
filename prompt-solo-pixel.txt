@@ -1,0 +1,22 @@
+TESTE PIXEL ART — MODO SOLO
+===========================
+Padrão combinado: casinhas 24x24, personagens 24x32, 4 direções x 2 passos,
+paleta de ~24 cores, sem anti-aliasing, entregue ampliado 16x (nearest-neighbor).
+Primeiro teste: só o PIRB de frente, parado. Se convencer, seguimos.
+
+LEMBRETE: perguntar pra Pyth se a máscara simplificada em pixel pode.
+
+------------------------------------------------------------
+PX1) PIRB 24x32, DE FRENTE, PARADO — anexe a referência da máscara + o Pirb atual
+------------------------------------------------------------
+Pixel art game sprite of the character in the references: a small hero wearing the
+pigeon mask with the purple watermelon-striped helmet and the white "P" logo on the front,
+orange beak, orange eyes with white rims, white patch above the beak, blue-gray mask.
+Outfit: white Greek tunic with gold trim, purple sash and small purple cape, gold arm bands,
+brown sandals. Keep the silhouette and the main colors of the mask; small details may be
+simplified to fit the pixel grid, but do not redesign it.
+EXACT size: 24 pixels wide x 32 pixels tall, standing, facing the viewer, idle pose.
+True pixel art: every pixel is a hard square, NO anti-aliasing, NO blur, NO gradients,
+limited palette of about 24 colors, 1-pixel dark outline around the character.
+Deliver it upscaled 16x with nearest-neighbor (final image 384x512), so each pixel is a
+clean 16x16 block. Solid flat pure green background (#00FF00), no shadow, no text.
