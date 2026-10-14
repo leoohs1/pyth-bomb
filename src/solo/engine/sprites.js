@@ -103,6 +103,8 @@ const PIXEL_FILES = {
   pu_bomb: '/solo/pixel/pu-bomb.png',
   pu_fire: '/solo/pixel/pu-fire.png',
   pu_speed: '/solo/pixel/pu-speed.png',
+  door_military_closed: '/solo/pixel/door-closed.png',
+  door_military_open: '/solo/pixel/door-open.png',
   floor_military: '/solo/pixel/floor-military.png',
   wall_military: '/solo/pixel/wall-military.png',
   block_military_0: '/solo/pixel/crate-military.png',
