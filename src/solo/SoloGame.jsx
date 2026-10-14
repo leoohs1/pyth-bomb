@@ -47,6 +47,11 @@ function posterize(ctx) {
   ctx.putImageData(img, 0, 0)
 }
 
+// baú grande da janela do prêmio (no estilo pixel, a versão pixel ampliada sem borrar)
+const CHEST_ART = STYLE === 'pixel'
+  ? { closed: '/solo/pixel/chest-closed.png', open: '/solo/pixel/chest-open.png' }
+  : { closed: '/solo/chest-closed-big.webp', open: '/solo/chest-open-big.webp' }
+
 const FRAME_PAD = 12 // espessura da moldura de metal (px), igual ao padding de .solo-frame
 
 const isTouchOnly = () =>
@@ -320,7 +325,7 @@ function ChestModal({ chest, onClose }) {
   if (chest.state === 'opening') {
     return (
       <div className="solo-over solo-chest">
-        <img className="solo-chest-img is-shaking" src="/solo/chest-closed-big.webp" alt="" />
+        <img className="solo-chest-img is-shaking" src={CHEST_ART.closed} alt="" />
         <h2>Opening the chest...</h2>
       </div>
     )
@@ -329,7 +334,7 @@ function ChestModal({ chest, onClose }) {
   return (
     <div className={`solo-over solo-chest${r.win ? ' is-win' : ''}`}>
       {r.win
-        ? <img className="solo-chest-img is-win" src="/solo/chest-open-big.webp" alt="" />
+        ? <img className="solo-chest-img is-win" src={CHEST_ART.open} alt="" />
         : <div className="solo-chest-icon">🕸️</div>}
       <h2>{r.win ? `You found ${r.amount} ${r.token}!` : 'Empty chest...'}</h2>
       <p className="solo-sub">{r.win ? 'Nice loot!' : 'Better luck in the next one'}</p>

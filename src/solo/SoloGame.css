@@ -410,3 +410,4 @@
 }
 .solo-style span.is-on { color: #2a1d05; background: linear-gradient(180deg, #f3e3b0, #c9a24a); }
 .is-pixel .solo-style, .is-pixel .solo-style span { border-radius: 0; font-family: 'Press Start 2P', monospace; font-size: 8px; }
+.is-pixel .solo-chest-img { image-rendering: pixelated; width: 208px; }

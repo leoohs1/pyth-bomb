@@ -105,6 +105,8 @@ const PIXEL_FILES = {
   pu_speed: '/solo/pixel/pu-speed.png',
   door_military_closed: '/solo/pixel/door-closed.png',
   door_military_open: '/solo/pixel/door-open.png',
+  chest_closed: '/solo/pixel/chest-closed.png',
+  chest_open: '/solo/pixel/chest-open.png',
   floor_military: '/solo/pixel/floor-military.png',
   wall_military: '/solo/pixel/wall-military.png',
   block_military_0: '/solo/pixel/crate-military.png',
