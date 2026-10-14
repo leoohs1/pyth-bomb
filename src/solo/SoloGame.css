@@ -411,3 +411,12 @@
 .solo-style span.is-on { color: #2a1d05; background: linear-gradient(180deg, #f3e3b0, #c9a24a); }
 .is-pixel .solo-style, .is-pixel .solo-style span { border-radius: 0; font-family: 'Press Start 2P', monospace; font-size: 8px; }
 .is-pixel .solo-chest-img { image-rendering: pixelated; width: 208px; }
+/* tela larga (ultrawide, a partir de ~2:1): usa o fundo largo, que cobre sem ampliar/cortar tanto */
+@media (min-aspect-ratio: 19/10) {
+  .solo-page.is-military.is-pixel {
+    background:
+      linear-gradient(rgba(10, 8, 18, 0.33), rgba(10, 8, 18, 0.33)),
+      url('/solo/pixel/bg-military-wide.png') center 58% / cover no-repeat,
+      #0d0b14;
+  }
+}
