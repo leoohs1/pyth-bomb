@@ -56,3 +56,35 @@ CENÁRIO DO QUARTEL (cada um ocupa exatamente 48x48 pixels):
 
 ITENS:
 10) BOMBA: a bomba roxa do logo (esfera roxa com redemoinho branco e chamas no topo), ~40x48
+
+
+=======================================================================
+PEDIDO PIXEL 2 — BOMBA e PIRB ANDANDO (pixel é o estilo principal agora)
+=======================================================================
+BOMBA — anexe o Pirb pixel + o logo do Pyth Bomb:
+Pixel art game sprite of the bomb from the attached Pyth Bomb logo: a round glossy purple bomb
+with a white swirl on the front, a short dark neck, and purple-and-white flames on top.
+SAME pixel size and style as the attached pixel Pirb (the squares must be the same size as his
+pixels). About 36 pixels wide x 46 pixels tall (sphere about 30 pixels wide).
+True pixel art: every pixel one solid color, no anti-aliasing, no gradients, no blur,
+about 14 colors, dark 1-pixel outline, a small white shine on the sphere.
+Deliver upscaled with nearest-neighbor so each pixel is a clean square block.
+Solid flat pure green background (#00FF00), no text, no logos.
+
+PIRB ANDANDO — 4 pedidos (um por direção). Anexe o Pirb pixel parado + a referência da
+máscara (5 vistas). Texto comum + a linha da direção no final:
+Pixel art walking sprite sheet of the attached pixel Pirb, SAME size (about 27x53 pixels),
+same pixel size, same colors, same outfit. Two walking poses side by side, feet on the same
+baseline, not touching, nothing cut off. The two poses must be clearly DIFFERENT moments:
+LEFT pose "stride": legs wide apart, front heel down, back leg on its toes, arms swinging.
+RIGHT pose "passing": legs together under the body, one knee bent and lifted.
+True pixel art: every pixel one solid color, no anti-aliasing, no blur, dark 1-pixel outline.
+Deliver upscaled with nearest-neighbor. Solid flat pure green background (#00FF00), no text.
+ - FRENTE:   View: FRONT, walking toward the viewer, the "P" logo visible on the front of the helmet.
+ - COSTAS:   View: BACK, walking away from the viewer. The back of the helmet is plain purple
+             stripes with a smooth rounded edge: NO "P" logo and NO V-shaped point on the back.
+             The purple cape is visible on the back.
+ - DIREITA:  View: SIDE PROFILE facing RIGHT, the beak points RIGHT, the "P" logo on the front
+             of the helmet, never mirrored.
+ - ESQUERDA: View: SIDE PROFILE facing LEFT, the beak points LEFT, the "P" logo on the front
+             of the helmet, never mirrored.
