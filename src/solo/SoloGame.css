@@ -429,3 +429,4 @@
     0 0 0 10px rgba(5, 4, 10, 0.55),
     0 18px 70px 10px rgba(0, 0, 0, 0.8);
 }
+.solo-hud-items { display: inline-flex; gap: 6px; }

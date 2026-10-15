@@ -79,6 +79,15 @@ export function consumeEvents(s) {
         add({ kind: 'spark', x: cx, y: cy - 0.2, life: rand(0.2, 0.4), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, color: '255, 255, 255' })
       }
       if (ev.killed) add({ kind: 'ring', x: cx, y: cy, life: 0.35, color: '140, 190, 255', big: true })
+    } else if (ev.type === 'shieldBreak') {
+      // escudo quebrando: anel azul + cacos de vidro voando
+      add({ kind: 'ring', x: cx, y: cy - 0.1, life: 0.45, color: '150, 230, 255', big: true })
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2, sp = rand(2, 3.2)
+        add({ kind: 'spark', x: cx, y: cy - 0.1, life: rand(0.3, 0.5), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, color: '190, 240, 255' })
+      }
+    } else if (ev.type === 'kick') {
+      for (let i = 0; i < 3; i++) add({ kind: 'dust', x: cx + rand(-0.2, 0.2), y: cy + 0.3, life: rand(0.3, 0.45), size: rand(0.1, 0.16) })
     } else if (ev.type === 'playerHit') {
       flash = 0.18
     }

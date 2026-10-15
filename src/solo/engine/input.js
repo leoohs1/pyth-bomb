@@ -5,19 +5,21 @@
 // 2) `bindKeyboard()` traduz teclas em ações. Um direcional na tela (celular, mais tarde)
 //    é só outra fonte que chama os mesmos press()/release().
 
-export const ACTIONS = ['up', 'down', 'left', 'right', 'bomb']
+export const ACTIONS = ['up', 'down', 'left', 'right', 'bomb', 'detonate']
 
 export function createControls() {
   const held = []          // direções seguradas, a mais recente no fim
   let bombQueued = false
+  let detonateQueued = false
 
   return {
     press(action) {
       if (action === 'bomb') { bombQueued = true; return }
+      if (action === 'detonate') { detonateQueued = true; return }
       if (!held.includes(action)) held.push(action)
     },
     release(action) {
-      if (action === 'bomb') return
+      if (action === 'bomb' || action === 'detonate') return
       const i = held.indexOf(action)
       if (i >= 0) held.splice(i, 1)
     },
@@ -31,9 +33,16 @@ export function createControls() {
       bombQueued = false
       return b
     },
+    // devolve true uma vez por toque no detonador (tecla E)
+    takeDetonate() {
+      const d = detonateQueued
+      detonateQueued = false
+      return d
+    },
     clear() {
       held.length = 0
       bombQueued = false
+      detonateQueued = false
     },
   }
 }
@@ -44,6 +53,7 @@ const KEYMAP = {
   KeyA: 'left', ArrowLeft: 'left',
   KeyD: 'right', ArrowRight: 'right',
   Space: 'bomb',
+  KeyE: 'detonate',
 }
 
 // Liga o teclado aos controles. `onKey` recebe as outras teclas (ex.: R pra recomeçar).
@@ -53,7 +63,7 @@ export function bindKeyboard(controls, onKey) {
     const action = KEYMAP[e.code]
     if (action) {
       e.preventDefault() // setas e espaço não rolam a página
-      if (!e.repeat || action !== 'bomb') controls.press(action)
+      if (!e.repeat || (action !== 'bomb' && action !== 'detonate')) controls.press(action)
     } else if (onKey) {
       onKey(e)
     }

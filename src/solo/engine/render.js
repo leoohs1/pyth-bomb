@@ -117,7 +117,10 @@ export function draw(ctx, s, tilePx, dpr) {
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
   if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
-  for (const b of s.bombs) drawBomb(ctx, b, s.time)
+  for (const b of s.bombs) {
+    const v = b.slide ? { ...b, x: b.x + b.slide.dx * b.slide.p, y: b.y + b.slide.dy * b.slide.p } : b
+    drawBomb(ctx, v, s.time)
+  }
   for (const e of s.enemies) drawEnemy(ctx, e, s.time)
   if (s.boss) drawWhale(ctx, s.boss, s.time)
   for (const f of s.flames) drawFlame(ctx, f)
@@ -290,7 +293,10 @@ function drawChest(ctx, c, time, near) {
   ctx.restore()
 }
 
-const PU_COLOR = { bomb: '59, 111, 216', fire: '216, 87, 43', speed: '47, 174, 106' }
+const PU_COLOR = {
+  bomb: '59, 111, 216', fire: '216, 87, 43', speed: '47, 174, 106',
+  shield: '80, 200, 230', kick: '230, 150, 40', detonator: '220, 50, 70',
+}
 
 // Power-up: ao aparecer dá um "pop" (cresce passando do tamanho e volta), depois flutua com
 // um brilho da cor dele e uma estrelinha piscando no canto.
@@ -336,7 +342,7 @@ function drawPowerup(ctx, pu, time) {
 
 function drawPowerupBox(ctx, pu, time, lift) {
   const { x, y } = pu
-  ctx.fillStyle = { bomb: '#3b6fd8', fire: '#d8572b', speed: '#2fae6a' }[pu.kind]
+  ctx.fillStyle = { bomb: '#3b6fd8', fire: '#d8572b', speed: '#2fae6a', shield: '#2b8fb0', kick: '#c47a1c', detonator: '#b0283c' }[pu.kind]
   ctx.strokeStyle = '#f3e3b0'
   ctx.lineWidth = 0.06
   ctx.beginPath(); ctx.roundRect(x + 0.14, y + 0.14 + lift, 0.72, 0.72, 0.12); ctx.fill(); ctx.stroke()
@@ -358,6 +364,31 @@ function drawPowerupBox(ctx, pu, time, lift) {
     ctx.quadraticCurveTo(cx, cy + 0.27, cx - 0.14, cy + 0.2)
     ctx.quadraticCurveTo(cx - 0.24, cy, cx, cy - 0.26)
     ctx.fill()
+  } else if (pu.kind === 'shield') {
+    // escudo
+    ctx.fillStyle = '#e8f6ff'
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - 0.24); ctx.lineTo(cx + 0.2, cy - 0.16); ctx.lineTo(cx + 0.17, cy + 0.06)
+    ctx.quadraticCurveTo(cx + 0.1, cy + 0.2, cx, cy + 0.26)
+    ctx.quadraticCurveTo(cx - 0.1, cy + 0.2, cx - 0.17, cy + 0.06)
+    ctx.lineTo(cx - 0.2, cy - 0.16); ctx.closePath(); ctx.fill()
+  } else if (pu.kind === 'kick') {
+    // botinha chutando + linhas de movimento
+    ctx.fillStyle = '#fff'
+    ctx.beginPath(); ctx.roundRect(cx - 0.06, cy - 0.22, 0.12, 0.26, 0.03); ctx.fill()
+    ctx.beginPath(); ctx.roundRect(cx - 0.06, cy - 0.02, 0.26, 0.12, 0.05); ctx.fill()
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.04
+    ctx.beginPath()
+    for (const oy of [-0.14, -0.04, 0.06]) { ctx.moveTo(cx - 0.24, cy + oy); ctx.lineTo(cx - 0.12, cy + oy) }
+    ctx.stroke()
+  } else if (pu.kind === 'detonator') {
+    // controle com botão vermelho
+    ctx.fillStyle = '#2a2a30'
+    ctx.beginPath(); ctx.roundRect(cx - 0.16, cy - 0.1, 0.32, 0.3, 0.05); ctx.fill()
+    ctx.fillStyle = '#ff4057'
+    ctx.beginPath(); ctx.arc(cx, cy - 0.1, 0.11, Math.PI, 0); ctx.fill()
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.035
+    ctx.beginPath(); ctx.moveTo(cx + 0.1, cy - 0.12); ctx.lineTo(cx + 0.18, cy - 0.26); ctx.stroke()
   } else {
     // botinha = duas setinhas pra direita
     ctx.strokeStyle = '#fff'
@@ -563,11 +594,11 @@ const BOMB_SPHERE_Y = 0.70  // centro da esfera, a partir do topo da imagem (fra
 const BOMB_SPHERE_R = 0.30  // raio da esfera (fração da altura)
 
 function drawBombSprite(ctx, b, time, img) {
-  const left = b.timer / FUSE_TIME
+  const left = Math.min(1, b.timer / FUSE_TIME)
   const rate = 6 + (1 - left) * 18
   const pulse = 1 + 0.07 * Math.sin(time * rate)
   // ao cair no chão: amassa e quica (primeiro 0,3 s)
-  const age = FUSE_TIME - b.timer
+  const age = (b.fuse ?? FUSE_TIME) - b.timer
   const drop = age < 0.3 ? Math.sin((age / 0.3) * Math.PI) * (1 - age / 0.3) : 0
   const [bw, bh] = sizeByH(img, BOMB_H)
   const h = bh * pulse * (1 - drop * 0.3)
@@ -603,7 +634,7 @@ function drawBomb(ctx, b, time) {
   const img = sprite('bomb')
   if (img) return drawBombSprite(ctx, b, time, img)
   // pulsa mais rápido e fica vermelha perto de explodir
-  const left = b.timer / FUSE_TIME
+  const left = Math.min(1, b.timer / FUSE_TIME)
   const rate = 6 + (1 - left) * 18
   const r = 0.32 * (1 + 0.07 * Math.sin(time * rate))
   const cx = b.x + 0.5, cy = b.y + 0.55
@@ -728,8 +759,31 @@ function drawPlayerSprite(ctx, p, time, img) {
   ctx.restore()
 }
 
+// Jogador + itens: piscando depois que o escudo quebra, e a bolha do escudo quando tem
 function drawPlayer(ctx, p, time) {
   if (!p.alive && p.deathT > 0.8) return
+  ctx.save()
+  if (p.invulnT > 0 && Math.sin(time * 30) > 0) ctx.globalAlpha = 0.35
+  drawPlayerBody(ctx, p, time)
+  ctx.restore()
+  if (p.shield && p.alive) {
+    const cx = p.x + 0.5, cy = p.y + 0.38, r = 0.66 + Math.sin(time * 4) * 0.03
+    const g = ctx.createRadialGradient(cx, cy, r * 0.55, cx, cy, r)
+    g.addColorStop(0, 'rgba(120, 220, 255, 0)')
+    g.addColorStop(1, 'rgba(120, 220, 255, 0.35)')
+    ctx.fillStyle = g
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = 'rgba(190, 240, 255, 0.85)'
+    ctx.lineWidth = 0.04
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke()
+    // brilhinho girando na bolha
+    const a = time * 2.5
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+    ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 0.05, 0, Math.PI * 2); ctx.fill()
+  }
+}
+
+function drawPlayerBody(ctx, p, time) {
   const img = sprite('player')
   if (img) return drawPlayerSprite(ctx, p, time, img)
   const bob = p.moving ? Math.abs(Math.sin(p.walkT * 12)) * 0.07 : 0

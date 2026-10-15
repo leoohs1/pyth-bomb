@@ -8,6 +8,7 @@ import {
   FLOOR, BLOCK, WALL,
   PLAYER_SPEED, START_BOMBS, START_RANGE, START_LIVES,
   SPEED_STEP, MAX_SPEED, MAX_BOMBS, MAX_RANGE,
+  SHIELD_INVULN, DETONATOR_FUSE, KICK_SPEED,
   FUSE_TIME, FLAME_TIME, BURN_TIME,
 } from './constants.js'
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
@@ -28,7 +29,7 @@ export function createGame(random = Math.random, startLevel = 0) {
   return loadLevel({
     levelIndex: Math.max(0, Math.min(LEVELS.length - 1, startLevel)),
     lives: START_LIVES,
-    stats: { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE },
+    stats: { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE, shield: false, kick: false, detonator: false },
     runTime: 0,
     loot: 0, // prêmios (de mentira, por enquanto) somados na corrida
   }, random)
@@ -52,7 +53,7 @@ function carry(s) {
   return {
     levelIndex: s.levelIndex,
     lives: s.lives,
-    stats: { speed: p.speed, maxBombs: p.maxBombs, range: p.range },
+    stats: { speed: p.speed, maxBombs: p.maxBombs, range: p.range, shield: p.shield, kick: p.kick, detonator: p.detonator },
     runTime: s.runTime,
     loot: s.loot,
   }
@@ -242,7 +243,15 @@ const flameAt = (s, x, y) => s.flames.some((f) => f.x === x && f.y === y)
 
 function killPlayer(s) {
   const p = s.player
-  if (!p.alive) return
+  if (!p.alive || p.invulnT > 0) return
+  if (p.shield) {
+    // o escudo segura a batida: quebra e o jogador fica piscando um tempinho
+    p.shield = false
+    p.invulnT = SHIELD_INVULN
+    s.shake = Math.min(0.35, s.shake + 0.2)
+    s.events.push({ type: 'shieldBreak', x: p.x, y: p.y })
+    return
+  }
   p.alive = false
   s.shake = Math.min(0.4, s.shake + 0.3)
   s.events.push({ type: 'playerHit', x: p.x, y: p.y })
@@ -257,6 +266,45 @@ function applyPowerup(p, kind) {
   if (kind === 'bomb') p.maxBombs = Math.min(MAX_BOMBS, p.maxBombs + 1)
   else if (kind === 'fire') p.range = Math.min(MAX_RANGE, p.range + 1)
   else if (kind === 'speed') p.speed = Math.min(MAX_SPEED, p.speed + SPEED_STEP)
+  else if (kind === 'shield') p.shield = true
+  else if (kind === 'kick') p.kick = true
+  else if (kind === 'detonator') p.detonator = true
+}
+
+// Chute: andando contra uma bomba (com o item), ela sai deslizando até bater em algo
+function tryKick(s, p, d) {
+  if (!p.kick) return
+  const px = Math.round(p.x), py = Math.round(p.y)
+  // precisa estar quase no centro da casa, encostado na bomba
+  if (Math.abs(p.x - px) > 0.2 || Math.abs(p.y - py) > 0.2) return
+  const b = bombAt(s, px + d.dx, py + d.dy)
+  if (!b || b.passable || b.slide) return
+  if (!slideFree(s, b, d.dx, d.dy)) return
+  b.slide = { dx: d.dx, dy: d.dy, p: 0 }
+  s.events.push({ type: 'kick', x: b.x, y: b.y })
+}
+
+// a próxima casa no caminho da bomba chutada está livre?
+function slideFree(s, b, dx, dy) {
+  const x = b.x + dx, y = b.y + dy
+  if (tileAt(s.level, x, y) !== FLOOR || bombAt(s, x, y)) return false
+  if (s.enemies.some((e) => e.alive && Math.round(e.x) === x && Math.round(e.y) === y)) return false
+  if (s.boss?.alive && Math.abs(s.boss.x - x) < 1.4 && Math.abs(s.boss.y - y) < 1.4) return false
+  const p = s.player
+  return !(p.alive && Math.round(p.x) === x && Math.round(p.y) === y)
+}
+
+function updateSlides(s, dt) {
+  for (const b of s.bombs) {
+    if (!b.slide) continue
+    b.slide.p += KICK_SPEED * dt
+    while (b.slide && b.slide.p >= 1) {
+      b.x += b.slide.dx
+      b.y += b.slide.dy
+      b.slide.p -= 1
+      if (!slideFree(s, b, b.slide.dx, b.slide.dy)) b.slide = null // bateu: para na casa atual
+    }
+  }
 }
 
 export const enemiesLeft = (s) => s.enemies.filter((e) => e.alive).length
@@ -305,7 +353,7 @@ function spawnChest(s) {
 
 export function update(s, controls, dt) {
   s.time += dt
-  if (isPaused(s)) { controls.takeBomb(); return } // baú abrindo: o mundo espera
+  if (isPaused(s)) { controls.takeBomb(); controls.takeDetonate(); return } // baú abrindo: o mundo espera
   if (s.status === 'playing') s.runTime += dt
   s.shake = Math.max(0, s.shake - dt * 1.5)
   const p = s.player
@@ -324,17 +372,27 @@ export function update(s, controls, dt) {
       else if (dir === 'right') p.flip = false
       p.moving = p.x !== bx || p.y !== by
       if (p.moving) p.walkT += dt
+      else tryKick(s, p, d)
     }
     if (controls.takeBomb()) {
       const x = Math.round(p.x), y = Math.round(p.y)
       if (s.bombs.length < p.maxBombs && !bombAt(s, x, y) && tileAt(s.level, x, y) === FLOOR) {
-        s.bombs.push({ x, y, timer: FUSE_TIME, range: p.range, passable: true })
+        const fuse = p.detonator ? DETONATOR_FUSE : FUSE_TIME
+        s.bombs.push({ x, y, timer: fuse, fuse, range: p.range, passable: true, remote: p.detonator })
         s.events.push({ type: 'bombPlaced', x, y })
       }
     }
+    // detonador: a tecla E explode a bomba mais antiga
+    if (controls.takeDetonate()) {
+      const b = s.bombs.find((q) => q.remote && q.timer > 0)
+      if (b) b.timer = 0
+    }
   } else {
     controls.takeBomb() // ignora bomba apertada depois de morrer
+    controls.takeDetonate()
   }
+  p.invulnT = Math.max(0, (p.invulnT ?? 0) - dt)
+  updateSlides(s, dt)
 
   // a bomba solta embaixo do jogador vira obstáculo assim que ele sai de cima dela
   for (const b of s.bombs) {

@@ -61,6 +61,7 @@ const isTouchOnly = () =>
 function hintOf(s) {
   if (s.status !== 'playing') return null
   if (s.time < s.noteUntil) return s.note
+  if (s.player.detonator && s.bombs.some((b) => b.remote)) return 'Press E to detonate your bomb'
   const c = s.chest
   if (c?.state === 'closed') return chestNear(s) ? 'Click the chest to open it!' : 'A chest appeared! Walk up to it and click it'
   if (c && chestDone(s)) return 'The door is open! Step on it to leave'
@@ -84,6 +85,9 @@ function hudOf(s) {
     bombs: p.maxBombs,
     range: p.range,
     boots: Math.round((p.speed - PLAYER_SPEED) / SPEED_STEP),
+    shield: !!p.shield,
+    kick: !!p.kick,
+    detonator: !!p.detonator,
     secs: Math.floor(s.runTime),
     intro: s.status === 'playing' && s.time < INTRO_SECS,
     firstLevel: s.levelIndex === 0,
@@ -247,6 +251,13 @@ export default function SoloGame() {
           <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
           <span title="Explosion range">🔥 <Bump v={hud?.range ?? 1} /></span>
           <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
+          {(hud?.shield || hud?.kick || hud?.detonator) && (
+            <span className="solo-hud-items">
+              {hud.shield && <b className="solo-bump" title="Shield: blocks 1 hit">🛡️</b>}
+              {hud.kick && <b className="solo-bump" title="Kick: walk into a bomb to kick it">🦵</b>}
+              {hud.detonator && <b className="solo-bump" title="Detonator: press E to blow up your bomb">🧨</b>}
+            </span>
+          )}
           <span title="Time">⏱ {time}</span>
           <span className="solo-hud-sep" />
           <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
