@@ -70,7 +70,7 @@ const FILES = {
   ...Object.fromEntries(Object.entries(DECOR).map(([name, src]) => [`deco_${name}`, src])),
 }
 
-// ---- ESTILO DA ARTE: 'painted' (pintado, o original) ou 'pixel' (pixel art).
+// ---- ESTILO DA ARTE: 'pixel' (pixel art, o PADRÃO — decisão da Halls) ou 'painted' (pintado, o original).
 // Troca pelo botão no topo da tela (fica guardado no navegador) ou por /solo?style=pixel.
 // No estilo pixel, cada imagem que tiver versão em PIXEL_FILES aparece em pixel; o resto
 // continua com a arte pintada. Arte pixel é desenhada no tamanho nativo:
@@ -81,8 +81,8 @@ export const STYLE = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get('style')
     if (q === 'pixel' || q === 'painted') { localStorage.setItem(STYLE_KEY, q); return q }
-    return localStorage.getItem(STYLE_KEY) === 'pixel' ? 'pixel' : 'painted'
-  } catch { return 'painted' }
+    return localStorage.getItem(STYLE_KEY) === 'painted' ? 'painted' : 'pixel'
+  } catch { return 'pixel' }
 })()
 export function setStyle(style) {
   try { localStorage.setItem(STYLE_KEY, style) } catch { /* sem localStorage: só nesta visita */ }
