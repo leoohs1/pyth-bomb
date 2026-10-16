@@ -347,6 +347,7 @@ export default function App() {
     const { data, error: e } = await supabase.rpc('submit_answer', { p_room_id: room.id, p_answer: text })
     if (e) return setError(e.message)
     if (data === 'wrong') setFeedback('❌ Wrong! Try again')
+    else if (data === 'close') setFeedback('🔥 So close! Try again')
     else if (data === 'hit') setFeedback('💔 5 wrong guesses! You lost a life')
     else if (data === 'timeout') setFeedback('⏱ Time is up! You lost a life')
     else if (data === 'exploded') setFeedback('💥 No lives left!')
