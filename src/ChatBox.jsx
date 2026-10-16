@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import './ChatBox.css'
 
+// tamanho do chat que a pessoa escolheu (1 = padrão, 2 = médio, 3 = grande), lembrado no navegador
+const SIZE_KEY = 'pb_chat_size'
+const SIZE_NAMES = ['Small', 'Medium', 'Large']
+function loadSize() {
+  try {
+    const n = Number(localStorage.getItem(SIZE_KEY))
+    return n === 2 || n === 3 ? n : 1
+  } catch {
+    return 1
+  }
+}
+
 // Chat da sala. No lobby e na tela final fica ABERTO; durante a partida fica fechado e só
 // aparece o balãozinho 💬 (com um número quando chega mensagem). Cada pessoa abre e fecha o
 // seu, sem afetar os outros. `variant`: 'arena' (dentro da arena, em cqw) ou 'compact' (celular).
 export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) {
   const [override, setOverride] = useState(null) // null = automático (aberto fora da partida)
   const [text, setText] = useState('')
+  const [size, setSize] = useState(loadSize)
   const listRef = useRef(null)
   const seenRef = useRef(0)
 
@@ -28,7 +41,12 @@ export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) 
   // rola pro fim quando chega mensagem ou o chat abre
   useEffect(() => {
     if (open && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
-  }, [msgs.length, open])
+  }, [msgs.length, open, size])
+
+  function pickSize(n) {
+    setSize(n)
+    try { localStorage.setItem(SIZE_KEY, String(n)) } catch { /* sem armazenamento: vale só até recarregar */ }
+  }
 
   if (!chat.available) return null
 
@@ -51,9 +69,17 @@ export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) 
   }
 
   return (
-    <section className={`ct-panel ct-${variant}${variant === 'compact' && phase !== 'playing' ? ' ct-inline' : ''}${phase === 'playing' ? ' ct-playing' : ''}`} aria-label="Chat">
+    <section className={`ct-panel ct-${variant}${variant === 'compact' && phase !== 'playing' ? ' ct-inline' : ''}${phase === 'playing' ? ' ct-playing' : ''} ct-lv-${size}`} aria-label="Chat">
       <header className="ct-head">
         <span className="ct-title">💬 Chat</span>
+        <div className="ct-lv" role="group" aria-label="Chat size">
+          {[1, 2, 3].map((n) => (
+            <button key={n} type="button" className={`ct-lv-btn${size === n ? ' is-on' : ''}`}
+              onClick={() => pickSize(n)} aria-pressed={size === n} aria-label={`${SIZE_NAMES[n - 1]} chat`} title={`${SIZE_NAMES[n - 1]} chat`}>
+              A
+            </button>
+          ))}
+        </div>
         <button type="button" className="ct-close" onClick={toggle} aria-label="Close chat">×</button>
       </header>
       <ul className="ct-list" ref={listRef}>

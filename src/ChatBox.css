@@ -142,3 +142,55 @@
 .ct-panel.ct-playing .ct-list { height: max(55px, 5.5cqw); }
 .ct-panel.ct-compact.ct-playing .ct-list { height: clamp(60px, 10dvh, 74px); }
 @media (max-height: 520px) { .ct-panel.ct-playing .ct-list { height: 36px; } }
+
+/* ---------- tamanho do chat (botões "A A A" no topo): 1 = padrão, 2 = médio, 3 = grande ----------
+   Cada pessoa escolhe o seu (fica guardado no navegador). Na arena, mesmo o grande para antes
+   do cartão do meio, pra não cobrir o botão de começar. */
+.ct-lv { display: flex; align-items: flex-end; gap: 2px; margin: 0 8px 0 auto; }
+.ct-lv-btn {
+  min-width: 22px;
+  height: 24px;
+  padding: 0 3px;
+  cursor: pointer;
+  line-height: 1;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  color: rgba(246, 238, 255, 0.6);
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+}
+.ct-lv-btn:nth-child(1) { font-size: 11px; }
+.ct-lv-btn:nth-child(2) { font-size: 14px; }
+.ct-lv-btn:nth-child(3) { font-size: 17px; }
+.ct-lv-btn:hover { color: #fff; border-color: rgba(246, 238, 255, 0.35); }
+.ct-lv-btn.is-on { color: #2c1a06; background: linear-gradient(180deg, #f8de8e, #dcae40); border-color: #a9771a; }
+
+.ct-lv-2 .ct-list, .ct-lv-2 .ct-empty { font-size: 15px; }
+.ct-lv-3 .ct-list, .ct-lv-3 .ct-empty { font-size: 17px; }
+
+/* arena (computador) */
+.ct-panel.ct-arena.ct-lv-2 { width: max(280px, 27.5cqw); }
+.ct-panel.ct-arena.ct-lv-3 { width: max(310px, 31cqw); }
+.ct-panel.ct-arena.ct-lv-2 .ct-list { height: max(170px, 17cqw); }
+.ct-panel.ct-arena.ct-lv-3 .ct-list { height: max(240px, 24cqw); }
+.ct-panel.ct-arena.ct-lv-2.ct-playing .ct-list { height: max(85px, 8.5cqw); }
+.ct-panel.ct-arena.ct-lv-3.ct-playing .ct-list { height: max(120px, 12cqw); }
+
+/* celular em pé */
+.ct-panel.ct-compact.ct-lv-2 .ct-list { height: min(46dvh, 340px); }
+.ct-panel.ct-compact.ct-lv-3 .ct-list { height: min(58dvh, 440px); }
+.ct-panel.ct-compact.ct-inline.ct-lv-2 .ct-list { height: 150px; }
+.ct-panel.ct-compact.ct-inline.ct-lv-3 .ct-list { height: 210px; }
+.ct-panel.ct-compact.ct-playing.ct-lv-2 .ct-list { height: clamp(90px, 15dvh, 120px); }
+.ct-panel.ct-compact.ct-playing.ct-lv-3 .ct-list { height: clamp(120px, 22dvh, 170px); }
+
+/* celular deitado (tela baixa) */
+@media (max-height: 520px) {
+  .ct-panel.ct-arena.ct-lv-2 { width: 245px; }
+  .ct-panel.ct-arena.ct-lv-3 { width: 260px; }
+  .ct-panel.ct-arena.ct-lv-2 .ct-list { height: 100px; }
+  .ct-panel.ct-arena.ct-lv-3 .ct-list { height: 140px; }
+  .ct-panel.ct-arena.ct-lv-2.ct-playing .ct-list { height: 52px; }
+  .ct-panel.ct-arena.ct-lv-3.ct-playing .ct-list { height: 72px; }
+}

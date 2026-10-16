@@ -252,6 +252,11 @@ export default function App() {
       return
     }
 
+    // partida rolando: quem é novo espera acabar (o servidor também barra: supabase/027_no_late_join.sql)
+    if (targetRoom.status === 'playing') {
+      return setError('This game has already started. Wait for it to end, then join.')
+    }
+
     const { data: player, error: e } = await supabase
       .from('players')
       .insert({ room_id: targetRoom.id, nickname: nickname.trim(), user_id: user.id })
