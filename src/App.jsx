@@ -9,10 +9,10 @@ import { preloadCharacters } from './characters'
 import useChat from './useChat'
 import { readInviteCode } from './invite'
 
-function makeCode() {
+function makeCode(extra = 2) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = 'PYTH'
-  for (let i = 0; i < 2; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < extra; i++) code += chars[Math.floor(Math.random() * chars.length)]
   return code
 }
 
@@ -282,8 +282,14 @@ export default function App() {
     const nick = nickname.trim()
     if (nick.length < 2) return setError('Pick a nickname first (at least 2 characters)')
     saveNickname(nick)
-    const { data, error: e } = await supabase.from('rooms').insert({ code: makeCode() }).select().single()
-    if (e) return setError(e.message)
+    // o código sorteado pode já ser de uma sala antiga (erro 23505 = código repetido): sorteia
+    // outro. Depois de 5 tentativas passa pra 3 letras no fim, que dá bem mais combinações.
+    let data, e
+    for (let i = 0; i < 8; i++) {
+      ({ data, error: e } = await supabase.from('rooms').insert({ code: makeCode(i < 5 ? 2 : 3) }).select().single())
+      if (e?.code !== '23505') break
+    }
+    if (e) return setError(e.code === '23505' ? 'Could not create a room right now. Please try again.' : e.message)
     joinRoom(data)
   }
 
