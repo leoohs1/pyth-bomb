@@ -749,16 +749,6 @@
   box-shadow: inset 0 3px 10px rgba(10, 4, 30, 0.5);
   user-select: all;
 }
-.ga-winner-name {
-  display: inline-block;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: max(18px, 2.6cqw);
-  text-transform: uppercase;
-}
 .ga-copy {
   white-space: nowrap;
   min-width: 6.4cqw;
@@ -834,6 +824,90 @@
 }
 @keyframes ga-crown-bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -0.4cqw); } }
 
+/* pódio do fim de jogo (top 3): 2º | 1º | 3º. Os personagens sentam na beirada do degrau com
+   as pernas pra frente (a arte é sentada: ~77% da altura é o bumbum, o resto são as pernas). */
+.ga-podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.5cqw;
+  margin: 1.1cqw 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ga-step { order: 1; display: flex; flex-direction: column; align-items: center; width: 8.6cqw; min-width: 0; }
+.ga-step-2 { order: 0; }
+.ga-step-3 { order: 2; }
+.ga-step-who { position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-end; height: 5cqw; }
+.ga-step-1 .ga-step-who { height: 6.2cqw; }
+.ga-step-who img {
+  height: 100%;
+  width: auto;
+  transform: translateY(23%);
+  filter: drop-shadow(0 0.2cqw 0.25cqw rgba(30, 14, 70, 0.35));
+  animation: ga-step-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.ga-step-crown {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  font-size: 1.7cqw;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: ga-crown-bob 1.6s ease-in-out infinite;
+}
+.ga-step-block {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding-bottom: 0.35cqw;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 800;
+  font-size: max(13px, 1.7cqw);
+  line-height: 1;
+  border-radius: 0.6cqw 0.6cqw 0 0;
+  box-shadow: inset 0 0.25cqw 0 rgba(255, 255, 255, 0.55), inset 0 -0.3cqw 0.6cqw rgba(40, 20, 70, 0.25);
+  transform-origin: bottom;
+  animation: ga-step-rise 0.6s ease-out both;
+}
+.ga-step-1 .ga-step-block { height: 4cqw; color: #6b4308; background: linear-gradient(180deg, #f8de8e, #dcae40 55%, #c08d25); }
+.ga-step-2 .ga-step-block { height: 3.2cqw; color: #3c4252; background: linear-gradient(180deg, #f4f5f9, #c4c9d5 55%, #9aa1b2); }
+.ga-step-3 .ga-step-block { height: 2.6cqw; color: #5a2f12; background: linear-gradient(180deg, #f3cba3, #cd8f58 55%, #a86a3a); }
+.ga-step.is-empty .ga-step-block { opacity: 0.4; }
+/* logo um pouco menor no fim de jogo, pra sobrar lugar pro pódio */
+.ga-panel-finished .ga-logo { width: 8.5cqw; }
+.ga-step-name {
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35cqw;
+  padding: 0.1cqw 0.5cqw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: max(10.5px, 1cqw);
+  color: var(--ga-ink);
+  border-radius: 999px;
+}
+.ga-step.is-me .ga-step-name { color: #fff; background: linear-gradient(180deg, #8f62e6, #5c33b4); }
+/* entrada: os degraus sobem (3º, 2º e por último o 1º) e o personagem pula em cima */
+.ga-step-3 .ga-step-block { animation-delay: 0.1s; }
+.ga-step-3 .ga-step-who img { animation-delay: 0.5s; }
+.ga-step-2 .ga-step-block { animation-delay: 0.35s; }
+.ga-step-2 .ga-step-who img { animation-delay: 0.75s; }
+.ga-step-1 .ga-step-block { animation-delay: 0.6s; }
+.ga-step-1 .ga-step-who img { animation-delay: 1s; }
+@keyframes ga-step-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ga-step-pop {
+  from { opacity: 0; transform: translateY(-20%) scale(0.6); }
+  to { opacity: 1; transform: translateY(23%) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ga-step-block, .ga-step-who img, .ga-step-crown { animation: none; }
+}
+
 @media (max-height: 520px) {
   .ga-panel { top: 17%; width: 36%; padding: 6px 10px 8px; }
   .ga-panel .ga-qnum { display: block; margin: 0 0 2px; font-size: 9px; }
@@ -842,6 +916,8 @@
   .ga-bigbtn { height: 30px; font-size: 11px; margin-top: 5px; }
   .ga-hint, .ga-leave { font-size: 9.5px; margin-top: 3px; }
   .ga-me { font-size: 10px; margin-top: 4px; padding: 3px 6px; }
+  .ga-podium { margin-top: 2px; }
+  .ga-step-name { font-size: 9px; margin-top: 1px; padding: 0 5px; }
 }
 
 /* ---------- explosão: "X got rugged!" ----------

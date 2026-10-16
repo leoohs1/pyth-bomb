@@ -118,7 +118,8 @@ export default function GameArenaV2Harness() {
         panel={phase === 'lobby'
           ? <LobbyPanel room={{ code: 'K7QX2M' }} players={players} me={players[0]} onPick={setMyIdx} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
           : phase === 'finished'
-            ? <FinishedPanel room={{ code: 'K7QX2M' }} winner={players.find((p) => p.id === 'p3')} iWon={false} iAmOut={false} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
+            ? <FinishedPanel room={{ code: 'K7QX2M' }} players={players.map((p) => ({ ...p, place: { p0: 2, p5: 3 }[p.id] ?? null }))} myId={MY_ID}
+                winner={players.find((p) => p.id === 'p3')} iWon={false} iAmOut={true} iAmHost={asHost} onStart={() => setPhase('playing')} onLeave={() => {}} error={null} />
             : null}
       />
       {/* botãozinho sempre visível pra esconder/mostrar o painel de teste

@@ -399,7 +399,7 @@ export default function App() {
       myPlayerId={me?.id} phase="finished" centerId={winner?.id} flash={flash} onLeave={leaveRoom} chat={chat}
       panel={
         <FinishedPanel
-          room={room} winner={winner} iWon={!!winner && winner.id === me?.id}
+          room={room} players={players} myId={me?.id} winner={winner} iWon={!!winner && winner.id === me?.id}
           iAmOut={!!meNow && !meNow.alive} iAmHost={iAmHost}
           onStart={startGame} onLeave={leaveRoom} error={error}
         />

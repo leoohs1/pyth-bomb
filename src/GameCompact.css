@@ -106,7 +106,16 @@
 .mb-panel .ga-me { font-size: 14px; padding: 0; margin-top: 10px; }
 .mb-panel .ga-me.is-win { font-size: 19px; }
 .mb-panel .ga-leave { font-size: 13px; margin-top: 10px; }
-.mb-panel .ga-winner-name { font-size: 26px; }
+.mb-panel .ga-podium { gap: 6px; margin-top: 12px; }
+.mb-panel .ga-step { width: 92px; }
+.mb-panel .ga-step-who { height: 62px; }
+.mb-panel .ga-step-1 .ga-step-who { height: 78px; }
+.mb-panel .ga-step-crown { top: 0; font-size: 20px; }
+.mb-panel .ga-step-block { font-size: 18px; padding-bottom: 4px; border-radius: 7px 7px 0 0; }
+.mb-panel .ga-step-1 .ga-step-block { height: 48px; }
+.mb-panel .ga-step-2 .ga-step-block { height: 38px; }
+.mb-panel .ga-step-3 .ga-step-block { height: 31px; }
+.mb-panel .ga-step-name { font-size: 13px; margin-top: 4px; padding: 1px 6px; }
 .mb-panel .ga-pick { margin-top: 12px; gap: 10px; }
 .mb-panel .ga-pick-thumb { width: 44px; height: 53px; }
 .mb-panel .ga-pick-btn { font-size: 13px; padding: 8px 12px; }

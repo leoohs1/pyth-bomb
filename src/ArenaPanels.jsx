@@ -74,17 +74,46 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   )
 }
 
-export function FinishedPanel({ room, winner, iWon, iAmOut, iAmHost, onStart, onLeave, error }) {
+const PLACE_LABEL = { 1: '1st', 2: '2nd', 3: '3rd' }
+
+// Pódio do fim de jogo: 2º à esquerda, 1º no meio (mais alto), 3º à direita (a ordem na
+// tela vem do CSS; na página fica 1, 2, 3 pra leitor de tela). 1º = vencedor da sala;
+// 2º e 3º vêm de players.place (supabase/026_podium_places.sql). Sem esse SQL rodado, ou se
+// a pessoa já saiu da sala, o degrau fica vazio.
+function Podium({ players, winner, myId }) {
+  const at = (n) => (n === 1 ? winner : players.find((p) => p.place === n)) ?? null
+  return (
+    <ol className="ga-podium" aria-label="Top 3">
+      {[1, 2, 3].map((n) => {
+        const p = at(n)
+        return (
+          <li key={n} className={`ga-step ga-step-${n}${p ? '' : ' is-empty'}${p && p.id === myId ? ' is-me' : ''}`}
+            aria-label={`${PLACE_LABEL[n]}: ${p ? p.nickname : 'nobody'}`}>
+            <div className="ga-step-who" aria-hidden="true">
+              {p && <img src={CHARACTER_NAMES[avatarIndex(p, players)].file} alt="" />}
+              {p && n === 1 && <span className="ga-step-crown">👑</span>}
+            </div>
+            <div className="ga-step-block" aria-hidden="true">{n}</div>
+            <span className="ga-step-name" aria-hidden="true">{p?.nickname ?? ''}</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+export function FinishedPanel({ room, players, myId, winner, iWon, iAmOut, iAmHost, onStart, onLeave, error }) {
+  const myPlace = players.find((p) => p.id === myId)?.place
   return (
     <>
       <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
       {winner ? (
         <>
-          <p className="ga-qnum">Winner</p>
-          <div className="ga-code ga-winner-name">{winner.nickname}</div>
-          <p className="ga-hint">survived the Pyth Bomb</p>
-          {iWon && <p className="ga-me is-win">🎉 That's you!</p>}
-          {!iWon && iAmOut && <p className="ga-me">You got rugged. Better luck next round!</p>}
+          <Podium players={players} winner={winner} myId={myId} />
+          {iWon && <p className="ga-me is-win">🎉 You won!</p>}
+          {!iWon && myPlace === 2 && <p className="ga-me">🥈 So close! You finished 2nd</p>}
+          {!iWon && myPlace === 3 && <p className="ga-me">🥉 Nice! You finished 3rd</p>}
+          {!iWon && myPlace !== 2 && myPlace !== 3 && iAmOut && <p className="ga-me">You got rugged. Better luck next round!</p>}
         </>
       ) : (
         <p className="ga-qtext">Game over</p>
