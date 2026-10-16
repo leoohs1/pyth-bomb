@@ -13,7 +13,7 @@ import Hearts from './Hearts.jsx'
 import LifeToast from './LifeToast.jsx'
 import GameCompact from './GameCompact.jsx'
 
-const QUESTION_MS = 17000 // tem que ser igual ao intervalo em deal_question (supabase/019_seventeen_seconds.sql)
+const QUESTION_MS = 11000 // tem que ser igual ao intervalo em deal_question (supabase/029_eleven_seconds.sql)
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso,
 // repete. Visual da arte atual (banco embutido batendo com o degrau) foi
