@@ -731,14 +731,14 @@
   padding: 1.3cqw 2cqw 1.4cqw;
   z-index: 6;
 }
-.ga-panel .ga-logo { width: 11cqw; margin-bottom: 0.2cqw; }
+.ga-panel .ga-logo { width: 9cqw; margin-bottom: 0; }
 .ga-panel .ga-qnum { font-size: max(10px, 0.85cqw); }
-.ga-code-row { display: flex; justify-content: center; align-items: stretch; gap: 0.7cqw; }
+.ga-code-row { display: flex; justify-content: center; align-items: stretch; gap: 0.6cqw; margin-top: 0.3cqw; }
 .ga-code {
-  padding: 0.2cqw 1.4cqw;
+  padding: 0.1cqw 1.1cqw;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
-  font-size: max(22px, 3.6cqw);
+  font-size: max(20px, 2.5cqw);
   line-height: 1.15;
   letter-spacing: 0.14em;
   text-indent: 0.14em;
@@ -751,12 +751,12 @@
 }
 .ga-copy {
   white-space: nowrap;
-  min-width: 6.4cqw;
-  padding: 0 1cqw;
+  min-width: 0;
+  padding: 0 0.9cqw;
   cursor: pointer;
   font-family: Cinzel, Georgia, serif;
   font-weight: 800;
-  font-size: max(11px, 1.15cqw);
+  font-size: max(10px, 0.95cqw);
   text-transform: uppercase;
   color: #fff;
   background: linear-gradient(180deg, #8f62e6, #5c33b4);
@@ -1076,5 +1076,3 @@
 @keyframes ga-lifeflash-vig { 0% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ga-lifeflash, .ga-lifeflash-text, .ga-lifeflash-vignette { animation: none; } }
 
-/* regras curtas no lobby */
-.ga-rules { margin: 0.6cqw 0 0; font-size: max(11px, 1.05cqw); font-weight: 700; color: rgba(46, 31, 99, 0.85); }

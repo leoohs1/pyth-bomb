@@ -309,4 +309,3 @@
 .mb-hearts-hero { position: relative; z-index: 1; font-size: 20px; gap: 4px; margin-top: 2px; }
 .mb-stage .ga-lifeflash { position: fixed; z-index: 450; padding-top: 42dvh; }
 .mb-stage .ga-lifeflash-text { font-size: 16px; padding: 7px 16px; border-width: 2px; }
-.mb-card .ga-rules { font-size: 13px; margin-top: 8px; }

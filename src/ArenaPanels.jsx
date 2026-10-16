@@ -35,15 +35,18 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   return (
     <>
       <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
-      <p className="ga-qnum">Room code</p>
-      <div className="ga-code-row">
-        <div className="ga-code" aria-label={`Room code ${room.code.split('').join(' ')}`}>{room.code}</div>
-        <button type="button" className={`ga-copy${copied ? ' is-copied' : ''}`} onClick={copyCode}>
-          {copied ? '✓ Copied' : 'Copy link'}
-        </button>
-      </div>
-      <p className="ga-hint">Share this link with your friends</p>
-      <p className="ga-rules">♥♥ 2 lives · ⏱ 11 s per question · 5 guesses</p>
+      {/* código e link de convite: só o dono da sala vê (os outros já entraram) */}
+      {iAmHost && (
+        <>
+          <p className="ga-qnum">Room code</p>
+          <div className="ga-code-row">
+            <div className="ga-code" aria-label={`Room code ${room.code.split('').join(' ')}`}>{room.code}</div>
+            <button type="button" className={`ga-copy${copied ? ' is-copied' : ''}`} onClick={copyCode}>
+              {copied ? '✓ Copied' : 'Copy link'}
+            </button>
+          </div>
+        </>
+      )}
 
       {canPick && (
         <div className="ga-pick">
