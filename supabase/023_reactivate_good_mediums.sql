@@ -1,0 +1,85 @@
+-- PYTH BOMB: brings back the medium/hard questions that are worth it (step 23)
+-- Run in Supabase SQL Editor. Safe to run more than once.
+-- Since 016 only EASY questions are dealt. This turns ON 49 of the 74 medium/hard questions
+-- that most people can answer, and relabels 19 of them as easy (they were too easy for "medium").
+-- Still OFF on purpose: fan-only / niche ones (Pride Lands, Central Perk, Heisenberg, Knicks, touchdown,
+-- CS2, League of Legends jungle, Meta Quest, whey, Mesozoic, The Merge, Monad, Copacabana, Sugarloaf),
+-- the hard Pyth numbers (max supply, number of chains, Jane Street), the community lore questions,
+-- and the 9 cut earlier by Halls.
+
+update public.questions set active = true where text in (
+  'What oracle model does Pyth primarily use for price updates?',
+  'What service is used to fetch Pyth Core price updates?',
+  'Which country gifted the Statue of Liberty to the United States?',
+  'What is the smallest country in the world?',
+  'What is the chemical symbol for gold?',
+  'Which planet is known as the Red Planet?',
+  'What is the largest organ in the human body?',
+  'How many rings are on the Olympic symbol?',
+  'Which country has won the most men''s FIFA World Cups?',
+  'How long is an Olympic swimming pool?',
+  'Who is the captain of the Black Pearl in Pirates of the Caribbean?',
+  'Who directed the acclaimed film Pulp Fiction?',
+  'Which car model is turned into a time machine in Back to the Future?',
+  'In which European city does the original heist of Money Heist (La Casa de Papel) take place?',
+  'Who masterfully played the Joker in Batman: The Dark Knight (2008)?',
+  'What does the acronym NPC mean in video games?',
+  'What is the name of the technology behind cryptocurrencies that stores transactions in linked blocks?',
+  'Which Brazilian driver became a three-time Formula 1 world champion?',
+  'Which Asian country is known as the birthplace of Judo?',
+  'Which American swimmer won a record 28 Olympic medals?',
+  'Which Spanish football team plays its home games at the Santiago Bernabéu?',
+  'In the English league, which London club is traditionally nicknamed "The Gunners"?',
+  'Usain Bolt holds world records in which sport?',
+  'Which North American archipelago is historically the birthplace of surfing?',
+  'Which huge Brazilian river runs through the largest rainforest in the world?',
+  'In which South American country are the Inca ruins of Machu Picchu?',
+  'Which very cold US state is separated from the rest of the country and is close to Russia?',
+  'Which man-made canal in Central America links the Atlantic to the Pacific?',
+  'What is the capital of Australia?',
+  'Which desert, located mainly in Chile, is considered the driest in the world?',
+  'What does DeFi stand for?',
+  'What does WAGMI stand for?',
+  'What is the fee paid to process a transaction on a blockchain called?',
+  'What does NFT stand for?',
+  'Which event cuts the miners'' reward for Bitcoin in half?',
+  'What are crypto wallets that stay offline called?',
+  'What do we call a program that runs by itself on a blockchain once its conditions are met?',
+  'What does DAO stand for?',
+  'What is the set of 12 or 24 words used to recover a crypto wallet called?',
+  'Which acronym stands for Fear, Uncertainty and Doubt?',
+  'Which Pyth product provides verifiable random numbers for games and NFTs?',
+  'Which blockchain was Pyth''s original architecture designed to take advantage of?',
+  'Which cross-chain protocol did Pyth historically use to distribute its price feeds?',
+  'What is the PYTH token mainly used for?',
+  'Besides crypto, name one other kind of asset Pyth provides prices for.',
+  'Which Pyth service is used to access accurate historical price data?',
+  'Where was the famous oracle of Ancient Greece located?',
+  'Which god of the seas and earthquakes wields a trident?',
+  'Who is the Greek goddess of wisdom and military strategy, patron of Athens?'
+);
+
+update public.questions set difficulty = 'easy' where text in (
+  'Which country gifted the Statue of Liberty to the United States?',
+  'What is the smallest country in the world?',
+  'Which planet is known as the Red Planet?',
+  'What is the largest organ in the human body?',
+  'How many rings are on the Olympic symbol?',
+  'Which country has won the most men''s FIFA World Cups?',
+  'Who is the captain of the Black Pearl in Pirates of the Caribbean?',
+  'Which car model is turned into a time machine in Back to the Future?',
+  'What is the name of the technology behind cryptocurrencies that stores transactions in linked blocks?',
+  'Which Asian country is known as the birthplace of Judo?',
+  'Which American swimmer won a record 28 Olympic medals?',
+  'Usain Bolt holds world records in which sport?',
+  'Which huge Brazilian river runs through the largest rainforest in the world?',
+  'In which South American country are the Inca ruins of Machu Picchu?',
+  'Which very cold US state is separated from the rest of the country and is close to Russia?',
+  'Which man-made canal in Central America links the Atlantic to the Pacific?',
+  'What does NFT stand for?',
+  'Which acronym stands for Fear, Uncertainty and Doubt?',
+  'Which god of the seas and earthquakes wields a trident?'
+);
+
+-- check: questions the game can deal now, by difficulty
+select difficulty, count(*) as in_play from public.questions where verified and active group by difficulty order by difficulty;
