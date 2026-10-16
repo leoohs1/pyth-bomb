@@ -128,16 +128,31 @@ export function draw(ctx, s, tilePx, dpr) {
   drawParticles(ctx, level.cols, level.rows)
 }
 
-// The Whale: baleia azul gigante (2x2). Pisca branco quando leva dano, fica vermelha quando brava.
+// The Whale: baleia azul gigante (2x2). Pisca branco quando leva dano, fica roxa quando brava.
+// Na transformação (enrageT), treme, cresce um pouco e pisca azul/roxo antes de ficar roxa de vez.
 function drawWhale(ctx, b, time) {
   if (!b.alive && b.deathT > 1.2) return
   const dying = b.alive ? 0 : b.deathT / 1.2
-  const angry = b.hp <= BOSS.hp / 2
-  const flash = b.hurtT > 0 && Math.sin(time * 40) > 0
+  const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0 // 0 -> 1 durante a transformação
+  // transformando: pisca entre azul e roxo, cada vez mais roxo
+  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
+  const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
   const bob = Math.sin(b.walkT * 4) * 0.05
+  const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : 0
+  const grow = b.enrageT > 0 ? 1 + 0.12 * Math.sin(enraging * Math.PI) : 1
 
   ctx.save()
-  ctx.translate(b.x + 0.5, b.y + 0.5 + bob)
+  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob)
+  ctx.scale(grow, grow)
+  if (b.enrageT > 0) {
+    // ondas do rugido saindo da cabeça
+    ctx.strokeStyle = `rgba(214, 160, 255, ${0.8 * (1 - enraging * 0.6)})`
+    ctx.lineWidth = 0.07
+    for (let i = 0; i < 3; i++) {
+      const r = 0.95 + ((time * 2.2 + i / 3) % 1) * 0.7
+      ctx.beginPath(); ctx.arc(0, -0.1, r, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke()
+    }
+  }
   ctx.globalAlpha = 1 - dying
   ctx.rotate(dying * 1.5)
   ctx.scale(1 - dying * 0.5, 1 - dying * 0.5)
@@ -649,23 +664,39 @@ function drawBomb(ctx, b, time) {
   ctx.beginPath(); ctx.arc(cx + r * 0.6, cy - r * 0.95, 0.07, 0, Math.PI * 2); ctx.fill()
 }
 
+// Fogo de uma casa. `sides` diz pra que lados ele continua (1 esquerda, 2 direita, 4 cima,
+// 8 baixo): lado que continua vai até a borda da casa; lado que não continua termina numa
+// ponta arredondada antes da borda (a explosão não fica "cortada" no fim do braço).
+// A pontinha desenhada dentro da caixa (visual) entra só um pouco na casa.
 function drawFlame(ctx, f) {
   const k = f.t / FLAME_TIME           // 1 = acabou de explodir, 0 = sumindo
   const w = 0.35 + 0.45 * Math.min(1, k * 1.6)
   const { x, y } = f
-  const rect = (color, ww) => {
-    ctx.fillStyle = color
-    if (f.kind === 'h') ctx.fillRect(x, y + 0.5 - ww / 2, 1, ww)
-    else if (f.kind === 'v') ctx.fillRect(x + 0.5 - ww / 2, y, ww, 1)
-    else {
-      ctx.fillRect(x, y + 0.5 - ww / 2, 1, ww)
-      ctx.fillRect(x + 0.5 - ww / 2, y, ww, 1)
+  const sides = f.sides ?? 15
+  const inset = f.visual ? 0.55 : 0.1
+  const bar = (ww, horizontal) => {
+    const r = ww / 2
+    ctx.beginPath()
+    if (horizontal) {
+      const a = sides & 1 ? x : x + inset, b = sides & 2 ? x + 1 : x + 1 - inset
+      const L = sides & 1 ? 0 : r, R = sides & 2 ? 0 : r
+      ctx.roundRect(a, y + 0.5 - r, b - a, ww, [L, R, R, L])
+    } else {
+      const a = sides & 4 ? y : y + inset, b = sides & 8 ? y + 1 : y + 1 - inset
+      const T = sides & 4 ? 0 : r, B = sides & 8 ? 0 : r
+      ctx.roundRect(x + 0.5 - r, a, ww, b - a, [T, T, B, B])
     }
+    ctx.fill()
   }
-  rect(C.blastGlow, Math.min(1, w * 1.35))
-  rect(C.blastOut, w)
-  rect(C.blastMid, w * 0.62)
-  rect(C.blastIn, w * 0.3)
+  const layer = (color, ww) => {
+    ctx.fillStyle = color
+    if (f.kind !== 'v') bar(ww, true)
+    if (f.kind !== 'h') bar(ww, false)
+  }
+  layer(C.blastGlow, Math.min(1, w * 1.35))
+  layer(C.blastOut, w)
+  layer(C.blastMid, w * 0.62)
+  layer(C.blastIn, w * 0.3)
 }
 
 // Personagem com arte: uma imagem só, de frente. A "vida" vem daqui:

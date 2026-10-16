@@ -430,3 +430,27 @@
     0 18px 70px 10px rgba(0, 0, 0, 0.8);
 }
 .solo-hud-items { display: inline-flex; gap: 6px; }
+
+/* selo MAX no placar (bombas, fogo ou botas no limite) */
+.solo-max {
+  margin-left: 4px;
+  padding: 1px 4px;
+  font: 800 9px/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: #2a1d05;
+  background: linear-gradient(180deg, #f3e3b0, #c9a24a);
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.is-pixel .solo-max { font-family: 'Press Start 2P', monospace; font-size: 7px; border-radius: 0; }
+/* frase engraçada da tela de morte */
+.solo-line {
+  margin: 0;
+  font: italic 700 20px/1.3 Inter, system-ui, sans-serif;
+  color: #ffd27a;
+  text-shadow: 0 2px 0 #000;
+  text-align: center;
+}
+.is-pixel .solo-line { font: 12px/1.6 'Press Start 2P', monospace; font-style: normal; }
+/* pausa: fundo escuro neutro (não é o vermelho da morte) */
+.solo-over.is-pause { background: rgba(14, 10, 26, 0.72); }

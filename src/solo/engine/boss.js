@@ -2,7 +2,8 @@
 // - Ocupa 2x2 casas, anda devagar atrás do jogador; bombas não a seguram (ela passa por cima).
 // - Leva BOSS_HP explosões; depois de cada uma fica piscando um pouco sem levar dano.
 // - De tempos em tempos para e solta FUDs na arena.
-// - Com metade da vida fica brava: anda e invoca mais rápido.
+// - Com metade da vida fica brava: antes, PARA por um instante (treme, pisca roxo, não leva dano)
+//   pra todo mundo perceber a transformação; depois anda e invoca mais rápido.
 import { FLOOR } from './constants.js'
 import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
@@ -18,12 +19,13 @@ export const BOSS = {
   angrySummonEvery: 4.5,
   summonPause: 0.9,    // fica parada um tiquinho ao invocar
   maxMinions: 4,
+  enrageTime: 1.6,     // segundos da transformação (parada, piscando, sem levar dano)
 }
 
 export function makeBoss(x, y) {
   return {
     x, y, hp: BOSS.hp, alive: true, deathT: 0,
-    hurtT: 0, summonT: BOSS.summonEvery * 0.6, pauseT: 0, walkT: 0,
+    hurtT: 0, summonT: BOSS.summonEvery * 0.6, pauseT: 0, walkT: 0, enrageT: 0,
   }
 }
 
@@ -58,8 +60,9 @@ export function updateBoss(s, dt, random = Math.random) {
   b.hurtT = Math.max(0, b.hurtT - dt)
   b.walkT += dt
 
-  // levou explosão?
-  if (b.hurtT === 0 && s.flames.some((f) => bossTouchesTile(b, f.x, f.y))) {
+  // levou explosão? (a pontinha de fogo desenhada dentro das caixas não conta)
+  if (b.hurtT === 0 && s.flames.some((f) => !f.visual && bossTouchesTile(b, f.x, f.y))) {
+    const wasAngry = angry(b)
     b.hp--
     b.hurtT = BOSS.invulnerable
     s.shake = Math.min(0.35, s.shake + 0.25)
@@ -71,7 +74,18 @@ export function updateBoss(s, dt, random = Math.random) {
       s.door = { x: Math.round(b.x), y: Math.round(b.y), revealed: true }
       return
     }
+    if (!wasAngry && angry(b)) {
+      // transformação: para, treme e fica invencível até terminar; depois já invoca reforço
+      b.enrageT = BOSS.enrageTime
+      b.hurtT = Math.max(b.hurtT, BOSS.enrageTime)
+      b.summonT = 0
+      s.shake = Math.min(0.5, s.shake + 0.4)
+      s.events.push({ type: 'bossEnrage', x: b.x, y: b.y })
+      s.note = `${BOSS.name} is ENRAGED! Faster, and more FUD`
+      s.noteUntil = s.time + 3.5
+    }
   }
+  if (b.enrageT > 0) { b.enrageT = Math.max(0, b.enrageT - dt); return }
 
   // invocar FUDs
   b.summonT -= dt

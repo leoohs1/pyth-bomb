@@ -3,7 +3,7 @@
 // (game.js) e aqui eles viram efeito. Tudo em casas (1 = uma casa), como no render.js.
 import { WALL } from './constants.js'
 import { tileAt } from './level.js'
-import { decoSprite, isPixel, PX_TILE } from './sprites.js'
+import { decoSprite, isPixel, PX_TILE, STYLE } from './sprites.js'
 
 // tamanho da decoração: arte pixel no tamanho nativo; pintada na largura pedida
 const decoSize = (img, wantW) => (isPixel(img)
@@ -24,6 +24,11 @@ let ambient = null      // decoração das bordas da fase atual
 let ambientLevel = null
 
 const rand = (a, b) => a + Math.random() * (b - a)
+
+// texto que sobe do item pego (o que ele faz) e avisos grandes (chefe se transformando)
+const PU_LABEL = { bomb: '+1 BOMB', fire: '+1 FIRE', speed: 'SPEED UP', shield: 'SHIELD', kick: 'KICK', detonator: 'DETONATOR' }
+const PU_MAX = { bomb: 'BOMBS MAX', fire: 'FIRE MAX', speed: 'SPEED MAX' }
+const TEXT_FONT = STYLE === 'pixel' ? '32px "Press Start 2P", monospace' : '900 32px Inter, system-ui, sans-serif'
 
 function add(p) {
   if (parts.length < 400) parts.push({ age: 0, z: 0, vz: 0, rot: 0, vr: 0, ...p })
@@ -57,6 +62,7 @@ export function consumeEvents(s) {
       }
     } else if (ev.type === 'powerup') {
       add({ kind: 'ring', x: cx, y: cy, life: 0.4, color: '255, 230, 150', big: true })
+      add({ kind: 'text', text: (ev.max && PU_MAX[ev.kind]) || PU_LABEL[ev.kind] || '', x: cx, y: cy - 0.55, vy: -0.55, life: 1.2, color: ev.max ? '#ffcf6b' : '#ffffff' })
       for (let i = 0; i < 10; i++) {
         const a = (i / 10) * Math.PI * 2
         add({ kind: 'spark', x: cx, y: cy, life: rand(0.3, 0.5), vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, color: '255, 240, 180' })
@@ -88,6 +94,15 @@ export function consumeEvents(s) {
       }
     } else if (ev.type === 'kick') {
       for (let i = 0; i < 3; i++) add({ kind: 'dust', x: cx + rand(-0.2, 0.2), y: cy + 0.3, life: rand(0.3, 0.45), size: rand(0.1, 0.16) })
+    } else if (ev.type === 'bossEnrage') {
+      // transformação do chefe: anel roxo grande, faíscas e o aviso por cima
+      add({ kind: 'ring', x: cx, y: cy, life: 0.7, color: '200, 130, 255', big: true })
+      add({ kind: 'ring', x: cx, y: cy, life: 1.1, color: '200, 130, 255', big: true })
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2, sp = rand(2.5, 4)
+        add({ kind: 'spark', x: cx, y: cy, life: rand(0.4, 0.7), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, color: '214, 160, 255' })
+      }
+      add({ kind: 'text', text: 'ENRAGED!', x: cx, y: cy - 1.3, vy: -0.25, life: 1.8, color: '#e2b5ff', big: true })
     } else if (ev.type === 'playerHit') {
       flash = 0.18
     }
@@ -294,6 +309,25 @@ export function drawParticles(ctx, cols, rows) {
     } else if (p.kind === 'mote') {
       ctx.fillStyle = `rgba(200, 140, 255, ${1 - k})`
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill()
+    } else if (p.kind === 'text') {
+      const pop = Math.min(1, p.age / 0.12)              // cresce rápido ao nascer
+      const size = (p.big ? 0.5 : 0.3) * (0.7 + 0.3 * pop) // altura da letra, em casas
+      ctx.save()
+      ctx.font = TEXT_FONT
+      const half = (ctx.measureText(p.text).width * size) / 32 / 2
+      // não deixa o texto sair pela borda da fase
+      ctx.translate(Math.max(half + 0.1, Math.min(cols - half - 0.1, p.x)), Math.max(0.4, p.y))
+      ctx.scale(size / 32, size / 32)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.globalAlpha = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4
+      ctx.lineJoin = 'round'
+      ctx.lineWidth = 9
+      ctx.strokeStyle = 'rgba(20, 8, 40, 0.92)'
+      ctx.strokeText(p.text, 0, 0)
+      ctx.fillStyle = p.color
+      ctx.fillText(p.text, 0, 0)
+      ctx.restore()
     } else if (p.kind === 'ring') {
       const r = (p.big ? 0.9 : 0.45) * (0.3 + k)
       ctx.strokeStyle = `rgba(${p.color}, ${0.7 * (1 - k)})`

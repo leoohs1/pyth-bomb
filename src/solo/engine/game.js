@@ -32,31 +32,54 @@ export function createGame(random = Math.random, startLevel = 0) {
     stats: { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE, shield: false, kick: false, detonator: false },
     runTime: 0,
     loot: 0, // prêmios (de mentira, por enquanto) somados na corrida
+    ...freshLevel(),
   }, random)
 }
 
+// o que vale só dentro de uma fase (zera ao passar de fase):
+// - items: itens da fase (garantidos + sorteados), sorteados uma vez só, na 1ª tentativa
+// - kept: itens de bomba/fogo/bota que você pegou nesta fase (não voltam se você morrer)
+// - chestOpened: o baú desta fase já foi aberto (morrer depois disso não dá outro sorteio)
+const freshLevel = () => ({ items: null, kept: [], chestOpened: false })
+
 // Próxima fase, mantendo vidas e power-ups
 export function nextLevel(s, random = Math.random) {
-  return loadLevel({ ...carry(s), levelIndex: s.levelIndex + 1 }, random)
+  return loadLevel({ ...carry(s), levelIndex: s.levelIndex + 1, ...freshLevel() }, random)
 }
 
-// Morreu mas ainda tem vida: tenta a mesma fase de novo (mapa novo), mantendo os power-ups
+// Morreu mas ainda tem vida: tenta a mesma fase de novo (mapa novo). Mantém bombas, fogo e
+// velocidade; perde chute e detonador. Os itens que você manteve não aparecem de novo no mapa.
 export function retryLevel(s, random = Math.random) {
-  return loadLevel(carry(s), random)
+  return loadLevel(carry(s, true), random)
 }
 
 export const isLastLevel = (s) => s.levelIndex >= LEVELS.length - 1
 export const levelInfo = (s) => LEVELS[s.levelIndex]
 
-function carry(s) {
+// itens que você mantém quando morre (o resto é perdido e pode voltar a aparecer na fase)
+const KEPT_ON_DEATH = ['bomb', 'fire', 'speed']
+
+function carry(s, died = false) {
   const p = s.player
   return {
     levelIndex: s.levelIndex,
     lives: s.lives,
-    stats: { speed: p.speed, maxBombs: p.maxBombs, range: p.range, shield: p.shield, kick: p.kick, detonator: p.detonator },
+    stats: {
+      speed: p.speed, maxBombs: p.maxBombs, range: p.range,
+      shield: died ? false : p.shield, kick: died ? false : p.kick, detonator: died ? false : p.detonator,
+    },
     runTime: s.runTime,
     loot: s.loot,
+    items: s.items,
+    kept: s.kept,
+    chestOpened: s.chestOpened || s.chest?.state === 'opened',
   }
+}
+
+// sorteia `count` itens da lista `pool` (pode repetir)
+function rollBonus(bonus, random) {
+  if (!bonus) return []
+  return Array.from({ length: bonus.count }, () => bonus.pool[Math.floor(random() * bonus.pool.length)])
 }
 
 function loadLevel(run, random) {
@@ -66,11 +89,19 @@ function loadLevel(run, random) {
   const { start } = level
   const far = (x, y) => Math.abs(x - start.x) + Math.abs(y - start.y)
 
+  // itens da fase: sorteados na 1ª tentativa; numa nova tentativa, sem os que você manteve
+  const items = run.items ?? shuffle([...cfg.powerups, ...rollBonus(cfg.bonus, random)], random)
+  const toPlace = [...items]
+  for (const k of run.kept) {
+    const i = toPlace.indexOf(k)
+    if (i >= 0) toPlace.splice(i, 1)
+  }
+
   // porta e power-ups ficam escondidos debaixo de blocos (a porta, longe do início)
   const blocks = shuffle(cellsOf(level, BLOCK), random)
   const doorCell = blocks.find(([x, y]) => far(x, y) >= 8) ?? blocks[0]
   const hidden = blocks.filter((c) => c !== doorCell)
-  const powerups = cfg.powerups.slice(0, hidden.length).map((kind, i) => ({
+  const powerups = toPlace.slice(0, hidden.length).map((kind, i) => ({
     x: hidden[i][0], y: hidden[i][1], kind, revealed: false, taken: false,
   }))
 
@@ -94,6 +125,7 @@ function loadLevel(run, random) {
 
   return {
     ...run,
+    items,
     level,
     player: {
       x: start.x, y: start.y,
@@ -204,20 +236,31 @@ function moveAxis(s, p, main, cross, sign, step) {
   p[main] = next
 }
 
-function addFlame(s, x, y, kind) {
-  const f = s.flames.find((q) => q.x === x && q.y === y)
+// Lados de uma casa de fogo que encostam em outro fogo (pro desenho: lado sem fogo vizinho
+// ganha ponta arredondada, em vez de terminar seco na borda da casa)
+const SIDE = { left: 1, right: 2, up: 4, down: 8 }
+const BACK = { left: 2, right: 1, up: 8, down: 4 }
+const ALL_SIDES = 15
+
+function addFlame(s, x, y, kind, sides) {
+  const f = s.flames.find((q) => q.x === x && q.y === y && !q.visual)
   if (f) {
     f.t = FLAME_TIME
-    if (f.kind !== kind) f.kind = 'center' // cruzamento de duas explosões
-  } else {
-    s.flames.push({ x, y, t: FLAME_TIME, kind })
+    if (f.kind !== kind) { f.kind = 'center'; f.sides = ALL_SIDES } // cruzamento de duas explosões
+    else f.sides |= sides
+    return f
   }
+  const nf = { x, y, t: FLAME_TIME, kind, sides }
+  s.flames.push(nf)
+  return nf
 }
 
 function explode(s, bomb) {
   s.bombs.splice(s.bombs.indexOf(bomb), 1)
-  addFlame(s, bomb.x, bomb.y, 'center')
-  for (const d of Object.values(DIRS)) {
+  const center = addFlame(s, bomb.x, bomb.y, 'center', ALL_SIDES)
+  for (const [name, d] of Object.entries(DIRS)) {
+    const kind = d.dx ? 'h' : 'v'
+    let prev = center
     for (let i = 1; i <= bomb.range; i++) {
       const x = bomb.x + d.dx * i
       const y = bomb.y + d.dy * i
@@ -228,20 +271,26 @@ function explode(s, bomb) {
           s.burning.push({ x, y, t: BURN_TIME })
           s.events.push({ type: 'blockBroken', x, y })
         }
+        // só desenho: a ponta do fogo entra um pouco na caixa (não machuca ninguém)
+        prev.sides |= SIDE[name]
+        s.flames.push({ x, y, t: FLAME_TIME, kind, sides: BACK[name], visual: true })
         break
       }
+      prev.sides |= SIDE[name]
       const other = bombAt(s, x, y)
-      if (other) { other.timer = 0; addFlame(s, x, y, 'center'); break } // reação em cadeia
-      addFlame(s, x, y, d.dx ? 'h' : 'v')
+      if (other) { other.timer = 0; addFlame(s, x, y, 'center', ALL_SIDES); break } // reação em cadeia
+      prev = addFlame(s, x, y, kind, BACK[name])
     }
   }
   s.shake = Math.min(0.25, s.shake + 0.15)
   s.events.push({ type: 'explode', x: bomb.x, y: bomb.y, range: bomb.range })
 }
 
-const flameAt = (s, x, y) => s.flames.some((f) => f.x === x && f.y === y)
+// fogo de verdade nessa casa? (a pontinha desenhada dentro da caixa não conta)
+const flameAt = (s, x, y) => s.flames.some((f) => f.x === x && f.y === y && !f.visual)
 
-function killPlayer(s) {
+// cause: 'fire' (a própria bomba), o tipo do inimigo que encostou, ou 'boss'
+function killPlayer(s, cause) {
   const p = s.player
   if (!p.alive || p.invulnT > 0) return
   if (p.shield) {
@@ -256,19 +305,32 @@ function killPlayer(s) {
   s.shake = Math.min(0.4, s.shake + 0.3)
   s.events.push({ type: 'playerHit', x: p.x, y: p.y })
   p.moving = false
+  s.deathCause = cause
+  s.deathRoll = Math.random() // sorteia a frase da tela de morte (fica fixa até a próxima)
   if (s.status === 'playing') {
     s.lives--
     s.status = s.lives > 0 ? 'dead' : 'gameover'
   }
 }
 
+// aplica o item; devolve false se não mudou nada (já estava no máximo)
 function applyPowerup(p, kind) {
+  const before = [p.maxBombs, p.range, p.speed]
   if (kind === 'bomb') p.maxBombs = Math.min(MAX_BOMBS, p.maxBombs + 1)
   else if (kind === 'fire') p.range = Math.min(MAX_RANGE, p.range + 1)
   else if (kind === 'speed') p.speed = Math.min(MAX_SPEED, p.speed + SPEED_STEP)
   else if (kind === 'shield') p.shield = true
   else if (kind === 'kick') p.kick = true
   else if (kind === 'detonator') p.detonator = true
+  else return false
+  return !['bomb', 'fire', 'speed'].includes(kind) || before.some((v, i) => v !== [p.maxBombs, p.range, p.speed][i])
+}
+
+// explicação curta dos itens especiais (aparece no aviso embaixo do placar)
+const ITEM_NOTES = {
+  shield: 'SHIELD! It blocks 1 hit',
+  kick: 'KICK! Walk into a bomb to send it sliding',
+  detonator: `DETONATOR! Press E to blow your bombs (or wait ${DETONATOR_FUSE} s)`,
 }
 
 // Chute: andando contra uma bomba (com o item), ela sai deslizando até bater em algo
@@ -302,6 +364,8 @@ function updateSlides(s, dt) {
       b.x += b.slide.dx
       b.y += b.slide.dy
       b.slide.p -= 1
+      // deslizou pra dentro do fogo: explode na hora (como no Bomberman)
+      if (flameAt(s, b.x, b.y)) { b.slide = null; b.timer = 0; break }
       if (!slideFree(s, b, b.slide.dx, b.slide.dy)) b.slide = null // bateu: para na casa atual
     }
   }
@@ -335,6 +399,10 @@ export function dismissChest(s) {
 // o baú aparece numa casa livre do lado da porta (busca em largura a partir dela)
 function spawnChest(s) {
   const { door, level } = s
+  // morreu depois de já ter aberto o baú desta fase: ele volta aberto e vazio (sem novo sorteio)
+  const fresh = s.chestOpened
+    ? { state: 'opened', result: { win: false, amount: 0, reopened: true }, dismissed: true }
+    : { state: 'closed', result: null, dismissed: false }
   const seen = new Set([door.x + ',' + door.y])
   const queue = [[door.x, door.y]]
   while (queue.length) {
@@ -344,11 +412,11 @@ function spawnChest(s) {
       const k = nx + ',' + ny
       if (seen.has(k) || tileAt(level, nx, ny) !== FLOOR) continue
       seen.add(k)
-      if (!bombAt(s, nx, ny)) return { x: nx, y: ny, state: 'closed', result: null, dismissed: false }
+      if (!bombAt(s, nx, ny)) return { x: nx, y: ny, ...fresh }
       queue.push([nx, ny])
     }
   }
-  return { x: door.x, y: door.y, state: 'closed', result: null, dismissed: false }
+  return { x: door.x, y: door.y, ...fresh }
 }
 
 export function update(s, controls, dt) {
@@ -438,16 +506,19 @@ export function update(s, controls, dt) {
   if (p.alive) {
     const px = Math.round(p.x), py = Math.round(p.y)
     // fogo ou encostar num inimigo = morte
-    if (flameAt(s, px, py)) killPlayer(s)
-    else if (s.enemies.some((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)) killPlayer(s)
-    else if (s.boss?.alive && bossTouchesPlayer(s.boss, p)) killPlayer(s)
+    const touching = s.enemies.find((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)
+    if (flameAt(s, px, py)) killPlayer(s, 'fire')
+    else if (touching) killPlayer(s, touching.type)
+    else if (s.boss?.alive && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
 
     // pega power-up
     for (const pu of s.powerups) {
       if (p.alive && pu.revealed && !pu.taken && pu.x === px && pu.y === py) {
         pu.taken = true
-        applyPowerup(p, pu.kind)
-        s.events.push({ type: 'powerup', x: pu.x, y: pu.y, kind: pu.kind })
+        const changed = applyPowerup(p, pu.kind)
+        if (KEPT_ON_DEATH.includes(pu.kind)) s.kept.push(pu.kind)
+        s.events.push({ type: 'powerup', x: pu.x, y: pu.y, kind: pu.kind, max: !changed })
+        if (ITEM_NOTES[pu.kind]) { s.note = ITEM_NOTES[pu.kind]; s.noteUntil = s.time + 4 }
       }
     }
 

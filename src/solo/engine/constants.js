@@ -29,7 +29,7 @@ export const MAX_SPEED = 4.6
 
 // Itens especiais
 export const SHIELD_INVULN = 2      // segundos piscando (sem levar dano) depois que o escudo quebra
-export const DETONATOR_FUSE = 10    // com detonador, a bomba espera a tecla E (explode sozinha depois disso)
+export const DETONATOR_FUSE = 6     // com detonador, a bomba espera a tecla E (explode sozinha depois disso). Era 10: forte demais (playtest do Gio)
 export const KICK_SPEED = 9         // casas por segundo da bomba chutada
 
 // Bomba e explosão (segundos)

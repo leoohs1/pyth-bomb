@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import './SoloGame.css'
 import SoundToggle from '../SoundToggle.jsx'
-import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP } from './engine/constants.js'
+import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
 import { LEVELS } from './engine/levels.js'
 import {
   createGame, nextLevel, retryLevel, update, enemiesLeft, doorOpen, levelInfo,
-  chestNear, chestDone, beginChest, finishChest, dismissChest,
+  chestNear, chestDone, beginChest, finishChest, dismissChest, isPaused,
 } from './engine/game.js'
 import { openChest, CHEST_IS_DEMO } from './chest/index.js'
 import { createControls, bindKeyboard } from './engine/input.js'
@@ -71,10 +71,28 @@ function hintOf(s) {
   return null
 }
 
-function hudOf(s) {
+// frases da tela de morte: algumas pelo que te matou, outras servem pra qualquer morte
+const DEATH_LINES = {
+  fire: ['Ser, that was your own bomb.', 'Self-liquidated.', 'You rugged yourself.', 'Friendly fire is still fire.', 'Bold strategy. It did not work.'],
+  marine: ['The Blue Marines were not impressed.', 'Outmarched.'],
+  sarge: ['The Sarge says: drop and give me 20.', 'Chain of command: you lost.'],
+  fud: ['Caught by the FUD.', 'You let the FUD get to you.'],
+  bear: ['The bears got you.', 'Bear market claims another one.'],
+  rug: ['Rug pulled. Classic.', 'Never trust a rug.'],
+  boss: ['The Whale ate your bags.', 'Whale-sized loss.', 'Market manipulated.'],
+  any: ['Rekt.', 'Liquidated.', 'Should have done your own research.', 'Not financial advice.', 'GG. Go again.'],
+}
+function deathLine(s) {
+  const pool = [...(DEATH_LINES[s.deathCause] ?? []), ...DEATH_LINES.any]
+  return pool[Math.floor((s.deathRoll ?? 0) * pool.length)]
+}
+
+function hudOf(s, paused) {
   const p = s.player
   return {
     status: s.status,
+    paused,
+    deathLine: s.status === 'dead' || s.status === 'gameover' ? deathLine(s) : null,
     level: s.levelIndex + 1,
     levelName: levelInfo(s).name,
     tagline: levelInfo(s).tagline ?? '',
@@ -85,6 +103,10 @@ function hudOf(s) {
     bombs: p.maxBombs,
     range: p.range,
     boots: Math.round((p.speed - PLAYER_SPEED) / SPEED_STEP),
+    // já no máximo: o placar mostra MAX (pegar mais desse item não muda nada)
+    bombsMax: p.maxBombs >= MAX_BOMBS,
+    rangeMax: p.range >= MAX_RANGE,
+    bootsMax: p.speed >= MAX_SPEED - 1e-6,
     shield: !!p.shield,
     kick: !!p.kick,
     detonator: !!p.detonator,
@@ -120,7 +142,22 @@ export default function SoloGame() {
     let hudKey = ''
 
     let freeze = 0 // micro-pausa ("hit-stop") quando um inimigo é derrotado
-    const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0 }
+    let paused = false // pausa (P/Esc, ou sozinha quando a aba some ou a janela perde o foco)
+    const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0; paused = false }
+    const setPaused = (v) => { paused = v; controls.clear() }
+    // só pausa no meio da fase (nas telas de morte, fase concluída e baú o jogo já está parado)
+    const pauseNow = () => { if (game.status === 'playing' && !isPaused(game)) setPaused(true) }
+    const onVisibility = () => { if (document.hidden) pauseNow() }
+    // pausado: qualquer tecla volta (e essa tecla não vira ação no jogo, ex.: não solta bomba)
+    const onResumeKey = (e) => {
+      if (!paused || e.altKey || e.ctrlKey || e.metaKey) return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      setPaused(false)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('blur', pauseNow)
+    window.addEventListener('keydown', onResumeKey, true)
     // Enter / botão da mensagem: fecha o resultado do baú, tenta de novo, próxima fase ou corrida nova
     const advance = () => {
       if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
@@ -128,7 +165,7 @@ export default function SoloGame() {
       else if (game.status === 'cleared') start(nextLevel(game))
       else if (game.status === 'gameover' || game.status === 'won') start(newRun())
     }
-    actionsRef.current = { advance, dismissChest: () => dismissChest(game) }
+    actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false) }
 
     // clique no canvas: abre o baú (se clicou nele e está do lado)
     const tileUnder = (e) => {
@@ -165,6 +202,7 @@ export default function SoloGame() {
     const unbind = bindKeyboard(controls, (e) => {
       if (e.code === 'Enter') advance()
       else if (e.code === 'KeyR') start(newRun()) // recomeça a corrida do zero
+      else if (e.code === 'KeyP' || e.code === 'Escape') pauseNow()
     })
 
     // o tamanho da casa acompanha o tamanho da janela, e o canvas é redesenhado nítido
@@ -189,13 +227,14 @@ export default function SoloGame() {
       const dt = Math.min(0.1, (now - last) / 1000) // aba escondida não acumula um "pulo" enorme
       last = now
       const n = Math.ceil(dt / STEP)
-      if (freeze > 0) freeze -= dt
+      if (paused) { /* parado: só redesenha */ }
+      else if (freeze > 0) freeze -= dt
       else for (let i = 0; i < n; i++) update(game, controls, dt / n)
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
       FX.consumeEvents(game)
-      FX.update(game, dt)
+      if (!paused) FX.update(game, dt)
       if (PIXEL) { draw(ctx, game, PIXEL, 1); if (POSTER) posterize(ctx) } else draw(ctx, game, tilePx, dpr)
-      const h = hudOf(game)
+      const h = hudOf(game, paused)
       const key = JSON.stringify(h)
       if (key !== hudKey) { hudKey = key; setHud(h) }
       raf = requestAnimationFrame(frame)
@@ -204,6 +243,9 @@ export default function SoloGame() {
 
     return () => {
       cancelAnimationFrame(raf); ro.disconnect(); unbind()
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('blur', pauseNow)
+      window.removeEventListener('keydown', onResumeKey, true)
       canvas.removeEventListener('click', onClick)
       canvas.removeEventListener('mousemove', onMove)
     }
@@ -248,9 +290,9 @@ export default function SoloGame() {
           <span title="Enemies left" className={hud?.enemies === 0 ? 'solo-hud-done' : ''}>👾 <Bump v={hud?.enemies ?? '–'} /></span>
           {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
           <span className="solo-hud-sep" />
-          <span title="Bombs at once">💣 <Bump v={hud?.bombs ?? 1} /></span>
-          <span title="Explosion range">🔥 <Bump v={hud?.range ?? 1} /></span>
-          <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} /></span>
+          <span title={`Bombs at once (max ${MAX_BOMBS})`}>💣 <Bump v={hud?.bombs ?? 1} />{hud?.bombsMax && <Max />}</span>
+          <span title={`Explosion range (max ${MAX_RANGE})`}>🔥 <Bump v={hud?.range ?? 1} />{hud?.rangeMax && <Max />}</span>
+          <span title="Speed boosts">👟 <Bump v={hud?.boots ?? 0} />{hud?.bootsMax && <Max />}</span>
           {(hud?.shield || hud?.kick || hud?.detonator) && (
             <span className="solo-hud-items">
               {hud.shield && <b className="solo-bump" title="Shield: blocks 1 hit">🛡️</b>}
@@ -292,6 +334,7 @@ export default function SoloGame() {
                 <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> Move</li>
                 <li><kbd>Space</kbd> Drop bomb</li>
                 <li><kbd>Click</kbd> Open chest</li>
+                <li><kbd>P</kbd> Pause</li>
               </ul>
             )}
           </div>
@@ -299,12 +342,16 @@ export default function SoloGame() {
         {hud?.hint && <div className="solo-hint">{hud.hint}</div>}
         {hud?.chest && <ChestModal chest={hud.chest} onClose={() => actionsRef.current.dismissChest()} />}
         {hud?.status === 'dead' && (
-          <Overlay title="You got rugged!" button="Try again"
+          <Overlay title="You got rugged!" line={hud.deathLine} button="Try again"
             text={`${hud.lives} ${hud.lives === 1 ? 'life' : 'lives'} left`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'gameover' && (
-          <Overlay title="Game over" button="Play again"
+          <Overlay title="Game over" line={hud.deathLine} button="Play again"
             text={`You reached level ${hud.level}`} onClick={() => actionsRef.current.advance()} />
+        )}
+        {hud?.paused && (
+          <Overlay pause title="Paused" button="Continue" text="Take your time. The enemies are frozen too."
+            foot="Press any key to continue" onClick={() => actionsRef.current.resume()} />
         )}
         {hud?.status === 'cleared' && (
           <Overlay win title={`Level ${hud.level} clear!`} button="Next level"
@@ -320,13 +367,14 @@ export default function SoloGame() {
   )
 }
 
-function Overlay({ title, text, button, onClick, win = false }) {
+function Overlay({ title, line, text, button, onClick, win = false, pause = false, foot = 'or press Enter' }) {
   return (
-    <div className={`solo-over${win ? ' is-win' : ''}`}>
+    <div className={`solo-over${win ? ' is-win' : ''}${pause ? ' is-pause' : ''}`}>
       <h2>{title}</h2>
+      {line && <p className="solo-line">{line}</p>}
       <p className="solo-sub">{text}</p>
       <button type="button" className="solo-btn" onClick={onClick}>{button}</button>
-      <p className="solo-sub">or press Enter</p>
+      <p className="solo-sub">{foot}</p>
     </div>
   )
 }
@@ -354,6 +402,11 @@ function ChestModal({ chest, onClose }) {
       <p className="solo-sub">or press Enter</p>
     </div>
   )
+}
+
+// selo "MAX" ao lado de um número do placar que chegou no limite
+function Max() {
+  return <small className="solo-max">MAX</small>
 }
 
 // número do placar que dá um "pulinho" quando muda (a key nova refaz a animação)
