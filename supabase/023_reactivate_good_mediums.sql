@@ -1,13 +1,23 @@
 -- PYTH BOMB: brings back the medium/hard questions that are worth it (step 23)
 -- Run in Supabase SQL Editor. Safe to run more than once.
 -- Since 016 only EASY questions are dealt. This turns ON 49 of the 74 medium/hard questions
--- that most people can answer, and relabels 19 of them as easy (they were too easy for "medium").
+-- that most people can answer, plus the 8 Pythenians community questions (Halls asked), and relabels 19 of them as easy (they were too easy for "medium").
 -- Still OFF on purpose: fan-only / niche ones (Pride Lands, Central Perk, Heisenberg, Knicks, touchdown,
 -- CS2, League of Legends jungle, Meta Quest, whey, Mesozoic, The Merge, Monad, Copacabana, Sugarloaf),
--- the hard Pyth numbers (max supply, number of chains, Jane Street), the community lore questions,
+-- the hard Pyth numbers (max supply, number of chains, Jane Street),
 -- and the 9 cut earlier by Halls.
 
 update public.questions set active = true where text in (
+  -- community (Pythenians) questions
+  'Who is the dev handling Pyth feeds?',
+  'Which member has a fluffy friend whose eyes go into purple laser mode?',
+  'Which member is always counting NFTs because they''ve lost track of how many they own?',
+  'Who is the spy with a Pyth eye?',
+  'Which member could hack NASA while coding a new feature for Pyth feeds?',
+  'Who somehow keeps the Pythenians team from losing the plot?',
+  'Who made the new Pythenians brand and badges system?',
+  'Who keeps throwing ideas into the fire as the Pythenians giga brain manager?',
+  -- general / crypto / Pyth / myth
   'What oracle model does Pyth primarily use for price updates?',
   'What service is used to fetch Pyth Core price updates?',
   'Which country gifted the Statue of Liberty to the United States?',
