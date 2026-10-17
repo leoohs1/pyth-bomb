@@ -28,7 +28,7 @@ export default function GameCompact({
   danger, pct, secs, urgent, questionMax,
   answer, setAnswer, answerRef, onSubmit, error, feedback, mistakes, flash,
   myPlayerId, holder, iAmHolder, iAmEliminated,
-  avatarOf, avatarRefs, flight, bombSeq, onLeave, chat, lifeFlash,
+  avatarOf, avatarRefs, flight, bombSeq, onLeave, chat, lifeFlash, chip = null,
 }) {
   const inGame = phase === 'playing'
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
@@ -36,7 +36,7 @@ export default function GameCompact({
   const hero = inGame ? holder : phase === 'finished' ? players.find((p) => p.id === centerId) : meNow
   const heroIsMe = !!hero && hero.id === myPlayerId
   const heroPanic = inGame && !!holder
-  const title = inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over'
+  const title = chip ?? (inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over')
 
   return (
     <main className={`mb-stage${players.length > 8 ? ' is-many' : ''}${chat ? ' has-chat' : ''}`}>

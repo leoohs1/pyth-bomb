@@ -13,7 +13,8 @@ function copyText(text) {
   return navigator.clipboard?.writeText(text).catch(() => false) ?? Promise.resolve(false)
 }
 
-export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeave, onPick, error }) {
+// subtitle: nome do modo embaixo do logo (ex.: Guess the Price); invitePath: endereço do modo no link de convite
+export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeave, onPick, error, subtitle = null, invitePath = '/play' }) {
   // o "me" do App é o registro de quando entrei; o da lista é o atual (personagem escolhido etc.)
   const me = players.find((x) => x.id === meProp?.id) ?? meProp
   const [copied, setCopied] = useState(false)
@@ -24,7 +25,7 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   async function copyCode() {
-    await copyText(inviteMessage(room.code)) // link completo + código, pronto pra colar
+    await copyText(inviteMessage(room.code, invitePath)) // link completo + código, pronto pra colar
     setCopied(true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => setCopied(false), 1600)
@@ -35,6 +36,7 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   return (
     <>
       <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
+      {subtitle && <p className="ga-mode-name">{subtitle}</p>}
       {/* código e link de convite: só o dono da sala vê (os outros já entraram) */}
       {iAmHost && (
         <>

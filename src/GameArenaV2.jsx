@@ -316,6 +316,8 @@ export default function GameArenaV2({
   chat = null,
   // aviso de "perdeu uma vida" (App): { name, mine, key }
   lifeFlash = null,
+  // texto da etiqueta do topo (outros modos, ex.: "Round 3/10 · Guess the Price"); sem ele, o do Classic
+  chip = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -478,7 +480,7 @@ export default function GameArenaV2({
         error={error} feedback={feedback} mistakes={mistakes} flash={flash}
         myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
         avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
-        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat} lifeFlash={lifeFlash}
+        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat} lifeFlash={lifeFlash} chip={chip}
       />
     )
   }
@@ -495,7 +497,7 @@ export default function GameArenaV2({
             <LeaveButton onLeave={onLeave} inGame={inGame} />
             <SoundToggle />
             <span className="ga-chip">
-              {inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over'}
+              {chip ?? (inGame ? `Round ${room.round_number} · Classic` : phase === 'lobby' ? 'Lobby · Classic' : 'Game over')}
             </span>
           </div>
         </div>

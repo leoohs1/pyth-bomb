@@ -1,0 +1,138 @@
+/* Guess the Price: o cartão do meio da arena (mesmo cartão de mármore do Hot Potato).
+   Tamanhos em cqw (acompanham a arena), com mínimos em px pra continuar legível. */
+
+/* nome do modo embaixo do logo, no lobby */
+.ga-mode-name {
+  margin: 0.1cqw 0 0.6cqw;
+  font: 800 max(12px, 1.25cqw)/1.2 Cinzel, Georgia, serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6a3fc4;
+}
+
+/* o cartão da rodada é um pouco mais alto e largo que o do lobby */
+.ga-card.ga-panel-price {
+  top: 13%;
+  width: 38cqw;
+  max-height: 80%;
+  overflow-y: auto;
+  padding: 1.1cqw 1.8cqw 1.2cqw;
+}
+.ga-panel-price .ga-qnum { display: flex; justify-content: center; align-items: center; gap: 0.5cqw; margin: 0 0 0.2cqw; }
+
+.pr-kind, .pr-demo {
+  padding: 0.1em 0.6em;
+  font: 800 max(9px, 0.75cqw)/1.4 Inter, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+.pr-kind { color: #fff; background: #6a3fc4; }
+.pr-demo { color: #6b4308; background: #f8de8e; border: 1px solid #c9a24a; }
+
+.pr-asset {
+  margin: 0;
+  font: 800 max(20px, 2.4cqw)/1.15 Cinzel, Georgia, serif;
+  color: var(--ga-ink, #2e1f63);
+}
+.pr-when { margin: 0.2cqw 0 0; font: 700 max(12px, 1.15cqw)/1.3 Inter, system-ui, sans-serif; color: #5a4a8a; }
+.pr-ref { margin: 0.35cqw 0 0.6cqw; font: 600 max(12px, 1.1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.75); }
+.pr-ref b { color: var(--ga-ink, #2e1f63); }
+.pr-time { margin-bottom: 0.7cqw; }
+
+.pr-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.6cqw; }
+.pr-input {
+  min-width: 0;
+  height: max(42px, 3.6cqw);
+  box-sizing: border-box;
+  padding: 0 0.9cqw;
+  font: 800 max(18px, 1.8cqw)/1 Inter, system-ui, sans-serif;
+  text-align: center;
+  color: #f6eeff;
+  background: linear-gradient(180deg, #4e4560, #3b3350);
+  border: 2px solid var(--ga-gold, #c9a24a);
+  border-radius: 10px;
+  box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45);
+  outline: none;
+}
+.pr-input::placeholder { color: rgba(246, 238, 255, 0.5); font-weight: 600; }
+.pr-input:focus { border-color: #ffe08a; box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45), 0 0 0 3px rgba(169, 139, 255, 0.55); }
+.pr-form .ga-send { height: max(42px, 3.6cqw); }
+.pr-form .ga-send:disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.4); }
+
+.pr-preview { min-height: 1.3em; margin: 0.35cqw 0 0; font: 700 max(12px, 1.1cqw)/1.3 Inter, system-ui, sans-serif; color: #6a3fc4; }
+.pr-sent { margin: 0.2cqw 0 0; font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif; color: #2f7a4a; }
+.pr-count { margin: 0.35cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
+
+/* revelação */
+.pr-answer-label { margin: 0.2cqw 0 0; font: 700 max(11px, 1cqw)/1.2 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(46, 31, 99, 0.6); }
+.pr-answer {
+  margin: 0;
+  font: 800 max(26px, 3.2cqw)/1.1 Cinzel, Georgia, serif;
+  color: #8a5a10;
+  text-shadow: 0 1px 0 #fff, 0 0 14px rgba(255, 214, 110, 0.75);
+  animation: pr-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.pr-conf { margin: 0 0 0.5cqw; font: 600 max(10.5px, 0.95cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
+@keyframes pr-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.pr-list { list-style: none; margin: 0.3cqw 0 0; padding: 0; text-align: left; }
+.pr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1.3fr) auto;
+  gap: 0.6cqw;
+  align-items: center;
+  padding: 0.25cqw 0.6cqw;
+  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  border-radius: 8px;
+}
+.pr-row:nth-child(odd) { background: rgba(106, 63, 196, 0.07); }
+.pr-row.is-me { background: rgba(106, 63, 196, 0.2); }
+.pr-row.is-worst { color: #b3143f; }
+.pr-name, .pr-guess, .pr-off { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-name { font-weight: 800; }
+.pr-off { color: rgba(46, 31, 99, 0.65); font-size: max(10px, 0.9cqw); }
+.pr-perfect { color: #6a3fc4; font-size: max(10px, 0.85cqw); letter-spacing: 0.02em; }
+.pr-pts { font-weight: 800; color: #2f7a4a; text-align: right; }
+.pr-next { margin: 0.5cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
+
+/* placar */
+.pr-scores { margin: 0.7cqw auto 0; max-width: 26cqw; text-align: left; }
+.pr-scores-title { margin: 0 0 0.2cqw; text-align: center; font: 800 max(11px, 1cqw)/1.2 Cinzel, Georgia, serif; letter-spacing: 0.08em; text-transform: uppercase; color: #6a3fc4; }
+.pr-scores ol { list-style: none; margin: 0; padding: 0; max-height: 14cqw; overflow-y: auto; }
+.pr-scores li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1cqw;
+  padding: 0.15cqw 0.5cqw;
+  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  border-radius: 6px;
+}
+.pr-scores li.is-me { background: rgba(106, 63, 196, 0.16); font-weight: 800; }
+.pr-scores.is-compact { margin-top: 0.5cqw; }
+
+/* fim de jogo: cartão mais alto na tela (pódio + placar), pra não ficar atrás do vencedor */
+.ga-card.ga-panel-finished:has(.pr-scores) { top: 8%; }
+.ga-panel-finished .pr-scores { margin-top: 0.9cqw; }
+.ga-panel-finished .pr-scores li { padding: 0.05cqw 0.5cqw; }
+
+/* celular em pé: o cartão fica no fluxo da tela (GameCompact) */
+.mb-panel-price .pr-asset { font-size: 22px; }
+.mb-panel-price .pr-when, .mb-panel-price .pr-ref, .mb-panel-price .pr-preview { font-size: 13px; }
+.mb-panel-price .pr-input, .mb-panel-price .pr-form .ga-send { height: 50px; }
+.mb-panel-price .pr-input { font-size: 22px; }
+.mb-panel-price .pr-row, .mb-panel-price .pr-scores li { font-size: 13px; }
+.mb-panel-price .pr-answer { font-size: 30px; }
+.mb-panel-price .pr-scores { max-width: none; }
+.mb-panel-price .pr-scores ol { max-height: 160px; }
+
+/* celular deitado (tela baixa): mais apertado */
+@media (max-height: 520px) {
+  .ga-card.ga-panel-price { top: 12%; width: 44%; padding: 6px 10px 8px; }
+  .pr-asset { font-size: 16px; }
+  .pr-answer { font-size: 20px; }
+  .pr-input, .pr-form .ga-send { height: 32px; font-size: 14px; }
+  .pr-row, .pr-scores li { font-size: 10px; }
+}
