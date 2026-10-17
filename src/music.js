@@ -33,7 +33,7 @@ function ensure() {
 function target() {
   const st = getSoundState()
   if (!started || hidden || st.musicMuted) return 0
-  const onPlay = typeof location !== 'undefined' && location.pathname.startsWith('/play')
+  const onPlay = typeof location !== 'undefined' && /^\/(play|price)/.test(location.pathname)
   return VOLUME * st.musicVolume * (duck || onPlay ? DUCK : 1)
 }
 
@@ -63,6 +63,25 @@ function apply(ms) {
 export function setMusicDuck(v) {
   duck = !!v
   apply()
+}
+
+// Cada modo pode ter a própria música (ex.: setMusicTrack('/music/price.mp3') no Guess the Price).
+// Só troca se o arquivo existir de verdade; sem ele, continua a faixa atual. Sem argumento = a padrão.
+let track = SRC
+export async function setMusicTrack(src = SRC) {
+  if (src === track) return
+  if (src !== SRC) {
+    try {
+      const r = await fetch(src, { method: 'HEAD' })
+      // sem o arquivo, o servidor devolve a página inicial (html) — não é áudio
+      if (!r.ok || !(r.headers.get('content-type') || '').includes('audio')) return
+    } catch { return }
+  }
+  track = src
+  const a = ensure()
+  const wasPlaying = !a.paused
+  a.src = src
+  if (wasPlaying) a.play().catch(() => { /* sem gesto ainda: começa no próximo toque */ })
 }
 
 // primeiro gesto da pessoa: começa a música (fade curtinho, pra não parecer atraso)

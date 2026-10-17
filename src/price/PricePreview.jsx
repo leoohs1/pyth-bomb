@@ -33,6 +33,7 @@ export default function PricePreview() {
   const [sent, setSent] = useState(null)
   const [, setT] = useState(0)
   useEffect(() => { const id = setInterval(() => setT((n) => n + 1), 500); return () => clearInterval(id) }, [])
+  useEffect(() => { document.documentElement.dataset.mode = 'price' }, []) // mesma arte do modo
 
   const room = {
     id: 'r', code: 'PYTHK7', status: phase === 'finished' ? 'finished' : phase === 'lobby' ? 'lobby' : 'playing',

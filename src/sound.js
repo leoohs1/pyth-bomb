@@ -21,7 +21,22 @@ export const SOUNDS = [
   'wrong',         // resposta errada / tempo da pergunta acabou
   'correct',       // acertei e a bomba saiu de mim
   'eliminated',    // eu fui eliminado
+  // Guess the Price
+  'lock_in',       // travei meu chute
+  'reveal',        // o preço certo aparece
+  'perfect',       // PYTH PERFECT (acertei dentro da faixa da Pyth)
+  'cash',          // ganhei pontos na rodada
 ]
+
+// Cada modo pode ter os próprios sons: com setSoundTheme('price'), o jogo procura primeiro
+// public/sounds/price/<nome>.mp3 e, se não tiver, usa public/sounds/<nome>.mp3 (e por último
+// a versão sintetizada lá embaixo). null = só os sons padrão (Hot Potato).
+let theme = null
+export function setSoundTheme(t = null) {
+  if (theme === t) return
+  theme = t
+  if (ctx) SOUNDS.forEach((n) => loadFile(n)) // já baixa os do modo novo
+}
 
 let ctx = null
 let hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
@@ -78,21 +93,29 @@ function ensure() {
   return ctx
 }
 
+// som guardado por modo: 'price:reveal', 'base:explosion'...
+const keyOf = (name) => `${theme ?? 'base'}:${name}`
+
 async function loadFile(name) {
-  if (cache.has(name) || loading.has(name)) return
-  loading.add(name)
+  const key = keyOf(name)
+  if (cache.has(key) || loading.has(key)) return
+  loading.add(key)
   let buf = null
-  for (const ext of EXTS) {
-    try {
-      const r = await fetch(`/sounds/${name}.${ext}`)
-      // sem o arquivo, o servidor devolve a página inicial (html) — não é áudio
-      if (!r.ok || !(r.headers.get('content-type') || '').includes('audio')) continue
-      buf = await ctx.decodeAudioData(await r.arrayBuffer())
-      break
-    } catch { /* tenta a próxima extensão */ }
+  const folders = theme ? [`/sounds/${theme}/`, '/sounds/'] : ['/sounds/']
+  for (const folder of folders) {
+    for (const ext of EXTS) {
+      try {
+        const r = await fetch(`${folder}${name}.${ext}`)
+        // sem o arquivo, o servidor devolve a página inicial (html) — não é áudio
+        if (!r.ok || !(r.headers.get('content-type') || '').includes('audio')) continue
+        buf = await ctx.decodeAudioData(await r.arrayBuffer())
+        break
+      } catch { /* tenta a próxima extensão */ }
+    }
+    if (buf) break
   }
-  cache.set(name, buf)
-  loading.delete(name)
+  cache.set(key, buf)
+  loading.delete(key)
 }
 
 export function unlock() {
@@ -171,6 +194,11 @@ const SYNTH = {
     tone({ f0: 880, dur: 0.14, gain: 0.3, at: 0.09 })
   },
   eliminated: () => tone({ type: 'triangle', f0: 440, f1: 110, dur: 0.7, gain: 0.35 }),
+  // Guess the Price (provisórios, até chegarem os arquivos do modo)
+  lock_in: () => { tone({ type: 'square', f0: 1200, dur: 0.04, gain: 0.12 }); tone({ type: 'square', f0: 1600, dur: 0.05, gain: 0.1, at: 0.05 }) },
+  reveal: () => { swish({ f0: 300, f1: 2600, q: 1.2, dur: 0.5, gain: 0.3 }); tone({ f0: 140, f1: 70, dur: 0.35, gain: 0.6, at: 0.45 }) },
+  perfect: () => [523, 659, 784, 1047].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.16, gain: 0.28, at: i * 0.08 })),
+  cash: () => { tone({ f0: 1320, dur: 0.07, gain: 0.2 }); tone({ f0: 1760, dur: 0.12, gain: 0.2, at: 0.07 }) },
 }
 
 export function play(name, opts = {}) {
@@ -178,8 +206,8 @@ export function play(name, opts = {}) {
   const c = ensure()
   if (!c) return
   if (c.state === 'suspended') { c.resume(); return } // ainda sem clique: o navegador não deixa tocar
-  if (!cache.has(name)) loadFile(name)
-  const buf = cache.get(name)
+  if (!cache.has(keyOf(name))) loadFile(name)
+  const buf = cache.get(keyOf(name))
   if (buf) {
     const s = ctx.createBufferSource()
     s.buffer = buf

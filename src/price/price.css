@@ -136,3 +136,29 @@
   .pr-input, .pr-form .ga-send { height: 32px; font-size: 14px; }
   .pr-row, .pr-scores li { font-size: 10px; }
 }
+
+/* ---------- arte própria do Guess the Price (DeFi) ----------
+   O PriceApp marca a página com <html data-mode="price">. A imagem nova fica em
+   public/price/arena-bg.webp, com o MESMO desenho da arena (bancos, altar e palco nos mesmos lugares).
+   Enquanto ela não existir, o navegador pula a 1ª camada e mostra a arena de sempre (2ª camada). */
+html[data-mode="price"] .ga-bg {
+  background: url('/price/arena-bg.webp') center / 100% 100% no-repeat,
+              url('/arena2-bg-v2.webp') center / 100% 100% no-repeat;
+}
+html[data-mode="price"] .ga-occluder {
+  background:
+    linear-gradient(180deg, rgba(15, 6, 35, 0.35) 0%, rgba(15, 6, 35, 0.05) 22%, rgba(15, 6, 35, 0.12) 62%, rgba(10, 4, 26, 0.55) 100%),
+    url('/price/arena-bg.webp') center / 100% 100% no-repeat,
+    url('/arena2-bg-v2.webp') center / 100% 100% no-repeat;
+}
+html[data-mode="price"] .mb-stage {
+  background:
+    linear-gradient(180deg, rgba(18, 10, 38, 0.72) 0%, rgba(18, 10, 38, 0.1) 38%, rgba(18, 10, 38, 0.2) 62%, rgba(18, 10, 38, 0.82) 100%),
+    url('/price/arena-bg.webp') center 62% / cover no-repeat,
+    url('/arena2-bg-v2.webp') center 62% / cover no-repeat,
+    #120a26;
+}
+html[data-mode="price"] .hm-bg {
+  background: url('/price/arena-bg.webp') center bottom / cover no-repeat,
+              url('/arena2-bg-v2.webp') center bottom / cover no-repeat;
+}

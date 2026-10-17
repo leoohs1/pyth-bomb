@@ -9,6 +9,8 @@ import { preloadCharacters } from '../characters'
 import useChat from '../useChat'
 import { readInviteCode } from '../invite'
 import { GuessPanel, RevealPanel, ScoreList } from './PricePanels'
+import { play, setSoundTheme } from '../sound'
+import { setMusicTrack } from '../music'
 import './price.css'
 
 // Guess the Price: a turma vê um ativo (Bitcoin, ouro, Nvidia...), uma data e hora do passado e o
@@ -18,6 +20,22 @@ import './price.css'
 
 const ROUNDS = 10
 const PATH = '/price'
+
+// personalidade do modo: fundo (price.css), música e sons próprios. Enquanto os arquivos não
+// existirem, o jogo usa os do Hot Potato (nada quebra). Arquivos: public/price/arena-bg.webp,
+// public/music/price.mp3 e public/sounds/price/<nome>.mp3 (nomes em src/sound.js).
+function usePriceTheme() {
+  useEffect(() => {
+    document.documentElement.dataset.mode = 'price'
+    setSoundTheme('price')
+    setMusicTrack('/music/price.mp3')
+    return () => {
+      delete document.documentElement.dataset.mode
+      setSoundTheme(null)
+      setMusicTrack()
+    }
+  }, [])
+}
 
 function makeCode(extra = 2) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -47,6 +65,7 @@ export default function PriceApp() {
 
   const roomId = room?.id
   const chat = useChat(roomId)
+  usePriceTheme()
 
   useEffect(() => {
     const id = setTimeout(preloadCharacters, 1200)
@@ -172,6 +191,24 @@ export default function PriceApp() {
     }
   }, [room, players, me?.id])
 
+  // sons da rodada: revelação (e se EU fiz PYTH PERFECT ou pontos) + tique nos últimos 5 segundos
+  const phaseKey = room?.status === 'playing' ? room.round_number + ':' + room.price_phase : null
+  const lastPhaseRef = useRef(null)
+  useEffect(() => {
+    const prev = lastPhaseRef.current
+    lastPhaseRef.current = phaseKey
+    if (!prev || !phaseKey || prev === phaseKey || room?.price_phase !== 'reveal') return
+    play('reveal')
+    const mine = room.price_reveal?.guesses?.find((g) => g.player_id === me?.id)
+    if (mine?.perfect) setTimeout(() => play('perfect'), 500)
+    else if (mine?.points > 0) setTimeout(() => play('cash'), 500)
+  }, [phaseKey, room, me?.id])
+  const secsLeft = room?.price_phase === 'guess' && room.question_expires_at
+    ? Math.ceil(Math.max(0, new Date(room.question_expires_at).getTime() - now) / 1000) : null
+  useEffect(() => {
+    if (secsLeft != null && secsLeft > 0 && secsLeft <= 5) play('clock_tick')
+  }, [secsLeft])
+
   async function joinRoom(target) {
     const user = await ensureSession()
     const { data: existing } = await supabase.from('players').select().eq('room_id', target.id).eq('user_id', user.id).maybeSingle()
@@ -240,7 +277,7 @@ export default function PriceApp() {
     setError(null)
     const { data, error: e } = await supabase.rpc('price_submit_guess', { p_room_id: room.id, p_guess: value })
     if (e) return setError(e.message)
-    if (data === 'ok') setSent(value)
+    if (data === 'ok') { setSent(value); play('lock_in') }
     else setError('Too late! The round is over.')
     inputRef.current?.focus()
   }
