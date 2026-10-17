@@ -25,3 +25,7 @@ dist-ssr
 
 # sons temporários (wav) gerados por scripts/make-sounds.mjs
 scripts/.out
+
+# Guess the Song: trechos de música NUNCA vão pro GitHub (ficam no Supabase Storage)
+musicas/
+musicas-prontas/

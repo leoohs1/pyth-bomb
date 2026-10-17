@@ -1,0 +1,114 @@
+/* Guess the Song: o cartão do meio da arena. Tamanhos em cqw (acompanham a arena), com mínimos
+   em px. A arte própria do modo (palco/casa de show) entra depois, como no Guess the Price. */
+
+.ga-card.ga-panel-song {
+  top: 13%;
+  width: 38cqw;
+  max-height: 80%;
+  overflow-y: auto;
+  overflow-x: hidden; /* a animação de "pulo" não cria barra de rolagem de lado */
+  padding: 1.1cqw 1.8cqw 1.2cqw;
+}
+
+/* prepara: 3, 2, 1 */
+.sg-ready { margin: 0.4cqw 0 0; font: 800 max(16px, 1.6cqw)/1.2 Cinzel, Georgia, serif; text-transform: uppercase; letter-spacing: 0.1em; color: #6a3fc4; }
+.sg-count {
+  margin: 0.2cqw 0;
+  font: 900 max(48px, 6cqw)/1 Cinzel, Georgia, serif;
+  color: var(--ga-ink, #2e1f63);
+  animation: sg-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.sg-hint { margin: 0.3cqw 0 0; font: 600 max(12px, 1.1cqw)/1.35 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.75); }
+@keyframes sg-pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ouvindo: barrinhas de equalizador */
+.sg-bars { display: flex; justify-content: center; align-items: flex-end; gap: 0.35cqw; height: max(34px, 3.2cqw); margin: 0.4cqw 0 0.6cqw; }
+.sg-bars span {
+  width: max(6px, 0.55cqw);
+  height: 25%;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #c9a2ff, #6a3fc4);
+}
+.sg-bars.is-on span { animation: sg-eq 0.6s ease-in-out infinite alternate; }
+@keyframes sg-eq { 0% { height: 15%; } 50% { height: 95%; } 100% { height: 40%; } }
+@media (prefers-reduced-motion: reduce) { .sg-bars.is-on span { animation: none; height: 60%; } }
+
+.sg-time { margin-bottom: 0.6cqw; }
+.sg-mine { display: flex; justify-content: center; gap: 0.8cqw; margin: 0 0 0.5cqw; }
+.sg-mine span {
+  padding: 0.2cqw 0.8cqw;
+  font: 800 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif;
+  color: rgba(46, 31, 99, 0.6);
+  background: rgba(106, 63, 196, 0.08);
+  border: 1px solid rgba(106, 63, 196, 0.25);
+  border-radius: 999px;
+}
+.sg-mine span.is-got { color: #fff; background: #2f9a5a; border-color: #2f9a5a; }
+
+.sg-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.6cqw; }
+.sg-input {
+  min-width: 0;
+  height: max(42px, 3.6cqw);
+  box-sizing: border-box;
+  padding: 0 0.9cqw;
+  font: 700 max(16px, 1.5cqw)/1 Inter, system-ui, sans-serif;
+  color: #f6eeff;
+  background: linear-gradient(180deg, #4e4560, #3b3350);
+  border: 2px solid var(--ga-gold, #c9a24a);
+  border-radius: 10px;
+  box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45);
+  outline: none;
+}
+.sg-input::placeholder { color: rgba(246, 238, 255, 0.5); font-weight: 600; }
+.sg-input:focus { border-color: #ffe08a; box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45), 0 0 0 3px rgba(169, 139, 255, 0.55); }
+.sg-form .ga-send { height: max(42px, 3.6cqw); }
+.sg-form .ga-send:disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.4); }
+.sg-done { margin: 0.4cqw 0; font: 800 max(14px, 1.3cqw)/1.3 Inter, system-ui, sans-serif; color: #2f9a5a; }
+
+.sg-feedback { min-height: 1.4em; margin: 0.35cqw 0 0; font: 800 max(12px, 1.1cqw)/1.3 Inter, system-ui, sans-serif; }
+.sg-feedback.is-hit { color: #2f9a5a; }
+.sg-feedback.is-close { color: #c27a00; }
+.sg-feedback.is-wrong { color: #b3143f; }
+
+.sg-found { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3cqw 0.8cqw; list-style: none; margin: 0.4cqw 0 0; padding: 0; }
+.sg-found li { font: 700 max(10.5px, 0.95cqw)/1.4 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.75); }
+.sg-found li.is-me { color: #6a3fc4; }
+.sg-found span { opacity: 0.25; filter: grayscale(1); }
+.sg-found span.is-got { opacity: 1; filter: none; }
+
+/* revelação */
+.sg-was { margin: 0.2cqw 0 0; font: 700 max(11px, 1cqw)/1.2 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(46, 31, 99, 0.6); }
+.sg-title { margin: 0; overflow-wrap: anywhere; font: 800 max(20px, 2.2cqw)/1.15 Cinzel, Georgia, serif; color: var(--ga-ink, #2e1f63); animation: sg-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.sg-artist { margin: 0.1cqw 0 0.5cqw; font: 700 max(13px, 1.3cqw)/1.3 Inter, system-ui, sans-serif; color: #6a3fc4; }
+.sg-list { list-style: none; margin: 0.3cqw 0 0; padding: 0; text-align: left; }
+.sg-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.6cqw;
+  align-items: center;
+  padding: 0.25cqw 0.6cqw;
+  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  border-radius: 8px;
+}
+.sg-row:nth-child(odd) { background: rgba(106, 63, 196, 0.07); }
+.sg-row.is-me { background: rgba(106, 63, 196, 0.2); }
+.sg-row .is-miss { opacity: 0.4; }
+.sg-name { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-first { color: #c27a00; font-size: 0.85em; }
+.sg-pts { font-weight: 800; color: #2f7a4a; text-align: right; }
+.sg-next { margin: 0.5cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
+
+/* celular em pé */
+.mb-panel-song .sg-input, .mb-panel-song .sg-form .ga-send { height: 50px; }
+.mb-panel-song .sg-input { font-size: 18px; }
+.mb-panel-song .sg-title { font-size: 24px; }
+.mb-panel-song .sg-row, .mb-panel-song .sg-found li { font-size: 13px; }
+
+/* celular deitado (tela baixa) */
+@media (max-height: 520px) {
+  .ga-card.ga-panel-song { top: 12%; width: 44%; padding: 6px 10px 8px; }
+  .sg-count { font-size: 36px; }
+  .sg-input, .sg-form .ga-send { height: 32px; font-size: 14px; }
+  .sg-row { font-size: 10px; }
+}

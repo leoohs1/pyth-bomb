@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import GameArenaV2 from '../GameArenaV2'
 import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
-import { GuessPanel, RevealPanel, ScoreList } from './PricePanels'
+import { GuessPanel, RevealPanel } from './PricePanels'
+import ScoreList from '../modes/ScoreList'
 import './price.css'
 
 // Prévia do Guess the Price com dados de mentira (sem servidor), só pra ver o visual:

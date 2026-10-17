@@ -97,36 +97,17 @@
 .pr-pts { font-weight: 800; color: #2f7a4a; text-align: right; }
 .pr-next { margin: 0.5cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
 
-/* placar */
-.pr-scores { margin: 0.7cqw auto 0; max-width: 26cqw; text-align: left; }
-.pr-scores-title { margin: 0 0 0.2cqw; text-align: center; font: 800 max(11px, 1cqw)/1.2 Cinzel, Georgia, serif; letter-spacing: 0.08em; text-transform: uppercase; color: #6a3fc4; }
-.pr-scores ol { list-style: none; margin: 0; padding: 0; max-height: 14cqw; overflow-y: auto; }
-.pr-scores li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1cqw;
-  padding: 0.15cqw 0.5cqw;
-  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
-  color: var(--ga-ink, #2e1f63);
-  border-radius: 6px;
-}
-.pr-scores li.is-me { background: rgba(106, 63, 196, 0.16); font-weight: 800; }
-.pr-scores.is-compact { margin-top: 0.5cqw; }
 
-/* fim de jogo: cartão mais alto na tela (pódio + placar), pra não ficar atrás do vencedor */
-.ga-card.ga-panel-finished:has(.pr-scores) { top: 8%; }
-.ga-panel-finished .pr-scores { margin-top: 0.9cqw; }
-.ga-panel-finished .pr-scores li { padding: 0.05cqw 0.5cqw; }
 
 /* celular em pé: o cartão fica no fluxo da tela (GameCompact) */
 .mb-panel-price .pr-asset { font-size: 22px; }
 .mb-panel-price .pr-when, .mb-panel-price .pr-ref, .mb-panel-price .pr-preview { font-size: 13px; }
 .mb-panel-price .pr-input, .mb-panel-price .pr-form .ga-send { height: 50px; }
 .mb-panel-price .pr-input { font-size: 22px; }
-.mb-panel-price .pr-row, .mb-panel-price .pr-scores li { font-size: 13px; }
+.mb-panel-price .pr-row, .mb-panel-price .rm-scores li { font-size: 13px; }
 .mb-panel-price .pr-answer { font-size: 30px; }
-.mb-panel-price .pr-scores { max-width: none; }
-.mb-panel-price .pr-scores ol { max-height: 160px; }
+.mb-panel-price .rm-scores { max-width: none; }
+.mb-panel-price .rm-scores ol { max-height: 160px; }
 
 /* celular deitado (tela baixa): mais apertado */
 @media (max-height: 520px) {
@@ -134,7 +115,7 @@
   .pr-asset { font-size: 16px; }
   .pr-answer { font-size: 20px; }
   .pr-input, .pr-form .ga-send { height: 32px; font-size: 14px; }
-  .pr-row, .pr-scores li { font-size: 10px; }
+  .pr-row, .rm-scores li { font-size: 10px; }
 }
 
 /* ---------- arte própria do Guess the Price (DeFi) ----------
@@ -218,9 +199,9 @@ html[data-mode="price"] .pr-row.is-worst { color: #ff6b85; }
 html[data-mode="price"] .pr-off { color: rgba(236, 230, 255, 0.6); }
 html[data-mode="price"] .pr-perfect { color: #6fe0ff; text-shadow: 0 0 8px rgba(111, 224, 255, 0.6); }
 html[data-mode="price"] .pr-pts { color: #3ee69a; }
-html[data-mode="price"] .pr-scores-title { color: #c9a2ff; }
-html[data-mode="price"] .pr-scores li { color: #ece6ff; font-variant-numeric: tabular-nums; }
-html[data-mode="price"] .pr-scores li.is-me { background: rgba(143, 98, 230, 0.3); }
+html[data-mode="price"] .rm-scores-title { color: #c9a2ff; }
+html[data-mode="price"] .rm-scores li { color: #ece6ff; font-variant-numeric: tabular-nums; }
+html[data-mode="price"] .rm-scores li.is-me { background: rgba(143, 98, 230, 0.3); }
 
 /* ---------- plaquinhas dos nomes em neon + brilho roxo atrás dos personagens ----------
    Os personagens continuam os mesmos (o elenco do Pyth Bomb); só o "acabamento" muda nesse modo. */

@@ -10,6 +10,8 @@ import GameArenaV2Harness from './GameArenaV2Harness.jsx'
 import SoloGame from './solo/SoloGame.jsx'
 import PriceApp from './price/PriceApp.jsx'
 import PricePreview from './price/PricePreview.jsx'
+import SongApp from './song/SongApp.jsx'
+import SongPreview from './song/SongPreview.jsx'
 
 const path = window.location.pathname
 // rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
@@ -21,6 +23,8 @@ const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/solo') ? <PlayGate><SoloGame /></PlayGate> // modo Solo (protótipo, fechado como o /play)
   : path.startsWith('/price-preview') ? <PricePreview /> // prévia do visual do Guess the Price (dados de mentira)
   : path.startsWith('/price') ? <PlayGate><PriceApp /></PlayGate> // Guess the Price (fechado como o /play)
+  : path.startsWith('/song-preview') ? <SongPreview /> // prévia do visual do Guess the Song (dados de mentira)
+  : path.startsWith('/song') ? <PlayGate><SongApp /></PlayGate> // Guess the Song (fechado como o /play)
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing />
 

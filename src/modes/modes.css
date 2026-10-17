@@ -1,0 +1,23 @@
+/* Peças comuns dos modos de rodada (Guess the Price, Guess the Song...). Cada modo muda as
+   cores no próprio CSS (ex.: html[data-mode="price"] .rm-scores li { ... }). */
+
+/* placar */
+.rm-scores { margin: 0.7cqw auto 0; max-width: 26cqw; text-align: left; }
+.rm-scores-title { margin: 0 0 0.2cqw; text-align: center; font: 800 max(11px, 1cqw)/1.2 Cinzel, Georgia, serif; letter-spacing: 0.08em; text-transform: uppercase; color: #6a3fc4; }
+.rm-scores ol { list-style: none; margin: 0; padding: 0; max-height: 14cqw; overflow-y: auto; }
+.rm-scores li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1cqw;
+  padding: 0.15cqw 0.5cqw;
+  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  border-radius: 6px;
+}
+.rm-scores li.is-me { background: rgba(106, 63, 196, 0.16); font-weight: 800; }
+.rm-scores.is-compact { margin-top: 0.5cqw; }
+
+/* fim de jogo: cartão mais alto na tela (pódio + placar), pra não ficar atrás do vencedor */
+.ga-card.ga-panel-finished:has(.rm-scores) { top: 8%; }
+.ga-panel-finished .rm-scores { margin-top: 0.9cqw; }
+.ga-panel-finished .rm-scores li { padding: 0.05cqw 0.5cqw; }

@@ -1,4 +1,5 @@
 import { fmtPrice, fmtWhen, fmtErr, parseGuess, KIND_LABEL } from './format.js'
+import ScoreList from '../modes/ScoreList'
 
 // Conteúdo do cartão do meio da arena no Guess the Price (chute, revelação, placar).
 // Só visual: as regras ficam no servidor (supabase/price/P01_guess_the_price.sql).
@@ -104,27 +105,5 @@ export function RevealPanel({ room, players, me, msLeft }) {
       <ScoreList players={players} me={me} compact />
       <p className="pr-next">{last ? 'Final results in' : 'Next round in'} {Math.max(0, Math.ceil(msLeft / 1000))}s</p>
     </>
-  )
-}
-
-// placar geral (pontos somados): no fim, os 5 primeiros; na revelação, os 3 primeiros.
-// Se eu estiver fora do topo, apareço no fim da lista com a minha posição.
-export function ScoreList({ players, me, compact = false }) {
-  const sorted = [...players].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-  const top = sorted.slice(0, compact ? 3 : 5)
-  const myPos = sorted.findIndex((p) => p.id === me?.id)
-  if (myPos >= top.length) top.push(sorted[myPos])
-  return (
-    <div className={`pr-scores${compact ? ' is-compact' : ''}`}>
-      <p className="pr-scores-title">{compact ? 'Leaders' : 'Final score'}</p>
-      <ol>
-        {top.map((p) => (
-          <li key={p.id} className={p.id === me?.id ? 'is-me' : ''}>
-            <span>{sorted.indexOf(p) + 1}. {p.nickname}</span>
-            <b>{(p.score ?? 0).toLocaleString('en-US')}</b>
-          </li>
-        ))}
-      </ol>
-    </div>
   )
 }

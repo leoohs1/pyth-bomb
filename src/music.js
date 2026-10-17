@@ -32,8 +32,8 @@ function ensure() {
 
 function target() {
   const st = getSoundState()
-  if (!started || hidden || st.musicMuted) return 0
-  const onPlay = typeof location !== 'undefined' && /^\/(play|price)/.test(location.pathname)
+  if (!started || hidden || st.musicMuted || silenced) return 0
+  const onPlay = typeof location !== 'undefined' && /^\/(play|price|song)/.test(location.pathname)
   return VOLUME * st.musicVolume * (duck || onPlay ? DUCK : 1)
 }
 
@@ -58,6 +58,13 @@ function rampTo(to, ms = FADE_MS) {
 function apply(ms) {
   if (!started) return
   rampTo(target(), ms)
+}
+
+// silêncio total por um tempo (ex.: Guess the Song, enquanto toca o trecho da rodada)
+let silenced = false
+export function setMusicSilenced(v) {
+  silenced = !!v
+  apply()
 }
 
 export function setMusicDuck(v) {
