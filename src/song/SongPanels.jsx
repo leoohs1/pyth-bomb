@@ -40,8 +40,6 @@ export function ListenPanel({ room, players, me, msLeft, total, text, setText, o
   return (
     <>
       <Header room={room} />
-      <div className="sg-play">
-      <div className="sg-main">
       <Bars on={msLeft > 0} />
       <div className="ga-time sg-time">
         <div className="ga-track" role="progressbar" aria-label="Time left" aria-valuemin={0} aria-valuemax={total} aria-valuenow={secs}>
@@ -74,19 +72,16 @@ export function ListenPanel({ room, players, me, msLeft, total, text, setText, o
         </form>
       )}
       <p className={`sg-feedback is-${feedback?.kind ?? 'none'}`} aria-live="polite">{feedback?.text ?? ''}</p>
+      {/* leaderboard ao vivo (os pontos sobem na hora do acerto): top 5 + eu, com 🎤🎵 de quem já
+          achou nesta música; uma linha separa do palpite */}
+      <hr className="sg-divider" />
+      <ScoreList players={players} me={me} compact limit={5} title="Leaderboard" extra={(p) => (
+        <span className="sg-got">
+          <span className={p.song_artist_round === r ? 'is-got' : ''}>🎤</span>
+          <span className={p.song_title_round === r ? 'is-got' : ''}>🎵</span>
+        </span>
+      )} />
       {error && <p className="ga-error" role="alert">{error}</p>}
-      </div>
-      {/* leaderboard ao vivo numa coluna própria (os pontos sobem na hora do acerto): top 5 + eu,
-          com 🎤🎵 de quem já achou nesta música */}
-      <aside className="sg-board">
-        <ScoreList players={players} me={me} compact limit={5} title="Leaderboard" extra={(p) => (
-          <span className="sg-got">
-            <span className={p.song_artist_round === r ? 'is-got' : ''}>🎤</span>
-            <span className={p.song_title_round === r ? 'is-got' : ''}>🎵</span>
-          </span>
-        )} />
-      </aside>
-      </div>
     </>
   )
 }

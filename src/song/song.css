@@ -70,24 +70,9 @@
 .sg-feedback.is-close { color: #c27a00; }
 .sg-feedback.is-wrong { color: #b3143f; }
 
-/* rodada: palpite à esquerda, leaderboard numa coluna própria à direita (no celular, uma embaixo da outra) */
-.ga-card.ga-panel-song:has(.sg-play) { width: 42cqw; }
-.sg-play { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 1.1cqw; align-items: stretch; }
-.sg-main { min-width: 0; }
-.sg-board {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding: 0.6cqw 0.7cqw;
-  border-radius: 0.8cqw;
-  background: rgba(46, 31, 99, 0.06);
-  border: 1px solid rgba(106, 63, 196, 0.25);
-}
-.sg-board .rm-scores { margin: 0; max-width: none; }
-.sg-board .rm-scores li { gap: 0.5cqw; padding: 0.15cqw 0.4cqw; }
-.mb-panel-song .sg-play { grid-template-columns: 1fr; gap: 10px; }
-.mb-panel-song .sg-board { padding: 8px 10px; border-radius: 12px; }
+/* linha fininha entre o palpite e a leaderboard da rodada (some nas pontas) */
+.sg-divider { height: 2px; margin: 0.6cqw auto 0.2cqw; width: 75%; border: 0; background: linear-gradient(90deg, transparent, rgba(106, 63, 196, 0.45), transparent); }
+.mb-panel-song .sg-divider { margin: 8px auto 2px; }
 
 /* 🎤🎵 de cada um na leaderboard da rodada: apagado até achar */
 .sg-got { white-space: nowrap; font-size: 0.9em; }
@@ -225,7 +210,7 @@ html[data-mode="song"] .sg-row.is-me { background: rgba(255, 90, 200, 0.22); box
 html[data-mode="song"] .sg-first { color: #ffd36b; }
 html[data-mode="song"] .sg-pts { color: #5cf0a0; }
 html[data-mode="song"] .rm-scores-title { color: #f2c45a; }
-html[data-mode="song"] .sg-board { background: rgba(10, 4, 26, 0.35); border-color: rgba(242, 196, 90, 0.35); box-shadow: inset 0 0 18px rgba(255, 90, 200, 0.08); }
+html[data-mode="song"] .sg-divider { background: linear-gradient(90deg, transparent, rgba(242, 196, 90, 0.9), transparent); }
 html[data-mode="song"] .rm-scores li { color: #fbf1ff; font-variant-numeric: tabular-nums; }
 html[data-mode="song"] .rm-scores li.is-me { background: rgba(255, 90, 200, 0.22); }
 
