@@ -38,7 +38,7 @@ export default function SongPreview() {
   const room = {
     id: 'r', code: 'PYTHM4', status: phase === 'finished' ? 'finished' : phase === 'lobby' ? 'lobby' : 'playing',
     mode: 'song', round_number: 3, song_total: 10, song_phase: phase, host_user_id: 'u0', winner_id: 'p2',
-    song_round: { file: 'x.mp3', listen_at: new Date().toISOString(), listen_secs: 20 },
+    song_round: { file: 'x.mp3', listen_at: new Date().toISOString(), listen_secs: 30 },
     song_reveal: phase === 'reveal' ? REVEAL : null,
   }
   const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {}, seatNudge: SONG_SEATS }
@@ -59,7 +59,7 @@ export default function SongPreview() {
     view = <GameArenaV2 {...common} phase="song" chip={chip} panel={<RevealPanel room={room} players={players} me={players[0]} msLeft={6000} />} />
   } else {
     view = <GameArenaV2 {...common} phase="song" chip={chip}
-      panel={<ListenPanel room={room} players={players} me={players[0]} msLeft={12400} total={20} text={text} setText={setText}
+      panel={<ListenPanel room={room} players={players} me={players[0]} msLeft={12400} total={30} text={text} setText={setText}
         onSubmit={() => {}} feedback={{ kind: 'close', text: 'So close! Check the spelling' }} />} />
   }
 

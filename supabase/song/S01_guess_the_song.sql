@@ -4,7 +4,7 @@
 --
 -- How a match works:
 --   * 10 rounds. Each round: 3 s "get ready" (everybody's phone downloads the clip), then the
---     clip plays for everybody at the same moment, for 20 seconds.
+--     clip plays for everybody at the same moment, for 20 seconds (30 since S03).
 --   * Players type the ARTIST or the SONG NAME (one box, as many tries as they want). Small
 --     typos are accepted. Typing both at once also works ("queen bohemian rhapsody").
 --   * Points for each part found: 1000 if instant, going down to 300 at the last second.
