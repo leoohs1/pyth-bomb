@@ -89,11 +89,13 @@ export default function SongApp() {
   const listenSecs = room?.song_round?.listen_secs ?? 20
   const phase = room?.status === 'playing' ? room.song_phase : null
 
-  // rodada nova: já baixa o trecho enquanto a contagem roda
+  // rodada nova: já baixa o trecho enquanto a contagem roda.
+  // Sem trecho (saiu da sala, fim de jogo): para o que estiver tocando.
   useEffect(() => {
     const a = audioRef.current
-    if (!a || !file) return
+    if (!a) return
     a.pause()
+    if (!file) { startedRef.current = null; return }
     a.src = file
     a.load()
     startedRef.current = null
@@ -117,13 +119,15 @@ export default function SongApp() {
     }
   }, [serverNow, file, listenAt, listenSecs, phase])
 
-  // tela GET READY: a voz "get ready" quando a contagem começa e um bip no 3, 2, 1 (depois vem o BEEP de "valendo")
+  // tela GET READY: a voz "get ready" quando a contagem começa e um bip a cada número
+  // (menos enquanto a voz fala); no fim vem o BEEP de "valendo"
   const readyN = phase === 'ready' && listenAt ? Math.max(1, Math.ceil((listenAt - serverNow) / 1000)) : null
   const lastReadyRef = useRef(null)
+  const voiceAtRef = useRef(0)
   useEffect(() => {
     if (readyN == null) { lastReadyRef.current = null; return }
-    if (lastReadyRef.current == null) play('get_ready')
-    else if (readyN < lastReadyRef.current && readyN <= 3) play('countdown')
+    if (lastReadyRef.current == null) { play('get_ready'); voiceAtRef.current = Date.now() }
+    else if (readyN < lastReadyRef.current && Date.now() - voiceAtRef.current > 850) play('countdown')
     lastReadyRef.current = readyN
   }, [readyN])
 

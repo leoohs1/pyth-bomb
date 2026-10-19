@@ -35,11 +35,44 @@ export default function useModeRoom({ mode, tickRpc }) {
   const [error, setError] = useState(null)
   const [now, setNow] = useState(() => Date.now())
   const [serverOffset, setServerOffset] = useState(0) // relógio do servidor - relógio daqui (ms)
+  // acerto do relógio: só vale a resposta que voltou mais rápido (a mais confiável); a "melhor" envelhece
+  // um pouco a cada amostra, pra ir se reajustando. O relógio da tela vai até ela devagarinho (no máximo
+  // 40 ms a cada 150 ms), então a contagem nunca dá pulo nem volta um número. Diferença grande
+  // (computador com a hora errada) acerta de uma vez — isso acontece no lobby, antes da partida.
+  const rttRef = useRef(Infinity)
+  const targetOffsetRef = useRef(null)
+  const takeClock = (data, t0, t1) => {
+    if (typeof data !== 'string' || Number.isNaN(Date.parse(data))) return false // modo que não devolve a hora
+    rttRef.current += 15
+    if (t1 - t0 <= rttRef.current) {
+      rttRef.current = t1 - t0
+      targetOffsetRef.current = Date.parse(data) - (t0 + t1) / 2
+    }
+    return true
+  }
+
   const meRef = useRef(null)
   const statusRef = useRef(null)
   meRef.current = me
   statusRef.current = room?.status
   const roomId = room?.id
+
+  // relógio da tela: anda sempre que estou numa sala (antes só andava na partida, e o 1º quadro da
+  // contagem usava uma hora velha do lobby)
+  useEffect(() => {
+    if (!roomId) return
+    const clock = setInterval(() => {
+      setNow(Date.now())
+      const target = targetOffsetRef.current
+      if (target == null) return
+      setServerOffset((cur) => {
+        const d = target - cur
+        if (Math.abs(d) > 1500) return target
+        return cur + Math.max(-40, Math.min(40, d))
+      })
+    }, 150)
+    return () => clearInterval(clock)
+  }, [roomId])
 
   useEffect(() => {
     const id = setTimeout(preloadCharacters, 1200)
@@ -109,27 +142,16 @@ export default function useModeRoom({ mode, tickRpc }) {
     }
   }, [roomId, mode, remember])
 
-  // durante a partida: relógio da tela + cutuca o servidor 1x por segundo (ele avança as rodadas).
+  // durante a partida: cutuca o servidor 1x por segundo (ele avança as rodadas).
   // Se o tique devolver a hora do servidor, acerta o relógio daqui (pra todos ouvirem/verem juntos).
   useEffect(() => {
     if (!roomId || room?.status !== 'playing') return
-    const clock = setInterval(() => setNow(Date.now()), 150)
     let n = 0
-    // só acerta o relógio com as respostas que voltaram mais rápido (as mais confiáveis): trocar a cada
-    // segundo fazia a contagem dar pulinhos. A "melhor" envelhece um pouco a cada tique, pra ir se reajustando.
-    let bestRtt = Infinity
     const tick = setInterval(async () => {
       const t0 = Date.now()
       const { data, error: e } = await supabase.rpc(tickRpc, { p_room_id: roomId })
       if (e) console.log('TICK ERROR:', e.message)
-      else if (typeof data === 'string' && !Number.isNaN(Date.parse(data))) {
-        const t1 = Date.now()
-        bestRtt += 15
-        if (t1 - t0 <= bestRtt) {
-          bestRtt = t1 - t0
-          setServerOffset(Date.parse(data) - (t0 + t1) / 2)
-        }
-      }
+      else takeClock(data, t0, Date.now())
       n++
       // rede de segurança se o aviso ao vivo se perder (celular com tela apagada etc.)
       if (n % 3 === 0) {
@@ -141,8 +163,27 @@ export default function useModeRoom({ mode, tickRpc }) {
         if (ps) setPlayers((old) => (JSON.stringify(old) === JSON.stringify(ps) ? old : ps))
       }
     }, 1000)
-    return () => { clearInterval(clock); clearInterval(tick) }
+    return () => clearInterval(tick)
   }, [roomId, room?.status, tickRpc])
+
+  // fora da partida (lobby, fim): já vai acertando o relógio, pra contagem da 1ª rodada não dar pulos.
+  // 3 amostras ao entrar e depois uma a cada 5 s — só nos modos cujo tique devolve a hora do servidor.
+  const roomStatus = room?.status ?? null
+  useEffect(() => {
+    if (!roomId || !roomStatus || roomStatus === 'playing') return
+    let stop = false
+    let id = null
+    const sample = async () => {
+      const t0 = Date.now()
+      const { data, error: e } = await supabase.rpc(tickRpc, { p_room_id: roomId })
+      return !stop && !e && takeClock(data, t0, Date.now())
+    }
+    ;(async () => {
+      for (let i = 0; i < 3; i++) if (!(await sample())) return
+      if (!stop) id = setInterval(sample, 5000)
+    })()
+    return () => { stop = true; clearInterval(id) }
+  }, [roomId, roomStatus, tickRpc])
 
   // "ainda estou aqui" a cada 15 s (supabase/013)
   useEffect(() => {

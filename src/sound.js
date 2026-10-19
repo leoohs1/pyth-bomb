@@ -28,7 +28,7 @@ export const SOUNDS = [
   'cash',          // ganhei pontos na rodada
   // Guess the Song
   'get_ready',     // começou a contagem antes da música (tela GET READY)
-  'countdown',     // os últimos números da contagem (3, 2, 1)
+  'countdown',     // cada número da contagem (menos o primeiro, quando a voz "get ready" fala)
   'go',            // fim da contagem: BEEP de "valendo" logo antes da música entrar
 ]
 
