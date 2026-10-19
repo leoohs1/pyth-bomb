@@ -4,6 +4,7 @@ import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
 import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { SONG_SEATS } from './seats'
+import { setMusicSilenced } from '../music'
 import './song.css'
 
 // Prévia do Guess the Song com dados de mentira (sem servidor e sem música), só pra ver o visual:
@@ -34,6 +35,7 @@ export default function SongPreview() {
   const [, setT] = useState(0)
   useEffect(() => { const id = setInterval(() => setT((n) => n + 1), 500); return () => clearInterval(id) }, [])
   useEffect(() => { document.documentElement.dataset.mode = 'song' }, [])
+  useEffect(() => { setMusicSilenced(true); return () => setMusicSilenced(false) }, []) // igual ao jogo: sem música de fundo
 
   const room = {
     id: 'r', code: 'PYTHM4', status: phase === 'finished' ? 'finished' : phase === 'lobby' ? 'lobby' : 'playing',

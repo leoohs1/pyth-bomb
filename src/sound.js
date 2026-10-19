@@ -26,6 +26,9 @@ export const SOUNDS = [
   'reveal',        // o preço certo aparece
   'perfect',       // PYTH PERFECT (acertei dentro da faixa da Pyth)
   'cash',          // ganhei pontos na rodada
+  // Guess the Song
+  'get_ready',     // começou a contagem antes da música (tela GET READY)
+  'countdown',     // cada número da contagem (5, 4, 3, 2, 1)
 ]
 
 // Cada modo pode ter os próprios sons: com setSoundTheme('price'), o jogo procura primeiro
@@ -199,6 +202,9 @@ const SYNTH = {
   reveal: () => { swish({ f0: 300, f1: 2600, q: 1.2, dur: 0.5, gain: 0.3 }); tone({ f0: 140, f1: 70, dur: 0.35, gain: 0.6, at: 0.45 }) },
   perfect: () => [523, 659, 784, 1047].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.16, gain: 0.28, at: i * 0.08 })),
   cash: () => { tone({ f0: 1320, dur: 0.07, gain: 0.2 }); tone({ f0: 1760, dur: 0.12, gain: 0.2, at: 0.07 }) },
+  // Guess the Song (provisórios, até chegarem os arquivos em public/sounds/song/)
+  get_ready: () => { swish({ f0: 400, f1: 2200, q: 1.5, dur: 0.4, gain: 0.25 }); [659, 988].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.18, gain: 0.25, at: 0.3 + i * 0.12 })) },
+  countdown: () => tone({ type: 'sine', f0: 880, dur: 0.09, gain: 0.25 }),
 }
 
 export function play(name, opts = {}) {

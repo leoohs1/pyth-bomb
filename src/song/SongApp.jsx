@@ -108,6 +108,16 @@ export default function SongApp() {
     }
   }, [serverNow, file, listenAt, listenSecs, phase])
 
+  // tela GET READY: um som quando a contagem começa e um bip a cada número
+  const readyN = phase === 'ready' && listenAt ? Math.max(1, Math.ceil((listenAt - serverNow) / 1000)) : null
+  const lastReadyRef = useRef(null)
+  useEffect(() => {
+    if (readyN == null) { lastReadyRef.current = null; return }
+    if (lastReadyRef.current == null) play('get_ready')
+    else if (readyN < lastReadyRef.current) play('countdown')
+    lastReadyRef.current = readyN
+  }, [readyN])
+
   // se o celular bloqueou o som, o primeiro toque na tela já toca
   useEffect(() => {
     const resume = () => {
