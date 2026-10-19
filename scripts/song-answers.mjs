@@ -17,8 +17,9 @@ export function artistAnswers(artist) {
   add(artist.replace(/\s+n'?\s+/gi, ' and ')) // Guns N' Roses = Guns and Roses
   const main = artist.split(/\s+(?:feat\.?|ft\.?|featuring|x)\s+/i)[0]
   add(main)
-  // dupla/grupo "A & B" / "A, B": cada nome sozinho também vale
-  for (const part of main.split(/\s*(?:&|,| and )\s*/i)) if (part.length >= 4) add(part)
+  // dupla, grupo ou participação ("A & B", "A, B", "A feat. B"): cada nome sozinho também vale
+  // (em "Uptown Funk", de Mark Ronson feat. Bruno Mars, quase todo mundo digita "Bruno Mars")
+  for (const part of artist.split(/\s*(?:&|,| and |\s(?:feat\.?|ft\.?|featuring|x)\s)\s*/i)) if (part.trim().length >= 4) add(part)
   out.delete(artist)
   return [...out]
 }

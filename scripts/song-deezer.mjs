@@ -48,7 +48,10 @@ async function find(artist, title) {
     await sleep(150)
     const list = (res?.data ?? []).filter((t) => t.preview)
     const good = list.filter((t) => close(t.artist?.name, artist) && close(cleanTitle(t.title), cleanTitle(title)))
-    const pick = (good.length ? good : []).sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0))[0]
+    // prefere a versão de estúdio: ao vivo, remix, acústico, karaokê... só se não tiver outra
+    const odd = (t) => (/\b(live|remix|acoustic|karaoke|instrumental|cover|tribute|demo|sped up|slowed)\b/i
+      .test(`${t.title} ${t.album?.title ?? ''}`) && !/\b(live|remix|acoustic)\b/i.test(title)) ? 1 : 0
+    const pick = (good.length ? good : []).sort((a, b) => odd(a) - odd(b) || (b.rank ?? 0) - (a.rank ?? 0))[0]
     if (pick) return { track: pick, exact: true }
     if (list.length && path === tries[1]) return { track: list[0], exact: false }
   }
@@ -61,14 +64,23 @@ let report = 'LISTA DO GUESS THE SONG — o que achei no Deezer\n(confira se cad
 let n = 0, bad = 0
 
 for (const line of lines) {
-  const m = line.match(/^(.+?)\s+[-–—]\s+(.+)$/)
+  // "#12345" no fim da linha: usa exatamente essa faixa do Deezer (quando a busca escolhe a versão errada)
+  const forced = line.match(/\s+#(\d+)\s*$/)
+  const m = (forced ? line.slice(0, forced.index) : line).match(/^(.+?)\s+[-–—]\s+(.+)$/)
   n++
   if (!m) { report += `${n}. ⚠ "${line}": escreva no formato "Artista - Música"\n`; bad++; continue }
   const [, artist, rawTitle] = m
   const yearMatch = rawTitle.match(/\s*\((\d{4})\)\s*$/)
   const title = yearMatch ? rawTitle.slice(0, yearMatch.index).trim() : rawTitle
   const year = yearMatch ? yearMatch[1] : ''
-  const found = await find(artist, title)
+  let found = null
+  if (forced) {
+    const t = await api(`/track/${forced[1]}`)
+    await sleep(150)
+    if (t?.id && t.preview) found = { track: t, exact: true }
+  } else {
+    found = await find(artist, title)
+  }
   if (!found) { report += `${n}. ⚠ ${artist} - ${title}: NÃO ACHEI no Deezer (confira a escrita)\n`; bad++; continue }
   const t = found.track
   const mark = found.exact ? '✓' : '⚠ CONFIRA (achei algo parecido)'
