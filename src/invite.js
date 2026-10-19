@@ -10,9 +10,12 @@ export function buildInviteLink(code, path = '/play') {
   return u.toString()
 }
 
+// nome de cada modo no convite (o resto é Pyth Bomb)
+const INVITE_NAMES = { '/price': 'Guess the Price room! 📈', '/song': 'Guess the Song room! 🎵' }
+
 // texto que o botão Copy coloca na área de transferência (pronto pra colar no WhatsApp/Discord)
 export function inviteMessage(code, path = '/play') {
-  return `Join my Pyth Bomb room! 💣\n${buildInviteLink(code, path)}\nRoom code: ${code}`
+  return `Join my ${INVITE_NAMES[path] ?? 'Pyth Bomb room! 💣'}\n${buildInviteLink(code, path)}\nRoom code: ${code}`
 }
 
 // código vindo do link (?room=PYTHFY), limpo (só letras e números, maiúsculo), ou '' se não tem
