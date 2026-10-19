@@ -31,5 +31,5 @@ export const SONG_SEATS = {
 // Personagem do centro (você) em pé, cantando, no lobby e nas rodadas: arquivo sentado -> arquivo em pé.
 // Quem ainda não tem a arte continua sentado. Arte: public/song/stage/ (kit para-o-chatgpt/11-microfone).
 export const SONG_STAGE_ART = {
-  '/oracle-pilot-calm.webp': '/song/stage/nysa-sing.webp',
+  '/oracle-pilot-calm.webp': '/song/stage/nysa-sing.webp', // Nysa
 }
