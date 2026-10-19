@@ -26,7 +26,9 @@ export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) 
   // a cada mudança de fase (lobby -> partida -> fim) volta ao automático
   useEffect(() => { setOverride(null) }, [phase])
 
-  const open = override ?? (phase !== 'playing')
+  // nas rodadas (Hot Potato, Guess the Price, Song...) começa fechado e menor; no lobby e no fim, aberto
+  const inRound = phase !== 'lobby' && phase !== 'finished'
+  const open = override ?? !inRound
   const msgs = chat.messages
 
   // não lidas: mensagens dos outros que chegaram com o chat fechado
@@ -69,7 +71,7 @@ export default function ChatBox({ chat, myPlayerId, phase, variant = 'arena' }) 
   }
 
   return (
-    <section className={`ct-panel ct-${variant}${variant === 'compact' && phase !== 'playing' ? ' ct-inline' : ''}${phase === 'playing' ? ' ct-playing' : ''} ct-lv-${size}`} aria-label="Chat">
+    <section className={`ct-panel ct-${variant}${variant === 'compact' && !inRound ? ' ct-inline' : ''}${inRound ? ' ct-playing' : ''} ct-lv-${size}`} aria-label="Chat">
       <header className="ct-head">
         <span className="ct-title">💬 Chat</span>
         <div className="ct-lv" role="group" aria-label="Chat size">

@@ -247,7 +247,7 @@ begin
   select * into v_s from price_secrets where room_id = p_room_id;
 
   create temp table if not exists price_tmp (player_id uuid, nickname text, guess numeric, err_pct numeric, perfect boolean, points int) on commit drop;
-  delete from price_tmp;
+  delete from price_tmp where true; -- (o Supabase exige um where em delete/update)
   insert into price_tmp
   select p.id, p.nickname, g.guess,
          case when g.guess is null then null else abs(g.guess - v_s.answer) / v_s.answer * 100 end,
@@ -260,7 +260,8 @@ begin
   update price_tmp set points = case
     when guess is null then 0
     when perfect then 1500
-    else round(1000 * greatest(0, 1 - err_pct / v_s.scale_pct))::int end;
+    else round(1000 * greatest(0, 1 - err_pct / v_s.scale_pct))::int end
+  where true;
 
   update players p set score = p.score + t.points from price_tmp t where p.id = t.player_id;
 
