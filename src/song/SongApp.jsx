@@ -121,7 +121,9 @@ export default function SongApp() {
 
   // tela GET READY: a voz "get ready" quando a contagem começa e um bip a cada número
   // (menos enquanto a voz fala); no fim vem o BEEP de "valendo"
-  const readyN = phase === 'ready' && listenAt ? Math.max(1, Math.ceil((listenAt - serverNow) / 1000)) : null
+  // só a 1ª música tem a contagem; nas outras a tela de resposta já aparece e a música vem logo
+  const countdown = phase === 'ready' && (room?.round_number ?? 0) <= 1
+  const readyN = countdown && listenAt ? Math.max(1, Math.ceil((listenAt - serverNow) / 1000)) : null
   const lastReadyRef = useRef(null)
   const voiceAtRef = useRef(0)
   useEffect(() => {
@@ -200,10 +202,11 @@ export default function SongApp() {
     if (phase === 'reveal') {
       const ms = room.question_expires_at ? Math.max(0, Date.parse(room.question_expires_at) - serverNow) : 0
       panel = <RevealPanel room={room} players={players} me={me} msLeft={ms} />
-    } else if (!listenAt || serverNow < listenAt) {
+    } else if (countdown && (!listenAt || serverNow < listenAt)) {
       panel = <ReadyPanel room={room} msToStart={listenAt ? listenAt - serverNow : 3000} />
     } else {
-      const ms = Math.max(0, listenAt + listenSecs * 1000 - serverNow)
+      // (da 2ª música em diante a tela de resposta aparece uns 2 s antes da música: o tempo fica cheio)
+      const ms = Math.max(0, Math.min(listenSecs * 1000, (listenAt ?? serverNow) + listenSecs * 1000 - serverNow))
       panel = <ListenPanel room={room} players={players} me={me} msLeft={ms} total={listenSecs}
         text={text} setText={setText} onSubmit={submitGuess} feedback={feedback} inputRef={inputRef} error={error} />
     }
