@@ -27,3 +27,9 @@ export const SONG_SEATS = {
   R_FRONT2: { dy: -1.7, dEdge: 2.3 },
   R_FRONT: { dy: -2.4, dEdge: 2.2 },
 }
+
+// Personagem do centro (você) em pé, cantando, no lobby e nas rodadas: arquivo sentado -> arquivo em pé.
+// Quem ainda não tem a arte continua sentado. Arte: public/song/stage/ (kit para-o-chatgpt/11-microfone).
+export const SONG_STAGE_ART = {
+  '/oracle-pilot-calm.webp': '/song/stage/nysa-sing.webp',
+}

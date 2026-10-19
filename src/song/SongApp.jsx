@@ -10,7 +10,7 @@ import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { play } from '../sound'
 import { setMusicSilenced, setMusicTrack } from '../music'
-import { SONG_SEATS } from './seats'
+import { SONG_SEATS, SONG_STAGE_ART } from './seats'
 import './song.css'
 
 // Guess the Song: toca um trecho de música (o mesmo, na mesma hora, pra todo mundo) e a turma
@@ -183,7 +183,7 @@ export default function SongApp() {
     )
   }
 
-  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat, seatNudge: SONG_SEATS }
+  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat, seatNudge: SONG_SEATS, stageArt: SONG_STAGE_ART }
 
   if (room.status === 'lobby') {
     return (

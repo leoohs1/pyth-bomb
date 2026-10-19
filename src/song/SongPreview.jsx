@@ -3,7 +3,7 @@ import GameArenaV2 from '../GameArenaV2'
 import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
 import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
-import { SONG_SEATS } from './seats'
+import { SONG_SEATS, SONG_STAGE_ART } from './seats'
 import { setMusicSilenced } from '../music'
 import './song.css'
 
@@ -43,7 +43,7 @@ export default function SongPreview() {
     song_round: { file: 'x.mp3', listen_at: new Date().toISOString(), listen_secs: 30 },
     song_reveal: phase === 'reveal' ? REVEAL : null,
   }
-  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {}, seatNudge: SONG_SEATS }
+  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {}, seatNudge: SONG_SEATS, stageArt: SONG_STAGE_ART }
   const chip = 'Round 3/10 · Guess the Song'
 
   let view

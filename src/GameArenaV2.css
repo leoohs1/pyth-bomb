@@ -252,6 +252,19 @@
 .ga-seat.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 /* eu, eliminado — continuo aparecendo no centro (spec item 12: "keep my
    local foreground character visible but grayscale"), só apagado */
+/* centro em pé (stageArt, ex.: cantando no Guess the Song): sombra no chão, embaixo dos pés */
+.ga-stand { position: relative; width: 100%; }
+.ga-stand .ga-avatar { position: relative; display: block; width: 100%; }
+.ga-stand-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -0.45cqw;
+  width: 62%;
+  height: 1.5cqw;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(12, 2, 24, 0.6), rgba(12, 2, 24, 0));
+}
 .ga-me-stage.is-out .ga-avatar { filter: grayscale(1) brightness(0.55) drop-shadow(0 0.12cqw 0.2cqw rgba(10, 4, 30, 0.4)); }
 .ga-me-stage.is-out .ga-name { color: rgba(246, 238, 255, 0.55); text-decoration: line-through; }
 

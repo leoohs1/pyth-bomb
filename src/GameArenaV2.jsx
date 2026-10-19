@@ -115,6 +115,9 @@ const SEAT_FILL_ORDER = [
 // jogador local: slot explícito próprio, fora dos 19 — nunca consome um
 // assento da plateia (spec item 7, última linha).
 const LOCAL_PLAYER = { id: 'LOCAL_PLAYER', x: 50, y: 78, widthCqw: 9.3, zIndex: 50 }
+// arte "em pé" do centro (stageArt, ex.: cantando no Guess the Song): os pés pisam no palco redondo,
+// então começa mais alto que o sentado (logo abaixo do cartão da rodada)
+const LOCAL_PLAYER_STANDING_Y = 63.5
 
 // liga/desliga os marcadores de calibração (cruz + ID do assento + caixa
 // aproximada do personagem + âncora do nome + âncora da bomba). Só visual —
@@ -334,6 +337,8 @@ export default function GameArenaV2({
   chip = null,
   // ajuste fino dos assentos pra arte de outro modo (ver nudgeSeat)
   seatNudge = null,
+  // arte em pé pro personagem do centro (arquivo sentado -> arquivo em pé), fora do pódio
+  stageArt = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -355,6 +360,7 @@ export default function GameArenaV2({
   const holder = players.find((p) => p.id === room.bomb_holder_id)
   // personagem do jogador = posição dele na lista (ordem de entrada)
   const avatarOf = (p) => AVATARS[avatarIndex(p, players)]
+  const standSrc = me && phase !== 'finished' ? stageArt?.[avatarOf(me)] ?? null : null
 
   // atribuição ESTÁVEL jogador → assento (spec item 7): uma vez que alguém
   // ganha um assento, ele fica com ele a partida inteira inteira — pânico,
@@ -666,9 +672,9 @@ export default function GameArenaV2({
         </div>
 
         {me && (
-          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}${iAmEliminated ? ' is-out' : ''}${isWinnerStage ? ' is-winner' : ''}`}
+          <div className={`ga-me-stage${iAmHolder ? ` is-holder dl-${danger}` : ''}${iAmEliminated ? ' is-out' : ''}${isWinnerStage ? ' is-winner' : ''}${standSrc ? ' is-standing' : ''}`}
             style={{
-              left: `${LOCAL_PLAYER.x}%`, top: `${LOCAL_PLAYER.y}%`,
+              left: `${LOCAL_PLAYER.x}%`, top: `${standSrc ? LOCAL_PLAYER_STANDING_Y : LOCAL_PLAYER.y}%`,
               width: `${LOCAL_PLAYER.widthCqw}cqw`, marginLeft: `${-LOCAL_PLAYER.widthCqw / 2}cqw`,
               zIndex: iAmHolder ? 200 : LOCAL_PLAYER.zIndex,
             }}>
@@ -682,14 +688,25 @@ export default function GameArenaV2({
               </>
             )}
             {!iAmEliminated && inGame && me.lives != null && <Hearts lives={me.lives} className="ga-hearts ga-hearts-me" />}
-            <SeatAvatar
-              src={avatarOf(me)}
-              isHolder={iAmHolder}
-              imgRef={(el) => {
-                if (el) avatarRefs.current[me.id] = el
-                else delete avatarRefs.current[me.id]
-              }}
-            />
+            {standSrc ? (
+              <div className="ga-stand">
+                <span className="ga-stand-shadow" aria-hidden="true" />
+                <img className="ga-avatar" src={standSrc} alt="" draggable="false"
+                  ref={(el) => {
+                    if (el) avatarRefs.current[me.id] = el
+                    else delete avatarRefs.current[me.id]
+                  }} />
+              </div>
+            ) : (
+              <SeatAvatar
+                src={avatarOf(me)}
+                isHolder={iAmHolder}
+                imgRef={(el) => {
+                  if (el) avatarRefs.current[me.id] = el
+                  else delete avatarRefs.current[me.id]
+                }}
+              />
+            )}
             {iAmHolder && (
               <div className="ga-bomb-float" aria-hidden="true">
                 <img src="/bomb-laurel.webp" alt="" width="1254" height="1254" />
