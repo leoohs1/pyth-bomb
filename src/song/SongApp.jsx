@@ -68,11 +68,11 @@ export default function SongApp() {
     }
   }, [])
 
-  // durante a partida a música de fundo fica muda (só o trecho toca)
+  // sem música de fundo no Guess the Song (a do Pyth Bomb fica só lá; aqui só toca o trecho da rodada)
   useEffect(() => {
-    setMusicSilenced(room?.status === 'playing')
+    setMusicSilenced(true)
     return () => setMusicSilenced(false)
-  }, [room?.status])
+  }, [])
 
   // de onde vem o trecho: prévia do Deezer (link novo a cada rodada) ou arquivo na pasta 'songs'
   const sr = room?.status === 'playing' ? room.song_round : null

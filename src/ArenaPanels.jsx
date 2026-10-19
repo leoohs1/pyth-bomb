@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CharacterPicker from './CharacterPicker.jsx'
 import { CHARACTER_NAMES, avatarIndex } from './characters.js'
-import { inviteMessage } from './invite.js'
+import { buildInviteLink } from './invite.js'
 
 const MIN_PLAYERS = 2
 
@@ -25,7 +25,7 @@ export function LobbyPanel({ room, players, me: meProp, iAmHost, onStart, onLeav
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   async function copyCode() {
-    await copyText(inviteMessage(room.code, invitePath)) // link completo + código, pronto pra colar
+    await copyText(buildInviteLink(room.code, invitePath)) // só o link (já leva o código da sala)
     setCopied(true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => setCopied(false), 1600)
