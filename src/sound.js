@@ -28,7 +28,8 @@ export const SOUNDS = [
   'cash',          // ganhei pontos na rodada
   // Guess the Song
   'get_ready',     // começou a contagem antes da música (tela GET READY)
-  'countdown',     // cada número da contagem (5, 4, 3, 2, 1)
+  'countdown',     // os últimos números da contagem (3, 2, 1)
+  'go',            // fim da contagem: BEEP de "valendo" logo antes da música entrar
 ]
 
 // Cada modo pode ter os próprios sons: com setSoundTheme('price'), o jogo procura primeiro
@@ -205,6 +206,7 @@ const SYNTH = {
   // Guess the Song (provisórios, até chegarem os arquivos em public/sounds/song/)
   get_ready: () => { swish({ f0: 400, f1: 2200, q: 1.5, dur: 0.4, gain: 0.25 }); [659, 988].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.18, gain: 0.25, at: 0.3 + i * 0.12 })) },
   countdown: () => tone({ type: 'sine', f0: 880, dur: 0.09, gain: 0.25 }),
+  go: () => { tone({ type: 'sine', f0: 1320, dur: 0.45, gain: 0.3 }); tone({ type: 'triangle', f0: 2640, dur: 0.3, gain: 0.06 }) },
 }
 
 export function play(name, opts = {}) {

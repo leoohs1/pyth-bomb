@@ -115,13 +115,20 @@ export default function useModeRoom({ mode, tickRpc }) {
     if (!roomId || room?.status !== 'playing') return
     const clock = setInterval(() => setNow(Date.now()), 150)
     let n = 0
+    // só acerta o relógio com as respostas que voltaram mais rápido (as mais confiáveis): trocar a cada
+    // segundo fazia a contagem dar pulinhos. A "melhor" envelhece um pouco a cada tique, pra ir se reajustando.
+    let bestRtt = Infinity
     const tick = setInterval(async () => {
       const t0 = Date.now()
       const { data, error: e } = await supabase.rpc(tickRpc, { p_room_id: roomId })
       if (e) console.log('TICK ERROR:', e.message)
       else if (typeof data === 'string' && !Number.isNaN(Date.parse(data))) {
         const t1 = Date.now()
-        setServerOffset(Date.parse(data) - (t0 + t1) / 2)
+        bestRtt += 15
+        if (t1 - t0 <= bestRtt) {
+          bestRtt = t1 - t0
+          setServerOffset(Date.parse(data) - (t0 + t1) / 2)
+        }
       }
       n++
       // rede de segurança se o aviso ao vivo se perder (celular com tela apagada etc.)

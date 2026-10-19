@@ -22,6 +22,7 @@ import './song.css'
 
 const ROUNDS = 10
 const PATH = '/song'
+const GO_MS = 500 // o BEEP de "valendo" toca quando a contagem acaba; a música entra meio segundo depois
 // áudio vazio (só pra "destravar" o som no celular no primeiro toque)
 const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
 
@@ -100,14 +101,15 @@ export default function SongApp() {
     setFeedback(null)
   }, [file])
 
-  // começa a tocar na hora marcada pelo servidor (todo mundo junto) e para na revelação
+  // começa a tocar na hora marcada pelo servidor (todo mundo junto, logo depois do BEEP) e para na revelação
   useEffect(() => {
     const a = audioRef.current
     if (!a || !file || !listenAt) return
-    const inListen = serverNow >= listenAt && serverNow < listenAt + listenSecs * 1000 && phase !== 'reveal'
+    const musicAt = listenAt + GO_MS
+    const inListen = serverNow >= musicAt && serverNow < listenAt + listenSecs * 1000 && phase !== 'reveal'
     if (inListen && startedRef.current !== file) {
       startedRef.current = file
-      const late = (serverNow - listenAt) / 1000
+      const late = (serverNow - musicAt) / 1000
       try { if (late > 0.3 && a.duration) a.currentTime = late % a.duration } catch { /* ainda carregando */ }
       a.play().catch(() => setFeedback({ kind: 'close', text: 'Tap anywhere to turn the sound on' }))
     } else if (!inListen && !a.paused) {
@@ -115,15 +117,26 @@ export default function SongApp() {
     }
   }, [serverNow, file, listenAt, listenSecs, phase])
 
-  // tela GET READY: um som quando a contagem começa e um bip a cada número
+  // tela GET READY: a voz "get ready" quando a contagem começa e um bip no 3, 2, 1 (depois vem o BEEP de "valendo")
   const readyN = phase === 'ready' && listenAt ? Math.max(1, Math.ceil((listenAt - serverNow) / 1000)) : null
   const lastReadyRef = useRef(null)
   useEffect(() => {
     if (readyN == null) { lastReadyRef.current = null; return }
     if (lastReadyRef.current == null) play('get_ready')
-    else if (readyN < lastReadyRef.current) play('countdown')
+    else if (readyN < lastReadyRef.current && readyN <= 3) play('countdown')
     lastReadyRef.current = readyN
   }, [readyN])
+
+  // fim da contagem: BEEP de "valendo" (uma vez por música; quem entra no meio da rodada não ouve)
+  const goRef = useRef(null)
+  useEffect(() => {
+    if (!listenAt || phase === 'reveal') return
+    const t = serverNow - listenAt
+    if (t >= 0 && t < 1500 && goRef.current !== listenAt) {
+      goRef.current = listenAt
+      play('go')
+    }
+  }, [serverNow, listenAt, phase])
 
   // se o celular bloqueou o som, o primeiro toque na tela já toca
   useEffect(() => {
