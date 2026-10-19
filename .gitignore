@@ -29,3 +29,6 @@ scripts/.out
 # Guess the Song: trechos de música NUNCA vão pro GitHub (ficam no Supabase Storage)
 musicas/
 musicas-prontas/
+
+# fotos das pessoas da comunidade (viram desenho no ChatGPT; nunca vão pro GitHub)
+para-o-chatgpt/10-elenco-comunidade/fotos/
