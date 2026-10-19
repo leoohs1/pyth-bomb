@@ -9,7 +9,7 @@ import useModeTheme from '../modes/useModeTheme'
 import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { play } from '../sound'
-import { setMusicSilenced } from '../music'
+import { setMusicSilenced, setMusicTrack } from '../music'
 import { SONG_SEATS } from './seats'
 import './song.css'
 
@@ -68,11 +68,18 @@ export default function SongApp() {
     }
   }, [])
 
-  // sem música de fundo no Guess the Song (a do Pyth Bomb fica só lá; aqui só toca o trecho da rodada)
+  // música própria do modo (public/music/song.mp3) na entrada, no lobby e no pódio; muda durante as
+  // rodadas (só toca o trecho). Enquanto ela não estiver valendo, silêncio: a do Pyth Bomb fica só lá.
+  const [ownMusic, setOwnMusic] = useState(false)
   useEffect(() => {
-    setMusicSilenced(true)
-    return () => setMusicSilenced(false)
+    let on = true
+    setMusicTrack('/music/song.mp3').then((ok) => { if (on) setOwnMusic(ok) })
+    return () => { on = false }
   }, [])
+  useEffect(() => {
+    setMusicSilenced(!ownMusic || room?.status === 'playing')
+    return () => setMusicSilenced(false)
+  }, [ownMusic, room?.status])
 
   // de onde vem o trecho: prévia do Deezer (link novo a cada rodada) ou arquivo na pasta 'songs'
   const sr = room?.status === 'playing' ? room.song_round : null

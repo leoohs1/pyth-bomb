@@ -74,21 +74,23 @@ export function setMusicDuck(v) {
 
 // Cada modo pode ter a própria música (ex.: setMusicTrack('/music/price.mp3') no Guess the Price).
 // Só troca se o arquivo existir de verdade; sem ele, continua a faixa atual. Sem argumento = a padrão.
+// Devolve true se essa faixa ficou valendo (o Guess the Song usa isso pra nunca tocar a do Pyth Bomb).
 let track = SRC
 export async function setMusicTrack(src = SRC) {
-  if (src === track) return
+  if (src === track) return true
   if (src !== SRC) {
     try {
       const r = await fetch(src, { method: 'HEAD' })
       // sem o arquivo, o servidor devolve a página inicial (html) — não é áudio
-      if (!r.ok || !(r.headers.get('content-type') || '').includes('audio')) return
-    } catch { return }
+      if (!r.ok || !(r.headers.get('content-type') || '').includes('audio')) return false
+    } catch { return false }
   }
   track = src
   const a = ensure()
   const wasPlaying = !a.paused
   a.src = src
   if (wasPlaying) a.play().catch(() => { /* sem gesto ainda: começa no próximo toque */ })
+  return true
 }
 
 // primeiro gesto da pessoa: começa a música (fade curtinho, pra não parecer atraso)
