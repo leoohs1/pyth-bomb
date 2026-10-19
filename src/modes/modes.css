@@ -14,6 +14,10 @@
   color: var(--ga-ink, #2e1f63);
   border-radius: 6px;
 }
+.rm-scores li > span:first-child { flex: 1; }
+/* celular (cartão mb-panel): as medidas em cqw ficam minúsculas lá (97 px de largura, 3 linhas) */
+.mb-panel .rm-scores { max-width: 280px; }
+.mb-panel .rm-scores ol { max-height: 9.5em; }
 .rm-scores li.is-me { background: rgba(106, 63, 196, 0.16); font-weight: 800; }
 .rm-scores.is-compact { margin-top: 0.5cqw; }
 

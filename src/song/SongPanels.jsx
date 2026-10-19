@@ -72,15 +72,13 @@ export function ListenPanel({ room, players, me, msLeft, total, text, setText, o
         </form>
       )}
       <p className={`sg-feedback is-${feedback?.kind ?? 'none'}`} aria-live="polite">{feedback?.text ?? ''}</p>
-      <ul className="sg-found">
-        {players.map((p) => (
-          <li key={p.id} className={p.id === me?.id ? 'is-me' : ''}>
-            {p.nickname}{' '}
-            <span className={p.song_artist_round === r ? 'is-got' : ''}>🎤</span>
-            <span className={p.song_title_round === r ? 'is-got' : ''}>🎵</span>
-          </li>
-        ))}
-      </ul>
+      {/* leaderboard ao vivo (os pontos sobem na hora do acerto): top 5 + eu, com 🎤🎵 de quem já achou nesta música */}
+      <ScoreList players={players} me={me} compact limit={5} title="Leaderboard" extra={(p) => (
+        <span className="sg-got">
+          <span className={p.song_artist_round === r ? 'is-got' : ''}>🎤</span>
+          <span className={p.song_title_round === r ? 'is-got' : ''}>🎵</span>
+        </span>
+      )} />
       {error && <p className="ga-error" role="alert">{error}</p>}
     </>
   )
