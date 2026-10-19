@@ -9,6 +9,7 @@ import useModeTheme from '../modes/useModeTheme'
 import ScoreList from '../modes/ScoreList'
 import { GuessPanel, RevealPanel } from './PricePanels'
 import { play } from '../sound'
+import { PRICE_SEATS } from './seats'
 import './price.css'
 
 // Guess the Price: a turma vê um ativo (Bitcoin, ouro, Nvidia...), uma data e hora do passado e o
@@ -95,7 +96,7 @@ export default function PriceApp() {
   }
 
   const msLeft = room.question_expires_at ? Math.max(0, new Date(room.question_expires_at).getTime() - now) : 0
-  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat }
+  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat, seatNudge: PRICE_SEATS }
 
   if (room.status === 'lobby') {
     return (

@@ -232,6 +232,20 @@ function getAvatarGeometry(src) {
 // 70% da face). Antes ficava na parede ENTRE as fileiras, em cima da cabeça
 // de quem senta na fileira de baixo — parecia o nome dele.
 const PLATE_ABOVE_EDGE = 0.75
+// outros modos com arte própria (Guess the Song...): a mesma arena redesenhada, mas os bancos
+// podem ter ficado um pouco fora do lugar. `seatNudge` = { L_FRONT: { dx, dy, dEdge } } em % da arena:
+// dx/dy movem o assento inteiro (personagem, sombra e plaquinha); dEdge move só a borda da frente
+// (onde fica a plaquinha), pra banco mais alto ou mais baixo que o bloco de mármore.
+function nudgeSeat(s, n) {
+  if (!n) return s
+  const dx = n.dx ?? 0, dy = n.dy ?? 0, edge = dy + (n.dEdge ?? 0)
+  return {
+    ...s, x: s.x + dx, y: s.y + edge, lipY: s.lipY != null ? s.lipY + dy : s.lipY,
+    namePlateY: s.namePlateY != null ? s.namePlateY + edge : s.namePlateY,
+    blockX: s.blockX ? [s.blockX[0] + dx, s.blockX[1] + dx] : s.blockX,
+  }
+}
+
 function plateX(s) { return s.blockX ? (s.blockX[0] + s.blockX[1]) / 2 : s.x }
 function plateY(s) { return s.blockX ? s.y - PLATE_ABOVE_EDGE : s.namePlateY }
 
@@ -318,6 +332,8 @@ export default function GameArenaV2({
   lifeFlash = null,
   // texto da etiqueta do topo (outros modos, ex.: "Round 3/10 · Guess the Price"); sem ele, o do Classic
   chip = null,
+  // ajuste fino dos assentos pra arte de outro modo (ver nudgeSeat)
+  seatNudge = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -361,7 +377,10 @@ export default function GameArenaV2({
   }
   const seated = crowd
     .filter((p) => seatAssignmentRef.current.has(p.id))
-    .map((p) => ({ player: p, seat: ARENA2_SEATS.find((s) => s.id === seatAssignmentRef.current.get(p.id)) }))
+    .map((p) => {
+      const seat = ARENA2_SEATS.find((s) => s.id === seatAssignmentRef.current.get(p.id))
+      return { player: p, seat: seat && nudgeSeat(seat, seatNudge?.[seat.id]) }
+    })
     // defesa contra hot-reload em dev: se ARENA2_SEATS mudar de forma
     // (IDs diferentes) enquanto o componente já está montado, o ref pode
     // guardar um ID de assento que não existe mais na array nova — um

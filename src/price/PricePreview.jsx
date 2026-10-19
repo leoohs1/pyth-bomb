@@ -3,14 +3,16 @@ import GameArenaV2 from '../GameArenaV2'
 import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
 import { GuessPanel, RevealPanel } from './PricePanels'
 import ScoreList from '../modes/ScoreList'
+import { PRICE_SEATS } from './seats'
 import './price.css'
 
 // Prévia do Guess the Price com dados de mentira (sem servidor), só pra ver o visual:
 // /price-preview  (?phase=lobby|guess|reveal|finished). Não faz parte do jogo de verdade.
-const NAMES = ['Halls', 'Gio', 'Ricardo', 'Samurai', 'Cakky', 'Kirito']
+const NAMES = ['Halls', 'Gio', 'Ricardo', 'Samurai', 'Cakky', 'Kirito', 'Luna', 'Pedro', 'Nina', 'Theo', 'Bia', 'Rafa',
+  'Duda', 'Leo', 'Mia', 'Caio', 'Iris', 'Davi', 'Zoe'] // 19 = sala lotada (18 na plateia + você no centro)
 const PLAYERS = NAMES.map((nickname, i) => ({
-  id: 'p' + i, user_id: 'u' + i, nickname, alive: true, avatar_idx: i, score: [2310, 1840, 2875, 960, 1430, 0][i],
-  place: [2, 3, 1, 5, 4, 6][i], price_guessed_round: i < 4 ? 3 : null,
+  id: 'p' + i, user_id: 'u' + i, nickname, alive: true, avatar_idx: i, score: [2310, 1840, 2875, 960, 1430, 0][i] ?? 0,
+  place: [2, 3, 1, 5, 4, 6][i] ?? i + 1, price_guessed_round: i < 4 ? 3 : null,
 }))
 const ROUND = {
   pro_id: 1, label: 'Bitcoin (BTC)', kind: 'crypto', decimals: 2, quote: 'USD',
@@ -31,6 +33,8 @@ const REVEAL = {
 export default function PricePreview() {
   const [phase, setPhase] = useState(() => new URLSearchParams(window.location.search).get('phase') || 'guess')
   const [guessText, setGuessText] = useState('97.5k')
+  const [count, setCount] = useState(() => Number(new URLSearchParams(window.location.search).get('n')) || 6)
+  const players = PLAYERS.slice(0, count)
   const [sent, setSent] = useState(null)
   const [, setT] = useState(0)
   useEffect(() => { const id = setInterval(() => setT((n) => n + 1), 500); return () => clearInterval(id) }, [])
@@ -41,23 +45,23 @@ export default function PricePreview() {
     mode: 'price', round_number: 3, price_total: 10, price_phase: phase, price_round: ROUND,
     price_reveal: phase === 'reveal' ? REVEAL : null, host_user_id: 'u0', winner_id: 'p2',
   }
-  const common = { room, players: PLAYERS, alive: PLAYERS, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {} }
+  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {}, seatNudge: PRICE_SEATS }
   const msLeft = 1000 * (phase === 'reveal' ? 6 : 14)
 
   let view
   if (phase === 'lobby') {
     view = <GameArenaV2 {...common} phase="lobby" chip="Lobby · Guess the Price"
-      panel={<LobbyPanel room={room} players={PLAYERS} me={PLAYERS[0]} iAmHost onStart={() => setPhase('guess')} onLeave={() => {}}
+      panel={<LobbyPanel room={room} players={players} me={players[0]} iAmHost onStart={() => setPhase('guess')} onLeave={() => {}}
         onPick={() => {}} subtitle="📈 Guess the Price" invitePath="/price" />} />
   } else if (phase === 'finished') {
     view = <GameArenaV2 {...common} phase="finished" centerId="p2" chip="Game over · Guess the Price"
-      panel={<><FinishedPanel room={room} players={PLAYERS} myId="p0" winner={PLAYERS[2]} iWon={false} iAmOut={false} iAmHost
-        onStart={() => setPhase('guess')} onLeave={() => {}} /><ScoreList players={PLAYERS} me={PLAYERS[0]} /></>} />
+      panel={<><FinishedPanel room={room} players={players} myId="p0" winner={(players[2] ?? players[0])} iWon={false} iAmOut={false} iAmHost
+        onStart={() => setPhase('guess')} onLeave={() => {}} /><ScoreList players={players} me={players[0]} /></>} />
   } else {
     view = <GameArenaV2 {...common} phase="price" chip="Round 3/10 · Guess the Price"
       panel={phase === 'reveal'
-        ? <RevealPanel room={room} players={PLAYERS} me={PLAYERS[0]} msLeft={msLeft} />
-        : <GuessPanel room={room} players={PLAYERS} msLeft={msLeft} guessText={guessText} setGuessText={setGuessText}
+        ? <RevealPanel room={room} players={players} me={players[0]} msLeft={msLeft} />
+        : <GuessPanel room={room} players={players} msLeft={msLeft} guessText={guessText} setGuessText={setGuessText}
             sent={sent} onSubmit={setSent} />} />
   }
 
@@ -67,6 +71,10 @@ export default function PricePreview() {
       <div style={{ position: 'fixed', left: 8, bottom: 8, zIndex: 999, display: 'flex', gap: 4 }}>
         {['lobby', 'guess', 'reveal', 'finished'].map((p) => (
           <button key={p} onClick={() => setPhase(p)} style={{ fontWeight: phase === p ? 800 : 400 }}>{p}</button>
+        ))}
+        <span style={{ width: 10 }} />
+        {[2, 6, 12, 19].map((n) => (
+          <button key={n} onClick={() => setCount(n)} style={{ fontWeight: count === n ? 800 : 400 }}>👥 {n === 19 ? '19 (lotado)' : n}</button>
         ))}
       </div>
     </>
