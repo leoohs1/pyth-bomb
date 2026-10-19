@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { join, extname, basename } from 'node:path'
+import { artistAnswers, titleAnswers, sqlArray as arr, esc } from './song-answers.mjs'
 
 const root = process.cwd()
 const IN = join(root, 'musicas')
@@ -23,38 +24,6 @@ if (!existsSync(IN)) { mkdirSync(IN); console.log('Criei a pasta "musicas". Colo
 mkdirSync(OUT, { recursive: true })
 const map = existsSync(MAP) ? JSON.parse(readFileSync(MAP, 'utf8')) : {}
 
-// respostas aceitas além do nome principal (a conferência no servidor já ignora maiúsculas,
-// acentos, pontuação, "the" no começo e erros pequenos)
-function artistAnswers(artist) {
-  const out = new Set()
-  const add = (s) => { s = s.trim(); if (s.length >= 2) out.add(s) }
-  add(artist)
-  add(artist.replace(/^the\s+/i, ''))
-  add(artist.replace(/\s*&\s*/g, ' and '))
-  add(artist.replace(/\s+and\s+/gi, ' & '))
-  add(artist.replace(/\s+n'?\s+/gi, ' and ')) // Guns N' Roses = Guns and Roses
-  const main = artist.split(/\s+(?:feat\.?|ft\.?|featuring|x)\s+/i)[0]
-  add(main)
-  // dupla/grupo "A & B" / "A, B": cada nome sozinho também vale
-  for (const part of main.split(/\s*(?:&|,| and )\s*/i)) if (part.length >= 4) add(part)
-  out.delete(artist)
-  return [...out]
-}
-function titleAnswers(title) {
-  const out = new Set()
-  const add = (s) => { s = s.trim(); if (s.length >= 2) out.add(s) }
-  add(title)
-  const clean = title.replace(/\s*[([].*?[)\]]\s*/g, ' ').replace(/\s+-\s+.*(remaster|live|version|edit|mix).*$/i, '').trim()
-  add(clean)
-  add(clean.replace(/\s*&\s*/g, ' and '))
-  add(clean.replace(/\s+and\s+/gi, ' & '))
-  add(clean.replace(/\bo'(?=\s)/gi, 'of')) // Sweet Child O' Mine = Sweet Child of Mine
-  out.delete(title)
-  return [...out]
-}
-
-const esc = (s) => String(s).replace(/'/g, "''")
-const arr = (list) => `array[${list.map((s) => `'${esc(s)}'`).join(', ')}]::text[]`
 const rows = []
 const problems = []
 

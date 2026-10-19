@@ -16,7 +16,8 @@ import './song.css'
 // digita o artista ou o nome da música. Mais rápido = mais pontos; 10 rodadas.
 // Sala, lobby, chat, personagens e arena são os mesmos dos outros modos (src/modes/useModeRoom.js);
 // as regras ficam no servidor (supabase/song/S01_guess_the_song.sql). Endereço: /song.
-// Os trechos ficam na pasta "songs" do Supabase (fora do GitHub), com nomes aleatórios.
+// O trecho vem da prévia oficial de 30 s do Deezer (o servidor pega um link novo a cada rodada,
+// supabase/song/S01b) ou de um arquivo na pasta "songs" do Supabase (fora do GitHub).
 
 const ROUNDS = 10
 const PATH = '/song'
@@ -72,7 +73,9 @@ export default function SongApp() {
     return () => setMusicSilenced(false)
   }, [room?.status])
 
-  const file = room?.status === 'playing' ? room.song_round?.file : null
+  // de onde vem o trecho: prévia do Deezer (link novo a cada rodada) ou arquivo na pasta 'songs'
+  const sr = room?.status === 'playing' ? room.song_round : null
+  const file = sr?.url ?? (sr?.file ? clipUrl(sr.file) : null)
   const listenAt = room?.song_round?.listen_at ? Date.parse(room.song_round.listen_at) : null
   const listenSecs = room?.song_round?.listen_secs ?? 20
   const phase = room?.status === 'playing' ? room.song_phase : null
@@ -82,7 +85,7 @@ export default function SongApp() {
     const a = audioRef.current
     if (!a || !file) return
     a.pause()
-    a.src = clipUrl(file)
+    a.src = file
     a.load()
     startedRef.current = null
     setText('')
