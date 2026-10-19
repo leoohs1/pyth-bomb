@@ -26,6 +26,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/^the\s+/, '').replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 const close = (a, b) => { a = norm(a); b = norm(b); return a === b || a.includes(b) || b.includes(a) }
+// artista: o nome inteiro igual, ou um dos nomes da parceria ("Post Malone & Swae Lee" = "Post Malone").
+// Nada de "contém": senão a banda cover "Hello I'm Adele" passa por Adele
+const artistParts = (s) => String(s ?? '').split(/\s*(?:&|,|\band\b|\bfeat\.?|\bft\.?|\bfeaturing\b|\sx\s)\s*/i).map(norm).filter(Boolean)
+const sameArtist = (a, b) => norm(a) === norm(b) || artistParts(a).some((x) => artistParts(b).includes(x))
 
 async function api(path) {
   for (let i = 0; i < 3; i++) {
@@ -47,7 +51,7 @@ async function find(artist, title) {
     const res = await api(path)
     await sleep(150)
     const list = (res?.data ?? []).filter((t) => t.preview)
-    const good = list.filter((t) => close(t.artist?.name, artist) && close(cleanTitle(t.title), cleanTitle(title)))
+    const good = list.filter((t) => sameArtist(t.artist?.name, artist) && close(cleanTitle(t.title), cleanTitle(title)))
     // prefere a versão de estúdio: ao vivo, remix, acústico, karaokê... só se não tiver outra
     const odd = (t) => (/\b(live|remix|acoustic|karaoke|instrumental|cover|tribute|demo|sped up|slowed)\b/i
       .test(`${t.title} ${t.album?.title ?? ''}`) && !/\b(live|remix|acoustic)\b/i.test(title)) ? 1 : 0
