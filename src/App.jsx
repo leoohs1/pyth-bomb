@@ -388,13 +388,13 @@ export default function App() {
     )
   }
 
-  // milissegundos que faltam pro turno atual (a pessoa com a bomba tem 11 s)
+  // milissegundos que faltam pro turno atual (a pessoa com a bomba tem 13 s)
   const questionMs = room.question_expires_at
     ? Math.max(0, new Date(room.question_expires_at).getTime() - Date.now())
     : 0
 
   // perigo (batida, brilho, ritmo do tique) sobe a cada turno conforme o tempo acaba
-  const danger = questionMs > 7000 ? 1 : questionMs > 5000 ? 2 : questionMs > 3000 ? 3 : 4
+  const danger = questionMs > 8500 ? 1 : questionMs > 6000 ? 2 : questionMs > 3500 ? 3 : 4
 
   if (room.status === 'playing') {
     return (
