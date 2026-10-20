@@ -11,14 +11,6 @@ const MODES = [
     locked: false,
   },
   {
-    id: 'price',
-    icon: '📈',
-    title: 'Guess the Price',
-    sub: 'What was it worth? Closest guess wins the round.',
-    locked: true, // ainda com preços de demonstração; destrava (locked: false) quando a chave da Pyth estiver ligada
-    href: '/price',
-  },
-  {
     id: 'song',
     icon: '🎵',
     title: 'Guess the Song',
@@ -27,11 +19,29 @@ const MODES = [
     href: '/song',
   },
   {
+    id: 'new',
+    icon: '✨',
+    title: 'New modes',
+    sub: 'More ways to play are on the way.',
+    locked: true,
+  },
+  // Escondidos da lista até ficarem prontos (tirar o "hidden" pra voltar; a ordem na tela é a daqui):
+  {
+    id: 'price',
+    icon: '📈',
+    title: 'Guess the Price',
+    sub: 'What was it worth? Closest guess wins the round.',
+    locked: true, // ainda com preços de demonstração; destrava (locked: false) quando a chave da Pyth estiver ligada
+    href: '/price',
+    hidden: true,
+  },
+  {
     id: 'solo',
     icon: '🕹️',
     title: 'Solo',
     sub: 'A real Bomberman-style dungeon run. Movement, power-ups, bosses.',
     locked: true,
+    hidden: true,
   },
   {
     id: 'arena',
@@ -39,8 +49,9 @@ const MODES = [
     title: 'Arena',
     sub: 'Real-time PvP. Still just an idea — a long way down the road.',
     locked: true,
+    hidden: true,
   },
-]
+].filter((m) => !m.hidden)
 
 // Escolha de modo de jogo: a "porta de entrada" do /play, antes do Classic.
 // O Classic abre por props do App.jsx; os outros modos têm página própria (href) e abrem por endereço.
