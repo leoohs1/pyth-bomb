@@ -15,7 +15,7 @@ const MODES = [
     icon: '📈',
     title: 'Guess the Price',
     sub: 'What was it worth? Closest guess wins the round.',
-    locked: false,
+    locked: true, // ainda com preços de demonstração; destrava (locked: false) quando a chave da Pyth estiver ligada
     href: '/price',
   },
   {
