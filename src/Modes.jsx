@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import './Home.css'   // fundo, painel de mármore, personagens (compartilhados)
 import './Modes.css'
 import SoundToggle from './SoundToggle.jsx'
 
+// icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
     id: 'classic',
     icon: '💣',
+    img: '/bomb-laurel.webp',
     title: 'Pyth Bomb Classic',
     sub: 'Answer fast, pass the bomb, don\'t get rugged.',
     locked: false,
@@ -13,6 +16,7 @@ const MODES = [
   {
     id: 'song',
     icon: '🎵',
+    img: '/modes/song.webp',
     title: 'Guess the Song',
     sub: 'Hear a clip, name the artist and the song. Fastest ears win.',
     locked: false,
@@ -21,6 +25,7 @@ const MODES = [
   {
     id: 'new',
     icon: '✨',
+    img: '/modes/new.webp',
     title: 'New modes',
     sub: 'More ways to play are on the way.',
     locked: true,
@@ -53,6 +58,12 @@ const MODES = [
   },
 ].filter((m) => !m.hidden)
 
+function ModeIcon({ m }) {
+  const [broken, setBroken] = useState(false)
+  if (m.img && !broken) return <img className="md-mode-img" src={m.img} alt="" aria-hidden="true" draggable="false" onError={() => setBroken(true)} />
+  return <span className="md-mode-icon" aria-hidden="true">{m.icon}</span>
+}
+
 // Escolha de modo de jogo: a "porta de entrada" do /play, antes do Classic.
 // O Classic abre por props do App.jsx; os outros modos têm página própria (href) e abrem por endereço.
 export default function Modes({ onSelectClassic }) {
@@ -83,7 +94,7 @@ export default function Modes({ onSelectClassic }) {
                 disabled={m.locked}
                 onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : undefined}
               >
-                <span className="md-mode-icon" aria-hidden="true">{m.icon}</span>
+                <ModeIcon m={m} />
                 <span className="md-mode-text">
                   <span className="md-mode-title">
                     {m.title}

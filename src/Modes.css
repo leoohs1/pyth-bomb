@@ -48,6 +48,16 @@
   border: 1.5px solid rgba(201, 162, 74, 0.6);
 }
 
+/* ícone com arte própria (sem o círculo do emoji) */
+.md-mode-img {
+  flex: none;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 7px rgba(20, 8, 50, 0.6));
+}
+.md-mode.is-locked .md-mode-img { filter: grayscale(0.55) brightness(0.8) drop-shadow(0 2px 6px rgba(20, 8, 50, 0.5)); opacity: 0.8; }
+
 .md-mode-text {
   flex: 1;
   min-width: 0;

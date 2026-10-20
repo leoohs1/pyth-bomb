@@ -246,3 +246,90 @@ html[data-mode="song"] .mb-hero-name {
   text-shadow: 0 0 6px rgba(255, 200, 90, 0.85);
 }
 html[data-mode="song"] .mb-name { font-family: Inter, system-ui, sans-serif; color: #ffe9a8; text-shadow: 0 0 5px rgba(255, 200, 90, 0.75); }
+
+/* ---------- "How to play": cartão de veludo que abre sozinho na 1ª vez no lobby + botão "?" ---------- */
+.sg-how-btn {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px 8px 10px;
+  font: 800 13px/1 Inter, system-ui, sans-serif;
+  color: #2b0f3a;
+  background: linear-gradient(180deg, #ffe08a, #f2b640);
+  border: 2px solid #fff2c4;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(8, 2, 16, 0.5);
+  cursor: pointer;
+}
+.sg-how-btn span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2b0f3a; color: #ffd36b; font-size: 13px; }
+.sg-how-btn:hover { filter: brightness(1.07); }
+.sg-how-back {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 4, 26, 0.68);
+  backdrop-filter: blur(3px);
+  animation: sg-how-fade 0.18s ease-out both;
+}
+.sg-how {
+  position: relative;
+  width: min(540px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 26px 24px 22px;
+  color: #fbf1ff;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(92, 28, 120, 0.98) 0%, rgba(44, 10, 64, 0.99) 55%, rgba(26, 6, 40, 1) 100%);
+  border: 2px solid #f2c45a;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 154, 0.35), inset 0 0 22px rgba(255, 90, 200, 0.18), 0 0 30px rgba(255, 180, 70, 0.45), 0 26px 60px rgba(8, 2, 16, 0.7);
+  animation: sg-how-pop 0.28s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+/* fileira de lampadinhas no topo, igual ao cartão da rodada */
+.sg-how::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 18px;
+  right: 18px;
+  height: 6px;
+  background: radial-gradient(circle, #fff1c4 0 1.6px, #ffc95c 2.2px, transparent 2.8px) 0 0 / 14px 6px repeat-x;
+}
+.sg-how h2 { margin: 6px 0 16px; text-align: center; font: 800 28px/1.1 Cinzel, Georgia, serif; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd36b; text-shadow: 0 0 14px rgba(255, 180, 70, 0.5); }
+.sg-how ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sg-how li { display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center; text-align: left; font: 600 15px/1.4 Inter, system-ui, sans-serif; }
+.sg-how b { color: #ffd36b; }
+.sg-how-ico { display: grid; place-items: center; width: 42px; height: 42px; font-size: 22px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(242, 196, 90, 0.55); }
+.sg-how-note { margin: 14px 0 0; text-align: center; font: 600 13px/1.3 Inter, system-ui, sans-serif; color: rgba(251, 241, 255, 0.7); }
+.sg-how-ok {
+  display: block;
+  margin: 16px auto 0;
+  min-width: 170px;
+  padding: 12px 28px;
+  font: 800 16px/1 Cinzel, Georgia, serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2b0f3a;
+  background: linear-gradient(180deg, #ffe08a, #f2b640);
+  border: 2px solid #fff2c4;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 #b6822a, 0 8px 18px rgba(8, 2, 16, 0.45);
+  cursor: pointer;
+}
+.sg-how-ok:hover { filter: brightness(1.06); }
+.sg-how-ok:active { transform: translateY(2px); box-shadow: 0 2px 0 #b6822a, 0 4px 10px rgba(8, 2, 16, 0.45); }
+@keyframes sg-how-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sg-how-pop { from { transform: scale(0.92) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+@media (max-width: 520px) {
+  .sg-how { padding: 24px 16px 18px; }
+  .sg-how h2 { font-size: 24px; }
+  .sg-how li { font-size: 14px; grid-template-columns: 38px 1fr; gap: 10px; }
+  .sg-how-ico { width: 38px; height: 38px; font-size: 20px; }
+}
