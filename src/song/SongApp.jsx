@@ -11,7 +11,7 @@ import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { play } from '../sound'
 import { setMusicSilenced, setMusicTrack } from '../music'
 import { SONG_SEATS, SONG_STAGE_ART } from './seats'
-import { HowToPlay, HowToButton, useHowToPlay } from './HowToPlay'
+import SongHowTo from './SongHowTo'
 import './song.css'
 
 // Guess the Song: toca um trecho de música (o mesmo, na mesma hora, pra todo mundo) e a turma
@@ -47,7 +47,6 @@ export default function SongApp() {
   const [text, setText] = useState('')
   const [feedback, setFeedback] = useState(null)
   const inputRef = useRef(null)
-  const how = useHowToPlay(room?.status === 'lobby')
   const audioRef = useRef(null)
   const startedRef = useRef(null) // arquivo do trecho que já começou a tocar
 
@@ -196,8 +195,7 @@ export default function SongApp() {
           panel={<LobbyPanel room={room} players={players} me={me} iAmHost={R.iAmHost} onStart={startGame} onLeave={R.leaveRoom}
             onPick={R.pickCharacter} error={error} subtitle="🎵 Guess the Song" invitePath={PATH} />}
         />
-        <HowToButton onClick={how.show} />
-        <HowToPlay open={how.open} onClose={how.close} />
+        <SongHowTo />
       </>
     )
   }

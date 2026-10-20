@@ -8,6 +8,7 @@ import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 import { preloadCharacters } from './characters'
 import useChat from './useChat'
 import { readInviteCode } from './invite'
+import ClassicHowTo from './ClassicHowTo'
 
 function makeCode(extra = 2) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -376,11 +377,14 @@ export default function App() {
 
   if (room.status === 'lobby') {
     return (
-      <GameArenaV2
-        room={room} players={players} alive={alive} danger={1} questionMs={0}
-        myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
-        panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
-      />
+      <>
+        <GameArenaV2
+          room={room} players={players} alive={alive} danger={1} questionMs={0}
+          myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
+          panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
+        />
+        <ClassicHowTo />
+      </>
     )
   }
 

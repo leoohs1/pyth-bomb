@@ -4,7 +4,7 @@ import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
 import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { SONG_SEATS, SONG_STAGE_ART } from './seats'
-import { HowToPlay, HowToButton, useHowToPlay } from './HowToPlay'
+import SongHowTo from './SongHowTo'
 import { setMusicSilenced } from '../music'
 import { CHARACTER_NAMES } from '../characters'
 import './song.css'
@@ -46,7 +46,6 @@ export default function SongPreview() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
-  const how = useHowToPlay(phase === 'lobby')
   const players = PLAYERS.slice(0, count).map((p, i) => (i === 0 ? { ...p, avatar_idx: myChar % nChars } : p))
   const [, setT] = useState(0)
   useEffect(() => { const id = setInterval(() => setT((n) => n + 1), 500); return () => clearInterval(id) }, [])
@@ -67,7 +66,7 @@ export default function SongPreview() {
     view = <><GameArenaV2 {...common} phase="lobby" chip="Lobby · Guess the Song"
       panel={<LobbyPanel room={room} players={players} me={players[0]} iAmHost onStart={() => setPhase('ready')} onLeave={() => {}}
         onPick={() => {}} subtitle="🎵 Guess the Song" invitePath="/song" />} />
-      <HowToButton onClick={how.show} /><HowToPlay open={how.open} onClose={how.close} /></>
+      <SongHowTo /></>
   } else if (phase === 'finished') {
     view = <GameArenaV2 {...common} phase="finished" centerId="p2" chip="Game over · Guess the Song"
       panel={<><FinishedPanel room={room} players={players} myId="p0" winner={(players[2] ?? players[0])} iWon={false} iAmOut={false} iAmHost
