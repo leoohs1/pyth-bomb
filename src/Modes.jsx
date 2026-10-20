@@ -11,6 +11,22 @@ const MODES = [
     locked: false,
   },
   {
+    id: 'price',
+    icon: '📈',
+    title: 'Guess the Price',
+    sub: 'What was it worth? Closest guess wins the round.',
+    locked: false,
+    href: '/price',
+  },
+  {
+    id: 'song',
+    icon: '🎵',
+    title: 'Guess the Song',
+    sub: 'Hear a clip, name the artist and the song. Fastest ears win.',
+    locked: false,
+    href: '/song',
+  },
+  {
     id: 'solo',
     icon: '🕹️',
     title: 'Solo',
@@ -27,7 +43,7 @@ const MODES = [
 ]
 
 // Escolha de modo de jogo: a "porta de entrada" do /play, antes do Classic.
-// Só visual: a navegação (ir pro Classic) chega por props do App.jsx.
+// O Classic abre por props do App.jsx; os outros modos têm página própria (href) e abrem por endereço.
 export default function Modes({ onSelectClassic }) {
   return (
     <main className="hm-stage">
@@ -54,7 +70,7 @@ export default function Modes({ onSelectClassic }) {
                 type="button"
                 className={`md-mode${m.locked ? ' is-locked' : ''}`}
                 disabled={m.locked}
-                onClick={m.id === 'classic' ? onSelectClassic : undefined}
+                onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : undefined}
               >
                 <span className="md-mode-icon" aria-hidden="true">{m.icon}</span>
                 <span className="md-mode-text">
