@@ -5,6 +5,7 @@ import ScoreList from '../modes/ScoreList'
 import { ReadyPanel, ListenPanel, RevealPanel } from './SongPanels'
 import { SONG_SEATS, SONG_STAGE_ART } from './seats'
 import { setMusicSilenced } from '../music'
+import { CHARACTER_NAMES } from '../characters'
 import './song.css'
 
 // Prévia do Guess the Song com dados de mentira (sem servidor e sem música), só pra ver o visual:
@@ -31,7 +32,20 @@ export default function SongPreview() {
   const [phase, setPhase] = useState(() => new URLSearchParams(window.location.search).get('phase') || 'listen')
   const [text, setText] = useState('bohemian rap')
   const [count, setCount] = useState(() => Number(new URLSearchParams(window.location.search).get('n')) || 6)
-  const players = PLAYERS.slice(0, count)
+  // personagem do centro (o "eu" da tela): troca pelos botões ◀ ▶ embaixo, ou ?char=0..19 no endereço
+  const [myChar, setMyChar] = useState(() => Number(new URLSearchParams(window.location.search).get('char')) || 0)
+  const nChars = CHARACTER_NAMES.length
+  const stepChar = (d) => setMyChar((c) => (c + d + nChars) % nChars)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target?.tagName)) return // não atrapalha quem está digitando
+      if (e.key === 'ArrowLeft') stepChar(-1)
+      else if (e.key === 'ArrowRight') stepChar(1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+  const players = PLAYERS.slice(0, count).map((p, i) => (i === 0 ? { ...p, avatar_idx: myChar % nChars } : p))
   const [, setT] = useState(0)
   useEffect(() => { const id = setInterval(() => setT((n) => n + 1), 500); return () => clearInterval(id) }, [])
   useEffect(() => { document.documentElement.dataset.mode = 'song' }, [])
@@ -72,6 +86,12 @@ export default function SongPreview() {
         {['lobby', 'ready', 'listen', 'reveal', 'finished'].map((p) => (
           <button key={p} onClick={() => setPhase(p)} style={{ fontWeight: phase === p ? 800 : 400 }}>{p}</button>
         ))}
+        <span style={{ width: 10 }} />
+        <button onClick={() => stepChar(-1)} aria-label="Personagem anterior">◀</button>
+        <select value={myChar % nChars} onChange={(e) => setMyChar(Number(e.target.value))} aria-label="Personagem do centro">
+          {CHARACTER_NAMES.map((c, i) => <option key={c.name} value={i}>{i + 1}. {c.name}</option>)}
+        </select>
+        <button onClick={() => stepChar(1)} aria-label="Próximo personagem">▶</button>
         <span style={{ width: 10 }} />
         {[2, 6, 12, 19].map((n) => (
           <button key={n} onClick={() => setCount(n)} style={{ fontWeight: count === n ? 800 : 400 }}>👥 {n === 19 ? '19 (lotado)' : n}</button>
