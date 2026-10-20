@@ -76,7 +76,7 @@ export default function SongPreview() {
   } else {
     view = <GameArenaV2 {...common} phase="song" chip={chip}
       panel={<ListenPanel room={room} players={players} me={players[0]} msLeft={12400} total={30} text={text} setText={setText}
-        onSubmit={() => {}} feedback={{ kind: 'close', text: 'So close! Check the spelling' }} />} />
+        onSubmit={() => {}} feedback={{ kind: 'close', text: 'So close! Check the spelling or the full name' }} />} />
   }
 
   return (

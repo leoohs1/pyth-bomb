@@ -32,7 +32,7 @@ const FEEDBACK = {
   artist: { kind: 'hit', text: '🎤 Artist found!' },
   title: { kind: 'hit', text: '🎵 Song found!' },
   both: { kind: 'hit', text: '🎉 Artist and song found!' },
-  close: { kind: 'close', text: 'So close! Check the spelling' },
+  close: { kind: 'close', text: 'So close! Check the spelling or the full name' },
   wrong: { kind: 'wrong', text: '✗ Nope, try again' },
   late: { kind: 'wrong', text: 'Too late! The round is over' },
   closed: { kind: 'wrong', text: 'Wait for the music to start' },
