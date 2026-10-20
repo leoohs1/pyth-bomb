@@ -43,4 +43,12 @@ export const SONG_STAGE_ART = {
   '/athena-sit-calm.webp': '/song/stage/thena-sing.webp', // Thena
   '/pythagoras-sit-calm.webp': '/song/stage/thagor-sing.webp', // Thagor
   '/naiad-sit-calm.webp': '/song/stage/wata-sing.webp', // Wata
+  '/boy-sit-calm.webp': '/song/stage/boyd-sing.webp', // Boyd
+  '/blossom-sit-calm.webp': '/song/stage/blom-sing.webp', // Blom
+  '/amazon-sit-calm.webp': '/song/stage/zon-sing.webp', // Zon
+  '/faun-sit-calm.webp': '/song/stage/faun-sing.webp', // Faun
+  '/sage-sit-calm.webp': '/song/stage/sag-sing.webp', // Sag
+  '/cyclops-sit-calm.webp': '/song/stage/clon-sing.webp', // Clon
+  '/owl-sit-calm.webp': '/song/stage/owlu-sing.webp', // Owlu
+  '/minotaur-sit-calm.webp': '/song/stage/minos-sing.webp', // Minos
 }

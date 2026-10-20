@@ -253,8 +253,10 @@
 /* eu, eliminado — continuo aparecendo no centro (spec item 12: "keep my
    local foreground character visible but grayscale"), só apagado */
 /* centro em pé (stageArt, ex.: cantando no Guess the Song): sombra no chão, embaixo dos pés */
-.ga-stand { position: relative; width: 100%; }
-.ga-stand .ga-avatar { position: relative; display: block; width: 100%; }
+/* a caixa tem a altura do personagem mais alto (600x860); os mais baixinhos (coruja, ciclope...) ficam
+   encostados embaixo, então todo mundo pisa no mesmo lugar do palco */
+.ga-stand { position: relative; width: 100%; aspect-ratio: 600 / 860; display: flex; align-items: flex-end; }
+.ga-stand .ga-avatar { position: relative; display: block; width: 100%; height: auto; }
 .ga-stand-shadow {
   position: absolute;
   left: 50%;
