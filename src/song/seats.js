@@ -32,4 +32,15 @@ export const SONG_SEATS = {
 // Quem ainda não tem a arte continua sentado. Arte: public/song/stage/ (kit para-o-chatgpt/11-microfone).
 export const SONG_STAGE_ART = {
   '/oracle-pilot-calm.webp': '/song/stage/nysa-sing.webp', // Nysa
+  '/hephaestus-sit-calm.webp': '/song/stage/hepa-sing.webp', // Hepa
+  '/artemis-sit-calm.webp': '/song/stage/mis-sing.webp', // Mis
+  '/hermes-sit-calm.webp': '/song/stage/herms-sing.webp', // Herms
+  '/nymph-sit-calm.webp': '/song/stage/nym-sing.webp', // Nym
+  '/hoplite-sit-calm.webp': '/song/stage/plite-sing.webp', // Plite
+  '/demeter-sit-calm.webp': '/song/stage/meteria-sing.webp', // Meteria
+  '/whip-sit-calm.webp': '/song/stage/gal-sing.webp', // Gal
+  '/apollo-sit-calm.webp': '/song/stage/polo-sing.webp', // Polo
+  '/athena-sit-calm.webp': '/song/stage/thena-sing.webp', // Thena
+  '/pythagoras-sit-calm.webp': '/song/stage/thagor-sing.webp', // Thagor
+  '/naiad-sit-calm.webp': '/song/stage/wata-sing.webp', // Wata
 }
