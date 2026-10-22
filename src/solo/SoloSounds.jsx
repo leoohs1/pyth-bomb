@@ -21,8 +21,8 @@ const SOUNDS = [
   ['solo_chest_open', 'Clicar no baú (tensão)', 'ok'],
   ['solo_chest_win', 'Baú com prêmio (fanfarra gloriosa)', 'prov'],
   ['solo_chest_empty', 'Baú vazio', 'ok'],
-  ['solo_clear', 'Fase concluída', 'prov'],
-  ['solo_win', 'Vencer o jogo (depois do chefe)', 'prov'],
+  ['solo_clear', 'Fase concluída (fanfarra gloriosa)', 'prov'],
+  ['solo_win', 'Vencer o jogo (depois do chefe, fanfarra enorme)', 'prov'],
 ]
 const LABEL = { ok: 'aprovado', prov: 'provisório', arquivo: 'arquivo' }
 

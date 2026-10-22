@@ -265,8 +265,32 @@ Object.assign(SYNTH, {
     swish({ type: 'bandpass', f0: 7500, f1: 3000, q: 0.6, dur: 1.1, gain: 0.14, at: 1.25 })
   },
   solo_chest_empty: () => chip([392, 349, 311, 262], { type: 'triangle', step: 0.14, dur: 0.18, gain: 0.14 }),
-  solo_clear: () => chip([523, 523, 523, 659, 784, 659, 784, 1047], { step: 0.1, dur: 0.14, gain: 0.13 }),
-  solo_win: () => { chip([523, 659, 784, 1047, 1319, 1047, 1319, 1568], { step: 0.11, dur: 0.16, gain: 0.13 }); chip([262, 330, 392, 523], { type: 'triangle', step: 0.22, dur: 0.3, gain: 0.12 }) },
+  // FASE CONCLUÍDA (~2,4 s): corrida subindo, acorde de metais com baixo e prato, resposta mais aguda e acorde final
+  solo_clear: () => {
+    chip([523, 659, 784, 1047], { step: 0.09, dur: 0.1, gain: 0.13 })
+    ;[523, 659, 784, 1047].forEach((hz) => tone({ type: 'square', f0: hz, dur: 0.55, gain: 0.08, at: 0.4 }))
+    tone({ type: 'triangle', f0: 131, dur: 0.65, gain: 0.3, at: 0.4 })
+    swish({ type: 'bandpass', f0: 7000, f1: 3500, q: 0.6, dur: 0.55, gain: 0.1, at: 0.4 })
+    chip([784, 1047, 1319, 1568], { step: 0.08, dur: 0.12, gain: 0.12, at: 1.0 })
+    ;[659, 784, 1047, 1319].forEach((hz) => tone({ type: 'square', f0: hz, dur: 1.1, gain: 0.08, at: 1.35 }))
+    tone({ type: 'triangle', f0: 131, dur: 1.2, gain: 0.3, at: 1.35 })
+    swish({ type: 'bandpass', f0: 8000, f1: 3000, q: 0.6, dur: 1.2, gain: 0.14, at: 1.35 })
+  },
+  // VITÓRIA (~4,2 s): rufar de baixo, tema ta-ta-ta TÂÂ, corrida longa subindo e um acorde enorme com brilhos
+  solo_win: () => {
+    ;[0, 0.14, 0.28, 0.42].forEach((t) => tone({ type: 'triangle', f0: 98, f1: 70, dur: 0.14, gain: 0.3, at: t }))
+    chip([523, 523, 523], { step: 0.12, dur: 0.1, gain: 0.13, at: 0.6 })
+    tone({ type: 'square', f0: 659, dur: 0.45, gain: 0.12, at: 0.96 })
+    tone({ type: 'triangle', f0: 131, dur: 0.5, gain: 0.28, at: 0.96 })
+    chip([587, 659, 784], { step: 0.12, dur: 0.1, gain: 0.13, at: 1.5 })
+    tone({ type: 'square', f0: 1047, dur: 0.4, gain: 0.12, at: 1.86 })
+    chip([784, 1047, 1319, 1568, 2093, 2637], { step: 0.08, dur: 0.1, gain: 0.12, at: 2.3 })
+    ;[523, 659, 784, 1047, 1319].forEach((hz) => tone({ type: 'square', f0: hz, dur: 1.8, gain: 0.07, at: 2.8 }))
+    tone({ type: 'triangle', f0: 131, dur: 1.9, gain: 0.25, at: 2.8 })
+    tone({ type: 'triangle', f0: 65, dur: 1.9, gain: 0.2, at: 2.8 })
+    swish({ type: 'bandpass', f0: 8000, f1: 2500, q: 0.6, dur: 1.9, gain: 0.12, at: 2.8 })
+    chip([2093, 2637, 3136, 2637, 3136, 4186], { type: 'triangle', step: 0.1, dur: 0.14, gain: 0.07, at: 3.35 })
+  },
   solo_dead: () => chip([392, 330, 262, 196], { step: 0.14, dur: 0.2, gain: 0.14 }),
   solo_gameover: () => chip([262, 247, 233, 220, 196, 165, 131], { step: 0.16, dur: 0.24, gain: 0.14 }),
 })
