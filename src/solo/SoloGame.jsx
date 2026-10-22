@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './SoloGame.css'
 import SoundToggle from '../SoundToggle.jsx'
+import { setMusicSilenced } from '../music'
 import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
 import { LEVELS } from './engine/levels.js'
 import {
@@ -127,6 +128,12 @@ export default function SoloGame() {
   const canvasRef = useRef(null)
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const [hud, setHud] = useState(null)
+
+  // sem a música de fundo do Pyth Bomb (Athens) aqui: o Solo vai ter o próprio som. Ao sair, ela volta.
+  useEffect(() => {
+    setMusicSilenced(true)
+    return () => setMusicSilenced(false)
+  }, [])
 
   useEffect(() => {
     if (touch) return
