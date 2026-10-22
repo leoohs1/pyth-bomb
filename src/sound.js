@@ -32,6 +32,27 @@ export const SOUNDS = [
   'go',            // fim da contagem: BEEP de "valendo" logo antes da música entrar
 ]
 
+// Sons do Solo (8 bits). Arquivos: public/sounds/solo/<nome>.mp3; sem o arquivo, toca a versão sintetizada.
+export const SOLO_SOUNDS = [
+  'solo_bomb',        // soltou a bomba
+  'solo_boom',        // a bomba explodiu
+  'solo_pickup',      // pegou um item
+  'solo_hurt',        // levou dano
+  'solo_shield',      // o escudo absorveu o dano
+  'solo_kick',        // chutou uma bomba
+  'solo_hit',         // acertou um inimigo ou o chefe (sem derrotar)
+  'solo_enemy_die',   // derrotou um inimigo
+  'solo_roar',        // o chefe se enfureceu
+  'solo_door',        // a porta abriu
+  'solo_chest_win',   // abriu o baú e ganhou
+  'solo_chest_empty', // abriu o baú e veio vazio
+  'solo_clear',       // fase concluída
+  'solo_win',         // venceu o jogo
+  'solo_dead',        // morreu (vai tentar de novo)
+  'solo_gameover',    // acabaram as vidas
+]
+const namesOfTheme = () => (theme === 'solo' ? SOLO_SOUNDS : SOUNDS)
+
 // Cada modo pode ter os próprios sons: com setSoundTheme('price'), o jogo procura primeiro
 // public/sounds/price/<nome>.mp3 e, se não tiver, usa public/sounds/<nome>.mp3 (e por último
 // a versão sintetizada lá embaixo). null = só os sons padrão (Hot Potato).
@@ -39,7 +60,7 @@ let theme = null
 export function setSoundTheme(t = null) {
   if (theme === t) return
   theme = t
-  if (ctx) SOUNDS.forEach((n) => loadFile(n)) // já baixa os do modo novo
+  if (ctx) namesOfTheme().forEach((n) => loadFile(n)) // já baixa os do modo novo
 }
 
 let ctx = null
@@ -127,7 +148,7 @@ export function unlock() {
   const c = ensure()
   if (!c) return
   if (c.state === 'suspended') c.resume()
-  SOUNDS.forEach((n) => loadFile(n))
+  namesOfTheme().forEach((n) => loadFile(n))
 }
 // aba escondida / minimizada: silêncio total (senão a bomba fica apitando em segundo plano)
 if (typeof document !== 'undefined') {
@@ -208,6 +229,32 @@ const SYNTH = {
   countdown: () => tone({ type: 'sine', f0: 880, dur: 0.09, gain: 0.25 }),
   go: () => { tone({ type: 'sine', f0: 1320, dur: 0.45, gain: 0.3 }); tone({ type: 'triangle', f0: 2640, dur: 0.3, gain: 0.06 }) },
 }
+
+// Solo (8 bits provisórios: ondas quadradas e ruído, como nos videogames antigos)
+const chip = (notes, { type = 'square', step = 0.07, dur = 0.09, gain = 0.13 } = {}) =>
+  notes.forEach((f, i) => tone({ type, f0: f, dur, gain, at: i * step }))
+Object.assign(SYNTH, {
+  solo_bomb: () => { tone({ type: 'square', f0: 330, f1: 140, dur: 0.1, gain: 0.14 }); tone({ type: 'square', f0: 200, f1: 90, dur: 0.12, gain: 0.1, at: 0.07 }) },
+  solo_boom: () => {
+    swish({ type: 'lowpass', f0: 2600, f1: 120, q: 0.7, dur: 0.5, gain: 0.55 })
+    tone({ type: 'square', f0: 120, f1: 40, dur: 0.4, gain: 0.22 })
+    tone({ type: 'triangle', f0: 75, f1: 30, dur: 0.55, gain: 0.35 })
+  },
+  solo_pickup: () => chip([523, 659, 784, 1047], { step: 0.06, dur: 0.08, gain: 0.12 }),
+  solo_hurt: () => { tone({ type: 'square', f0: 420, f1: 90, dur: 0.35, gain: 0.17 }); swish({ f0: 1600, f1: 300, dur: 0.25, gain: 0.22 }) },
+  solo_shield: () => chip([988, 1319, 1976], { type: 'triangle', step: 0.05, dur: 0.12, gain: 0.12 }),
+  solo_kick: () => { tone({ type: 'triangle', f0: 170, f1: 55, dur: 0.12, gain: 0.35 }); swish({ f0: 900, f1: 200, dur: 0.06, gain: 0.12 }) },
+  solo_hit: () => { tone({ type: 'square', f0: 260, f1: 170, dur: 0.07, gain: 0.15 }); swish({ f0: 2500, f1: 900, dur: 0.07, gain: 0.16 }) },
+  solo_enemy_die: () => { tone({ type: 'square', f0: 640, f1: 140, dur: 0.2, gain: 0.14 }); swish({ f0: 3000, f1: 400, dur: 0.22, gain: 0.2 }); tone({ type: 'square', f0: 330, f1: 90, dur: 0.18, gain: 0.1, at: 0.1 }) },
+  solo_roar: () => { tone({ type: 'sawtooth', f0: 95, f1: 45, dur: 0.7, gain: 0.25 }); swish({ type: 'lowpass', f0: 900, f1: 100, dur: 0.7, gain: 0.3 }); tone({ type: 'square', f0: 70, f1: 35, dur: 0.6, gain: 0.15, at: 0.1 }) },
+  solo_door: () => chip([392, 523, 659, 784, 1047], { step: 0.08, dur: 0.12, gain: 0.12 }),
+  solo_chest_win: () => chip([523, 659, 784, 1047, 784, 1047, 1319], { step: 0.09, dur: 0.15, gain: 0.13 }),
+  solo_chest_empty: () => chip([392, 349, 311, 262], { type: 'triangle', step: 0.14, dur: 0.18, gain: 0.14 }),
+  solo_clear: () => chip([523, 523, 523, 659, 784, 659, 784, 1047], { step: 0.1, dur: 0.14, gain: 0.13 }),
+  solo_win: () => { chip([523, 659, 784, 1047, 1319, 1047, 1319, 1568], { step: 0.11, dur: 0.16, gain: 0.13 }); chip([262, 330, 392, 523], { type: 'triangle', step: 0.22, dur: 0.3, gain: 0.12 }) },
+  solo_dead: () => chip([392, 330, 262, 196], { step: 0.14, dur: 0.2, gain: 0.14 }),
+  solo_gameover: () => chip([262, 247, 233, 220, 196, 165, 131], { step: 0.16, dur: 0.24, gain: 0.14 }),
+})
 
 export function play(name, opts = {}) {
   if (state.sfxMuted || hidden) return

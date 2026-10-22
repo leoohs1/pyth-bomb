@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import './SoloGame.css'
 import SoundToggle from '../SoundToggle.jsx'
 import { setMusicSilenced } from '../music'
+import { setSoundTheme } from '../sound'
+import { createSoloSfx } from './sfx.js'
 import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
 import { LEVELS } from './engine/levels.js'
 import {
@@ -129,10 +131,12 @@ export default function SoloGame() {
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const [hud, setHud] = useState(null)
 
-  // sem a música de fundo do Pyth Bomb (Athens) aqui: o Solo vai ter o próprio som. Ao sair, ela volta.
+  // sem a música de fundo do Pyth Bomb (Athens) aqui: o Solo tem o próprio som (efeitos 8 bits, src/solo/sfx.js).
+  // Ao sair, tudo volta ao normal nos outros modos.
   useEffect(() => {
     setMusicSilenced(true)
-    return () => setMusicSilenced(false)
+    setSoundTheme('solo')
+    return () => { setMusicSilenced(false); setSoundTheme(null) }
   }, [])
 
   useEffect(() => {
@@ -148,6 +152,7 @@ export default function SoloGame() {
     let last = performance.now()
     let hudKey = ''
 
+    const sfx = createSoloSfx() // toca os sons do jogo (só escuta, não muda regra nenhuma)
     let freeze = 0 // micro-pausa ("hit-stop") quando um inimigo é derrotado
     let paused = false // pausa (P/Esc, ou sozinha quando a aba some ou a janela perde o foco)
     const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0; paused = false }
@@ -238,6 +243,7 @@ export default function SoloGame() {
       else if (freeze > 0) freeze -= dt
       else for (let i = 0; i < n; i++) update(game, controls, dt / n)
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
+      sfx(game) // antes do FX.consumeEvents, que limpa os avisos
       FX.consumeEvents(game)
       if (!paused) FX.update(game, dt)
       if (PIXEL) { draw(ctx, game, PIXEL, 1); if (POSTER) posterize(ctx) } else draw(ctx, game, tilePx, dpr)
