@@ -232,8 +232,8 @@ const SYNTH = {
 }
 
 // Solo (8 bits provisórios: ondas quadradas e ruído, como nos videogames antigos)
-const chip = (notes, { type = 'square', step = 0.07, dur = 0.09, gain = 0.13 } = {}) =>
-  notes.forEach((f, i) => tone({ type, f0: f, dur, gain, at: i * step }))
+const chip = (notes, { type = 'square', step = 0.07, dur = 0.09, gain = 0.13, at = 0 } = {}) =>
+  notes.forEach((f, i) => tone({ type, f0: f, dur, gain, at: at + i * step }))
 Object.assign(SYNTH, {
   solo_bomb: () => { tone({ type: 'square', f0: 330, f1: 140, dur: 0.1, gain: 0.14 }); tone({ type: 'square', f0: 200, f1: 90, dur: 0.12, gain: 0.1, at: 0.07 }) },
   solo_boom: () => {
@@ -253,7 +253,17 @@ Object.assign(SYNTH, {
     chip([262, 330, 262, 330, 392, 330, 392, 494, 392, 494, 587], { step: 0.09, dur: 0.1, gain: 0.1 })
     tone({ type: 'triangle', f0: 110, f1: 330, dur: 1.0, gain: 0.16 })
   },
-  solo_chest_win: () => chip([523, 659, 784, 1047, 784, 1047, 1319], { step: 0.09, dur: 0.15, gain: 0.13 }),
+  // FANFARRA GLORIOSA (baú com prêmio): ta-ta-ta, TÂÂÂ (acorde de metais + baixo + prato), brilhos subindo e o acorde final
+  solo_chest_win: () => {
+    chip([392, 392, 392], { step: 0.11, dur: 0.1, gain: 0.13 })
+    ;[523, 659, 784].forEach((hz) => tone({ type: 'square', f0: hz, dur: 0.75, gain: 0.1, at: 0.36 }))
+    tone({ type: 'triangle', f0: 131, dur: 0.95, gain: 0.3, at: 0.36 })
+    swish({ type: 'highpass', f0: 5500, f1: 3500, q: 0.7, dur: 0.8, gain: 0.1, at: 0.36 })
+    chip([1047, 1319, 1568, 2093], { type: 'triangle', step: 0.06, dur: 0.14, gain: 0.1, at: 0.95 })
+    ;[523, 659, 784, 1047].forEach((hz) => tone({ type: 'square', f0: hz, dur: 1.0, gain: 0.09, at: 1.25 }))
+    tone({ type: 'triangle', f0: 131, dur: 1.1, gain: 0.3, at: 1.25 })
+    swish({ type: 'bandpass', f0: 7500, f1: 3000, q: 0.6, dur: 1.1, gain: 0.14, at: 1.25 })
+  },
   solo_chest_empty: () => chip([392, 349, 311, 262], { type: 'triangle', step: 0.14, dur: 0.18, gain: 0.14 }),
   solo_clear: () => chip([523, 523, 523, 659, 784, 659, 784, 1047], { step: 0.1, dur: 0.14, gain: 0.13 }),
   solo_win: () => { chip([523, 659, 784, 1047, 1319, 1047, 1319, 1568], { step: 0.11, dur: 0.16, gain: 0.13 }); chip([262, 330, 392, 523], { type: 'triangle', step: 0.22, dur: 0.3, gain: 0.12 }) },
