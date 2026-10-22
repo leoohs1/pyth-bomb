@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './SoloGame.css'
 import SoundToggle from '../SoundToggle.jsx'
-import { setMusicSilenced } from '../music'
+import { setMusicSilenced, setMusicTrack } from '../music'
 import { setSoundTheme } from '../sound'
 import { createSoloSfx } from './sfx.js'
 import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
@@ -131,13 +131,20 @@ export default function SoloGame() {
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const [hud, setHud] = useState(null)
 
-  // sem a música de fundo do Pyth Bomb (Athens) aqui: o Solo tem o próprio som (efeitos 8 bits, src/solo/sfx.js).
-  // Ao sair, tudo volta ao normal nos outros modos.
+  // O Solo tem o próprio som: efeitos 8 bits (src/solo/sfx.js) e música própria (public/music/solo.mp3, baixinha,
+  // por baixo dos efeitos). Enquanto a música do Solo não estiver valendo, silêncio: a do Pyth Bomb (Athens)
+  // nunca toca aqui. Ao sair, tudo volta ao normal nos outros modos.
+  const [ownMusic, setOwnMusic] = useState(false)
   useEffect(() => {
-    setMusicSilenced(true)
+    let on = true
     setSoundTheme('solo')
-    return () => { setMusicSilenced(false); setSoundTheme(null) }
+    setMusicTrack('/music/solo.mp3').then((ok) => { if (on) setOwnMusic(ok) })
+    return () => { on = false; setSoundTheme(null); setMusicTrack() }
   }, [])
+  useEffect(() => {
+    setMusicSilenced(!ownMusic)
+    return () => setMusicSilenced(false)
+  }, [ownMusic])
 
   useEffect(() => {
     if (touch) return

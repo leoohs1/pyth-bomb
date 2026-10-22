@@ -33,7 +33,7 @@ function ensure() {
 function target() {
   const st = getSoundState()
   if (!started || hidden || st.musicMuted || silenced) return 0
-  const onPlay = typeof location !== 'undefined' && /^\/(play|price|song)/.test(location.pathname)
+  const onPlay = typeof location !== 'undefined' && /^\/(play|price|song|solo)/.test(location.pathname)
   return VOLUME * st.musicVolume * (duck || onPlay ? DUCK : 1)
 }
 
