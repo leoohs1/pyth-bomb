@@ -6,9 +6,10 @@ const ODDS = {
   boss: { winChance: 0.75, amounts: [10, 20, 50] },
 }
 
-export function openFakeChest({ boss }) {
+export function openFakeChest({ boss, force }) {
   const { winChance, amounts } = boss ? ODDS.boss : ODDS.normal
-  const win = Math.random() < winChance
+  // force: só pro atalho de teste (/solo?chest=win ou ?chest=empty); no jogo normal não existe
+  const win = force === 'win' ? true : force === 'empty' ? false : Math.random() < winChance
   const amount = win ? amounts[Math.floor(Math.random() * amounts.length)] : 0
   return new Promise((resolve) => {
     setTimeout(() => resolve({ win, amount, token: 'PYTH', demo: true }), 1200)

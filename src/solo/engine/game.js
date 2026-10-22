@@ -387,6 +387,21 @@ export const chestNear = (s) => !!s.chest && s.player.alive &&
 // o jogo para enquanto o baú abre e enquanto o resultado está na tela
 export const isPaused = (s) => s.chest?.state === 'opening' || (s.chest?.state === 'opened' && !s.chest.dismissed)
 
+// ATALHO DE TESTE (/solo?chest=1): sem inimigos, porta à mostra e o baú numa casa livre ao lado do jogador
+export function placeTestChest(s) {
+  s.enemies = []
+  setTile(s.level, s.door.x, s.door.y, FLOOR)
+  s.door.revealed = true
+  const px = Math.round(s.player.x), py = Math.round(s.player.y)
+  for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+    const x = px + dx, y = py + dy
+    if (tileAt(s.level, x, y) === FLOOR) { s.chest = { x, y, state: 'closed', result: null, dismissed: false }; return }
+  }
+  const x = px + 1, y = py
+  setTile(s.level, x, y, FLOOR)
+  s.chest = { x, y, state: 'closed', result: null, dismissed: false }
+}
+
 // tenta abrir: só se o jogador estiver do lado e o baú ainda fechado
 export function beginChest(s) {
   if (s.status !== 'playing' || !chestNear(s) || s.chest.state !== 'closed') return false

@@ -7,7 +7,7 @@ import { createSoloSfx } from './sfx.js'
 import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
 import { LEVELS } from './engine/levels.js'
 import {
-  createGame, nextLevel, retryLevel, update, enemiesLeft, doorOpen, levelInfo,
+  createGame, nextLevel, retryLevel, update, enemiesLeft, doorOpen, levelInfo, placeTestChest,
   chestNear, chestDone, beginChest, finishChest, dismissChest, isPaused,
 } from './engine/game.js'
 import { openChest, CHEST_IS_DEMO } from './chest/index.js'
@@ -23,7 +23,13 @@ import * as FX from './engine/fx.js'
 
 // atalho de teste: /solo?level=4 começa direto na fase 4
 const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('level')) || 1) - 1
-const newRun = () => createGame(Math.random, START_LEVEL)
+// atalho de teste: /solo?chest=1 começa sem inimigos, com o baú ao lado de você (?chest=win ou ?chest=empty força o resultado)
+const TEST_CHEST = new URLSearchParams(window.location.search).get('chest')
+const newRun = () => {
+  const g = createGame(Math.random, START_LEVEL)
+  if (TEST_CHEST) placeTestChest(g)
+  return g
+}
 
 const INTRO_SECS = 3.4 // quanto tempo a faixa de abertura da fase fica na tela (igual ao CSS .solo-banner)
 // Estilo pixel (botão no topo): o jogo é desenhado com PX_TILE pixels por casinha e ampliado
@@ -208,7 +214,7 @@ export default function SoloGame() {
         g.noteUntil = g.time + 1.6
         return
       }
-      openChest({ level: g.levelIndex + 1, boss: !!g.boss })
+      openChest({ level: g.levelIndex + 1, boss: !!g.boss, force: TEST_CHEST })
         .then((result) => finishChest(g, result))
         .catch(() => finishChest(g, { win: false, amount: 0, token: 'PYTH', demo: true, error: true }))
     }
