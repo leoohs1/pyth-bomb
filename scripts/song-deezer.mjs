@@ -14,7 +14,7 @@ import { artistAnswers, titleAnswers, cleanTitle, sqlArray, esc } from './song-a
 
 const root = process.cwd()
 const LIST = join(root, process.argv[2] ?? 'musicas/lista.txt')
-const OUT = join(root, 'musicas-prontas')
+const OUT = join(root, process.argv[3] ?? 'musicas-prontas') // 3o argumento (opcional): pasta de saida
 if (!existsSync(LIST)) {
   mkdirSync(join(root, 'musicas'), { recursive: true })
   console.log(`Não achei ${LIST}. Crie esse arquivo com uma música por linha ("Artista - Música") e rode de novo.`)
