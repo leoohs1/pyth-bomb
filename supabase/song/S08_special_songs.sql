@@ -119,20 +119,20 @@ insert into public.song_bank (deezer_id, artist, title, artist_answers, title_an
 select 884025, 'ABBA', 'Dancing Queen', array[]::text[], array[]::text[], null
 where not exists (select 1 from public.song_bank where (deezer_id = 884025 or (public.normalize_answer(artist) = public.normalize_answer('ABBA') and public.normalize_answer(title) = public.normalize_answer('Dancing Queen'))));
 insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
-select 92734438, 'Mark Ronson feat. Bruno Mars', 'Uptown Funk', array['Mark Ronson', 'Bruno Mars']::text[], array[]::text[], null
-where not exists (select 1 from public.song_bank where (deezer_id = 92734438 or (public.normalize_answer(artist) = public.normalize_answer('Mark Ronson feat. Bruno Mars') and public.normalize_answer(title) = public.normalize_answer('Uptown Funk'))));
+select 13141170, 'Backstreet Boys', 'I Want It That Way', array[]::text[], array[]::text[], null
+where not exists (select 1 from public.song_bank where (deezer_id = 13141170 or (public.normalize_answer(artist) = public.normalize_answer('Backstreet Boys') and public.normalize_answer(title) = public.normalize_answer('I Want It That Way'))));
+insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
+select 925106, 'Rihanna', 'Umbrella', array[]::text[], array[]::text[], null
+where not exists (select 1 from public.song_bank where (deezer_id = 925106 or (public.normalize_answer(artist) = public.normalize_answer('Rihanna') and public.normalize_answer(title) = public.normalize_answer('Umbrella'))));
 insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
 select 623698142, 'Luis Fonsi', 'Despacito', array[]::text[], array[]::text[], null
 where not exists (select 1 from public.song_bank where (deezer_id = 623698142 or (public.normalize_answer(artist) = public.normalize_answer('Luis Fonsi') and public.normalize_answer(title) = public.normalize_answer('Despacito'))));
 insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
-select 14408104, 'Rick Astley', 'Never Gonna Give You Up', array[]::text[], array[]::text[], null
-where not exists (select 1 from public.song_bank where (deezer_id = 14408104 or (public.normalize_answer(artist) = public.normalize_answer('Rick Astley') and public.normalize_answer(title) = public.normalize_answer('Never Gonna Give You Up'))));
+select 60726278, 'PSY', 'Gangnam Style', array['Psy']::text[], array[]::text[], null
+where not exists (select 1 from public.song_bank where (deezer_id = 60726278 or (public.normalize_answer(artist) = public.normalize_answer('PSY') and public.normalize_answer(title) = public.normalize_answer('Gangnam Style'))));
 insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
-select 1109731, 'Eminem', 'Lose Yourself', array[]::text[], array[]::text[], null
-where not exists (select 1 from public.song_bank where (deezer_id = 1109731 or (public.normalize_answer(artist) = public.normalize_answer('Eminem') and public.normalize_answer(title) = public.normalize_answer('Lose Yourself'))));
-insert into public.song_bank (deezer_id, artist, title, artist_answers, title_answers, year)
-select 88897841, 'Shakira', 'Hips Don''t Lie', array[]::text[], array[]::text[], null
-where not exists (select 1 from public.song_bank where (deezer_id = 88897841 or (public.normalize_answer(artist) = public.normalize_answer('Shakira') and public.normalize_answer(title) = public.normalize_answer('Hips Don''t Lie'))));
+select 70266756, 'Avicii', 'Wake Me Up', array[]::text[], array[]::text[], null
+where not exists (select 1 from public.song_bank where (deezer_id = 70266756 or (public.normalize_answer(artist) = public.normalize_answer('Avicii') and public.normalize_answer(title) = public.normalize_answer('Wake Me Up'))));
 
 -- mark the special ones (and make sure they are on and "never dealt")
 update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 908604612 or (public.normalize_answer(artist) = public.normalize_answer('The Weeknd') and public.normalize_answer(title) = public.normalize_answer('Blinding Lights'))); -- The Weeknd - Blinding Lights
@@ -150,11 +150,11 @@ update public.song_bank set special = true, active = true, times_dealt = 0 where
 update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 2525864 or (public.normalize_answer(artist) = public.normalize_answer('The Police') and public.normalize_answer(title) = public.normalize_answer('Every Breath You Take'))); -- The Police - Every Breath You Take
 update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 518458172 or (public.normalize_answer(artist) = public.normalize_answer('Guns N'' Roses') and public.normalize_answer(title) = public.normalize_answer('Sweet Child O'' Mine'))); -- Guns N' Roses - Sweet Child O' Mine
 update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 884025 or (public.normalize_answer(artist) = public.normalize_answer('ABBA') and public.normalize_answer(title) = public.normalize_answer('Dancing Queen'))); -- ABBA - Dancing Queen
-update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 92734438 or (public.normalize_answer(artist) = public.normalize_answer('Mark Ronson feat. Bruno Mars') and public.normalize_answer(title) = public.normalize_answer('Uptown Funk'))); -- Mark Ronson feat. Bruno Mars - Uptown Funk
+update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 13141170 or (public.normalize_answer(artist) = public.normalize_answer('Backstreet Boys') and public.normalize_answer(title) = public.normalize_answer('I Want It That Way'))); -- Backstreet Boys - I Want It That Way
+update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 925106 or (public.normalize_answer(artist) = public.normalize_answer('Rihanna') and public.normalize_answer(title) = public.normalize_answer('Umbrella'))); -- Rihanna - Umbrella
 update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 623698142 or (public.normalize_answer(artist) = public.normalize_answer('Luis Fonsi') and public.normalize_answer(title) = public.normalize_answer('Despacito'))); -- Luis Fonsi - Despacito
-update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 14408104 or (public.normalize_answer(artist) = public.normalize_answer('Rick Astley') and public.normalize_answer(title) = public.normalize_answer('Never Gonna Give You Up'))); -- Rick Astley - Never Gonna Give You Up
-update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 1109731 or (public.normalize_answer(artist) = public.normalize_answer('Eminem') and public.normalize_answer(title) = public.normalize_answer('Lose Yourself'))); -- Eminem - Lose Yourself
-update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 88897841 or (public.normalize_answer(artist) = public.normalize_answer('Shakira') and public.normalize_answer(title) = public.normalize_answer('Hips Don''t Lie'))); -- Shakira - Hips Don't Lie
+update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 60726278 or (public.normalize_answer(artist) = public.normalize_answer('PSY') and public.normalize_answer(title) = public.normalize_answer('Gangnam Style'))); -- PSY - Gangnam Style
+update public.song_bank set special = true, active = true, times_dealt = 0 where (deezer_id = 70266756 or (public.normalize_answer(artist) = public.normalize_answer('Avicii') and public.normalize_answer(title) = public.normalize_answer('Wake Me Up'))); -- Avicii - Wake Me Up
 
 -- check: 20 special songs, and the total in the game
 select count(*) filter (where special) as special_songs, count(*) filter (where active) as songs_in_play from public.song_bank;
