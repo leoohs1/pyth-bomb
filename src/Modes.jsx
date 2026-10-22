@@ -34,6 +34,7 @@ const MODES = [
   {
     id: 'price',
     icon: '📈',
+    img: '/modes/price.webp',
     title: 'Guess the Price',
     sub: 'What was it worth? Closest guess wins the round.',
     locked: true, // ainda com preços de demonstração; destrava (locked: false) quando a chave da Pyth estiver ligada
@@ -43,6 +44,7 @@ const MODES = [
   {
     id: 'solo',
     icon: '🕹️',
+    img: '/modes/solo.webp',
     title: 'Solo',
     sub: 'A real Bomberman-style dungeon run. Movement, power-ups, bosses.',
     locked: true,
@@ -51,6 +53,7 @@ const MODES = [
   {
     id: 'arena',
     icon: '⚔️',
+    img: '/modes/arena.webp',
     title: 'Arena',
     sub: 'Real-time PvP. Still just an idea — a long way down the road.',
     locked: true,
