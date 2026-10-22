@@ -42,9 +42,11 @@ export function createSoloSfx() {
     const d = !!doorOpen(g)
     if (d && !door && g.status === 'playing') say('solo_door', now)
     door = d
-    // baú aberto agora (não conta o que volta já aberto depois de morrer)
+    // baú: clicou (fechado -> abrindo) e depois o resultado (abrindo -> aberto). Um baú que volta já aberto
+    // depois de morrer (result.reopened) não toca nada.
     const c = g.chest?.state ?? null
-    if (c === 'opened' && chest === 'closed' && g.chest.result && !g.chest.result.reopened) say(g.chest.result.win ? 'solo_chest_win' : 'solo_chest_empty', now)
+    if (c === 'opening' && chest === 'closed') say('solo_chest_open', now)
+    else if (c === 'opened' && chest !== 'opened' && g.chest.result && !g.chest.result.reopened) say(g.chest.result.win ? 'solo_chest_win' : 'solo_chest_empty', now)
     chest = c
     // morreu / fim de jogo / fase concluída / venceu
     if (g.status !== status) {

@@ -44,6 +44,7 @@ export const SOLO_SOUNDS = [
   'solo_enemy_die',   // derrotou um inimigo
   'solo_roar',        // o chefe se enfureceu
   'solo_door',        // a porta abriu
+  'solo_chest_open',  // clicou no baú: tensão enquanto abre (espera o resultado)
   'solo_chest_win',   // abriu o baú e ganhou
   'solo_chest_empty', // abriu o baú e veio vazio
   'solo_clear',       // fase concluída
@@ -248,6 +249,10 @@ Object.assign(SYNTH, {
   solo_enemy_die: () => { tone({ type: 'square', f0: 640, f1: 140, dur: 0.2, gain: 0.14 }); swish({ f0: 3000, f1: 400, dur: 0.22, gain: 0.2 }); tone({ type: 'square', f0: 330, f1: 90, dur: 0.18, gain: 0.1, at: 0.1 }) },
   solo_roar: () => { tone({ type: 'sawtooth', f0: 95, f1: 45, dur: 0.7, gain: 0.25 }); swish({ type: 'lowpass', f0: 900, f1: 100, dur: 0.7, gain: 0.3 }); tone({ type: 'square', f0: 70, f1: 35, dur: 0.6, gain: 0.15, at: 0.1 }) },
   solo_door: () => chip([392, 523, 659, 784, 1047], { step: 0.08, dur: 0.12, gain: 0.12 }),
+  solo_chest_open: () => {
+    chip([262, 330, 262, 330, 392, 330, 392, 494, 392, 494, 587], { step: 0.09, dur: 0.1, gain: 0.1 })
+    tone({ type: 'triangle', f0: 110, f1: 330, dur: 1.0, gain: 0.16 })
+  },
   solo_chest_win: () => chip([523, 659, 784, 1047, 784, 1047, 1319], { step: 0.09, dur: 0.15, gain: 0.13 }),
   solo_chest_empty: () => chip([392, 349, 311, 262], { type: 'triangle', step: 0.14, dur: 0.18, gain: 0.14 }),
   solo_clear: () => chip([523, 523, 523, 659, 784, 659, 784, 1047], { step: 0.1, dur: 0.14, gain: 0.13 }),
