@@ -6,6 +6,7 @@ import { doorOpen } from './engine/game.js'
 // Os sons ficam em src/sound.js (SOLO_SOUNDS) e, quando existirem, em public/sounds/solo/<nome>.mp3.
 
 const STATUS_SOUND = { dead: 'solo_dead', gameover: 'solo_gameover', cleared: 'solo_clear', won: 'solo_win' }
+const DELAY = { solo_gameover: 0.75 } // a risada entra depois do dano (igual ao Classic: senão um abafa o outro)
 const MIN_GAP = { solo_boom: 0.09, solo_hit: 0.08, solo_enemy_die: 0.08, solo_pickup: 0.08 } // segundos entre repetições
 
 export function createSoloSfx() {
@@ -14,15 +15,19 @@ export function createSoloSfx() {
   let door = false
   let chest = null
   const lastAt = new Map()
+  const timers = new Set()
 
   const say = (name, now) => {
     const gap = MIN_GAP[name] ?? 0
     if (gap && now - (lastAt.get(name) ?? -9) < gap) return
     lastAt.set(name, now)
-    play(name)
+    const delay = DELAY[name]
+    if (!delay) return play(name)
+    const id = setTimeout(() => { timers.delete(id); play(name) }, delay * 1000)
+    timers.add(id)
   }
 
-  return function frame(g) {
+  const frame = function (g) {
     const now = performance.now() / 1000
     if (g !== game) { // fase nova / corrida nova / tentar de novo: só guarda o ponto de partida
       game = g; status = g.status; door = !!doorOpen(g); chest = g.chest?.state ?? null
@@ -55,4 +60,6 @@ export function createSoloSfx() {
       status = g.status
     }
   }
+  frame.stop = () => { timers.forEach(clearTimeout); timers.clear() } // ao sair do Solo, cancela sons que ainda iam tocar
+  return frame
 }

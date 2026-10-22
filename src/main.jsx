@@ -8,6 +8,7 @@ import PlayGate from './PlayGate.jsx'
 import ArenaPreview from './ArenaPreview.jsx'
 import GameArenaV2Harness from './GameArenaV2Harness.jsx'
 import SoloGame from './solo/SoloGame.jsx'
+import SoloSounds from './solo/SoloSounds.jsx'
 import PriceApp from './price/PriceApp.jsx'
 import PricePreview from './price/PricePreview.jsx'
 import SongApp from './song/SongApp.jsx'
@@ -20,6 +21,7 @@ const path = window.location.pathname
 // sobrescrevia o fundo quando entrava no mesmo bundle.)
 const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/game-arena-v2-preview') ? <GameArenaV2Harness />
+  : path.startsWith('/solo-sons') ? <PlayGate><SoloSounds /></PlayGate> // tela pra ouvir os sons do Solo (sem jogar)
   : path.startsWith('/solo') ? <PlayGate><SoloGame /></PlayGate> // modo Solo (protótipo, fechado como o /play)
   : path.startsWith('/price-preview') ? <PricePreview /> // prévia do visual do Guess the Price (dados de mentira)
   : path.startsWith('/price') ? <PlayGate><PriceApp /></PlayGate> // Guess the Price (fechado como o /play)

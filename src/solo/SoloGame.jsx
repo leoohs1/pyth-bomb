@@ -268,7 +268,7 @@ export default function SoloGame() {
     raf = requestAnimationFrame(frame)
 
     return () => {
-      cancelAnimationFrame(raf); ro.disconnect(); unbind()
+      cancelAnimationFrame(raf); ro.disconnect(); unbind(); sfx.stop()
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('blur', pauseNow)
       window.removeEventListener('keydown', onResumeKey, true)
