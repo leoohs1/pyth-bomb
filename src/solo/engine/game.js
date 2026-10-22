@@ -101,6 +101,12 @@ function loadLevel(run, random) {
   const blocks = shuffle(cellsOf(level, BLOCK), random)
   const doorCell = blocks.find(([x, y]) => far(x, y) >= 8) ?? blocks[0]
   const hidden = blocks.filter((c) => c !== doorCell)
+  // pelo menos 1 item fica entre as 8 caixas mais perto do início (quem começa quebrando caixa já ganha algo)
+  if (toPlace.length && hidden.length > 8) {
+    const nearest = hidden.map((c, i) => [far(c[0], c[1]), i]).sort((p, q) => p[0] - q[0]).slice(0, 8)
+    const pick = nearest[Math.floor(random() * nearest.length)][1]
+    ;[hidden[0], hidden[pick]] = [hidden[pick], hidden[0]] // o 1º item da lista vai pra ela
+  }
   const powerups = toPlace.slice(0, hidden.length).map((kind, i) => ({
     x: hidden[i][0], y: hidden[i][1], kind, revealed: false, taken: false,
   }))
