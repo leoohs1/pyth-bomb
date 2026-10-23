@@ -49,24 +49,28 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3] },
 }
 
-// Poça d'água em pixel (fase 2: o convés está vazando): mancha de água azul-escura com a borda "respirando",
-// ondinhas que se abrem a partir de uma gota que cai num ponto diferente a cada vez, e brilhos que piscam.
+// Poça com BALEIA (fase 2: tem uma baleia embaixo do convés): mancha d'água azul-escura com um buraco no meio
+// (o respiradouro). De tempos em tempos a baleia SOLTA UM JATO: a coluna d'água sobe, abre num leque de gotas lá
+// em cima, as gotas caem de volta na poça e abrem ondinhas; depois fica calma de novo, com brilhos piscando.
 // Desenhada pixel a pixel (1 pixel = 1/PX_TILE de casa). Só enfeite: não muda nada no jogo.
-const WATER = { rim: 'rgb(24, 58, 92)', deep: 'rgb(34, 84, 128)', mid: 'rgb(48, 112, 160)', ring: 'rgb(124, 196, 226)', glint: 'rgb(214, 240, 252)' }
+const WATER = { rim: 'rgb(24, 58, 92)', hole: 'rgb(14, 36, 64)', deep: 'rgb(34, 84, 128)', mid: 'rgb(48, 112, 160)', ring: 'rgb(124, 196, 226)', glint: 'rgb(214, 240, 252)' }
 const noise2 = (x, y, s) => { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v) }
+const SPOUT = { cycle: 4.2, riseAt: 0.7, topAt: 1.1, fallAt: 1.8, landAt: 2.4, height: 27, gravity: 70 }
 
 function drawPuddle(ctx, p, time, scale) {
   const u = 1 / PX_TILE
   const size = u + 1 / scale // um tiquinho maior, pra não aparecer risco entre os pixels
-  const cx = 24, cy = 28 // centro da poça dentro da casa, em pixels
+  const cx = 24, cy = 31 // centro da poça dentro da casa, em pixels (mais embaixo: sobra lugar pro jato)
   const rx = 15 + Math.sin(time * 1.3 + p.seed) * 0.8
-  const ry = 7 + Math.sin(time * 1.7 + p.seed * 2) * 0.5
-  // gota atual: a cada 2,4 s cai uma e abre uma ondinha (lugar diferente a cada vez)
-  const T = 2.4
-  const t = time + p.seed * 0.37
-  const cycle = Math.floor(t / T)
-  const age = (t - cycle * T) / T // 0 → 1
-  const dx = (noise2(cycle, 1, p.seed) - 0.5) * 12, dy = (noise2(cycle, 2, p.seed) - 0.5) * 5
+  const ry = 6.5 + Math.sin(time * 1.7 + p.seed * 2) * 0.5
+  const t = (time + p.seed * 0.37) % SPOUT.cycle // onde estamos no ciclo do jato
+  // ondinhas: duas, saindo do meio quando a água volta pra poça
+  const age1 = (t - SPOUT.landAt) / 1.2, age2 = (t - SPOUT.landAt - 0.35) / 1.2
+  const rings = [age1, age2].filter((a) => a >= 0 && a < 1)
+  const rect = (ix, iy, color, w = 1) => {
+    ctx.fillStyle = color
+    ctx.fillRect(p.x + (cx + ix) * u, p.y + (cy + iy) * u, size * w, size)
+  }
   ctx.save()
   ctx.globalAlpha = 0.93
   for (let iy = -9; iy <= 9; iy++) {
@@ -75,28 +79,65 @@ function drawPuddle(ctx, p, time, scale) {
       const edge = d + (noise2(ix, iy, p.seed) - 0.5) * 0.2 // contorno irregular (suave)
       if (edge > 1) continue
       let color = edge > 0.78 ? WATER.rim : edge > 0.35 ? WATER.deep : WATER.mid
-      // ondinha: anel que cresce a partir da gota e some
-      const ring = Math.hypot((ix - dx) / 1.9, iy - dy) // meio achatada, como a poça
-      if (age < 0.9 && Math.abs(ring - age * 9) < 0.7) color = WATER.ring
-      ctx.fillStyle = color
-      ctx.fillRect(p.x + (cx + ix) * u, p.y + (cy + iy) * u, size, size)
+      if ((ix * ix) / 14 + (iy * iy) / 3.2 < 1) color = WATER.hole // o respiradouro da baleia
+      const ring = Math.hypot(ix / 1.9, iy) // meio achatada, como a poça
+      if (rings.some((a) => Math.abs(ring - 1.5 - a * 8.5) < 0.7)) color = WATER.ring
+      rect(ix, iy, color)
     }
   }
-  // brilhos que piscam (pontinhos claros em lugares fixos da poça)
-  ctx.fillStyle = WATER.glint
-  for (let k = 0; k < 5; k++) {
-    if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
-    const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * rx * 1.3), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * ry * 1.1)
-    if ((gx * gx) / (rx * rx) + (gy * gy) / (ry * ry) > 0.6) continue
-    ctx.fillRect(p.x + (cx + gx) * u, p.y + (cy + gy) * u, size * 2, size)
+  // brilhos que piscam enquanto está calma
+  if (t < SPOUT.riseAt || t > SPOUT.landAt + 1.2) {
+    for (let k = 0; k < 5; k++) {
+      if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
+      const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * rx * 1.3), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * ry * 1.1)
+      if ((gx * gx) / (rx * rx) + (gy * gy) / (ry * ry) > 0.6) continue
+      rect(gx, gy, WATER.glint, 2)
+    }
+  }
+  // o jato: sobe rápido, segura um pouco lá em cima (leque de gotas) e desce
+  const ease = (k) => 1 - (1 - k) * (1 - k)
+  let h = 0
+  if (t >= SPOUT.riseAt && t < SPOUT.topAt) h = SPOUT.height * ease((t - SPOUT.riseAt) / (SPOUT.topAt - SPOUT.riseAt))
+  else if (t >= SPOUT.topAt && t < SPOUT.fallAt) h = SPOUT.height + Math.sin(time * 14) * 0.8
+  else if (t >= SPOUT.fallAt && t < SPOUT.landAt) h = SPOUT.height * (1 - ease((t - SPOUT.fallAt) / (SPOUT.landAt - SPOUT.fallAt)))
+  h = Math.round(h)
+  if (h > 1) {
+    ctx.globalAlpha = 1
+    for (let r = 0; r < h; r++) {
+      const w = r < h * 0.45 ? 4 : r < h * 0.8 ? 3 : 2 // mais fino lá em cima
+      const sway = Math.round(Math.sin(time * 9 + r * 0.35) * 0.8)
+      const left = sway - Math.floor(w / 2)
+      for (let k = 0; k < w; k++) rect(left + k, -2 - r, k === 0 || k === w - 1 ? WATER.ring : WATER.glint)
+    }
+    // leque no topo: dois arcos de gotinhas abrindo pros lados e caindo (aparece quando o jato está alto)
+    if (h > SPOUT.height * 0.6) {
+      for (const side of [-1, 1]) {
+        for (let k = 1; k <= 6; k++) rect(side * (1 + k * 1.3) | 0, -2 - h + ((k * k * 0.4) | 0), k < 5 ? WATER.glint : WATER.ring)
+      }
+    }
+  }
+  // gotas lançadas do topo quando o jato chega lá em cima: sobem um pouco, abrem pros lados e caem de volta
+  const tau0 = t - SPOUT.topAt
+  if (tau0 >= 0) {
+    ctx.globalAlpha = 1
+    for (let i = 0; i < 10; i++) {
+      const tau = tau0 - (i % 3) * 0.06
+      if (tau < 0) continue
+      const a = (i / 9) * 2 - 1
+      const vx = a * 15 + (noise2(i, 9, p.seed) - 0.5) * 4
+      const vy = -10 + noise2(i, 8, p.seed) * 8
+      const x = vx * tau, y = -2 - SPOUT.height + vy * tau + 0.5 * SPOUT.gravity * tau * tau
+      if (y >= 0) continue // já caiu na poça
+      rect(Math.round(x), Math.round(y), i % 2 ? WATER.glint : WATER.ring)
+    }
   }
   ctx.restore()
 }
 
-// chão de convés na casa (x, y): ~90% liso (6 variações) e ~10% com rachadura (4 formatos), sorteados pela posição
+// chão de convés na casa (x, y): ~97% liso (12 variações) e só ~3% com rachadura (8 formatos), sorteados pela posição
 function deckTile(deck, x, y) {
   const h = ((x * 19349663) ^ (y * 83492791)) >>> 0
-  const list = h % 100 < 90 ? deck.plain : deck.cracked
+  const list = h % 100 < 97 ? deck.plain : deck.cracked
   return list[(h >>> 8) % list.length]
 }
 
