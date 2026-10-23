@@ -1235,9 +1235,14 @@ function drawPlayerSprite(ctx, p, time, img) {
   // tem arte própria pra direção (ex.: Pirb de lado)? então não espelha nem gira
   const ownArt = p.moving && p.facing !== 'down' && !!walkFrames(p.facing)
   const turnTo = p.flip && playerCanFlip && !ownArt ? -1 : 1
-  v.turn += Math.sign(turnTo - v.turn) * Math.min(Math.abs(turnTo - v.turn), dt * 9)
+  // PIXEL ART: nada de escala quebrada, rotação nem giro de papel: isso reamostra a arte a cada quadro e os pixels
+  // "tremem" (parado ele parecia ser repintado o tempo todo). Em pixel ele vira na hora, anda com o pulinho em
+  // pixels inteiros e fica parado de verdade quando está parado. (Na arte pintada continua tudo suave.)
+  const crisp = isPixel(img)
+  if (crisp) v.turn = turnTo
+  else v.turn += Math.sign(turnTo - v.turn) * Math.min(Math.abs(turnTo - v.turn), dt * 9)
   // inclinação suave na direção do movimento
-  const leanAmt = ownArt ? 0.04 : 0.12 // a arte de lado já vem inclinada
+  const leanAmt = crisp ? 0 : ownArt ? 0.04 : 0.12 // a arte de lado já vem inclinada
   const leanTo = !p.moving ? 0 : p.facing === 'left' ? -leanAmt : p.facing === 'right' ? leanAmt : 0
   v.lean += (leanTo - v.lean) * Math.min(1, dt * 12)
 
@@ -1255,16 +1260,17 @@ function drawPlayerSprite(ctx, p, time, img) {
     const frames = !!pair
     if (frames) img = pair[step % 2]
     hop = k * (frames ? 0.07 : 0.1)
-    sy = frames ? 0.94 + k * 0.08 : 0.9 + k * 0.14 // amassa no chão, estica no ar
+    if (crisp) hop = Math.round(hop * PX_TILE) / PX_TILE // pulinho em pixels inteiros
+    sy = crisp ? 1 : frames ? 0.94 + k * 0.08 : 0.9 + k * 0.14 // amassa no chão, estica no ar
     const vertical = p.facing === 'up' || p.facing === 'down'
-    wobble = Math.sin(phase) * (frames ? (vertical ? 0.05 : 0.03) : (vertical ? 0.09 : 0.04))
+    wobble = crisp ? 0 : Math.sin(phase) * (frames ? (vertical ? 0.05 : 0.03) : (vertical ? 0.09 : 0.04))
     // poeirinha cada vez que pisa
     if (step !== v.lastStep) {
       v.lastStep = step
       const back = p.facing === 'left' ? 0.25 : p.facing === 'right' ? -0.25 : (step % 2 ? 0.2 : -0.2)
       v.dust.push({ x: p.x + 0.5 + back, y: feetY - 0.02, t: 0 })
     }
-  } else if (p.alive) {
+  } else if (p.alive && !crisp) {
     sy = 1 + Math.sin(time * 3) * 0.02        // respirando
     wobble = Math.sin(time * 1.6) * 0.025
   }
@@ -1293,7 +1299,9 @@ function drawPlayerSprite(ctx, p, time, img) {
   const shadow = (1 - dying) * (1 - hop * 1.5)
   ctx.beginPath(); ctx.ellipse(p.x + 0.5, feetY, 0.3 * shadow, 0.08 * shadow, 0, 0, Math.PI * 2); ctx.fill()
 
-  ctx.translate(p.x + 0.5, feetY - hop)
+  // em pixel, o pé cai sempre numa linha/coluna de pixel da arte (sem meio pixel: é o que faz a arte tremer)
+  const snap = (n) => crisp ? Math.round(n * PX_TILE) / PX_TILE : n
+  ctx.translate(snap(p.x + 0.5), snap(feetY - hop))
   ctx.rotate(v.lean + wobble + dying * Math.PI * 2)
   ctx.scale(v.turn * sx * (1 - dying), sy * (1 - dying))
   if (dying) ctx.globalAlpha = Math.sin(time * 40) > 0 ? 0.5 : 1
