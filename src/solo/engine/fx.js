@@ -168,6 +168,7 @@ export function consumeEvents(s) {
 // e a energia roxa da "invasão Pyth"). Por enquanto só no quartel (tileset 'military').
 function setupAmbient(level, tileset, decor) {
   if (decor === 'hull') return setupHull(level)
+  if (decor === 'tavern') return setupTavern(level)
   if (tileset !== 'military') return []
   const { cols, rows } = level
   const deco = []
@@ -210,6 +211,27 @@ function setupHull(level) {
     else if (k === 2) deco.push({ type: 'porthole', x, y, phase: i * 0.9 })
     else if (k === 4) deco.push({ type: 'cannon', x, y })
     else if (k === 7 && deco.filter((d) => d.type === 'leak').length < 3) deco.push({ type: 'leak', x, y, next: rand(0.2, 1) })
+  })
+  return deco
+}
+
+// decoração da taverna (levels.js decor: 'tavern'): lampiões, janelas pro mar, prateleiras, cartazes, âncoras e redes nas paredes da borda
+function setupTavern(level) {
+  const { cols, rows } = level
+  const deco = []
+  const spots = []
+  for (let x = 1; x < cols - 1; x++) spots.push([x, 0], [x, rows - 1])
+  for (let y = 1; y < rows - 1; y++) spots.push([0, y], [cols - 1, y])
+  const count = (t) => deco.filter((d) => d.type === t).length
+  spots.forEach(([x, y], i) => {
+    if (tileAt(level, x, y) !== WALL) return
+    const k = (x * 7 + y * 13) % 9
+    const put1 = (type) => deco.push({ type, set: 'tavern', x, y, phase: i * 1.3 })
+    if (k === 0 || k === 5) put1('lantern')
+    else if (k === 2) put1('window')
+    else if (k === 4) put1('shelf')
+    else if (k === 1 && count('anchor') < 2) put1('anchor')
+    else if (k === 7) { const t = (x + y) % 2 ? 'poster' : 'net'; if (count(t) < 3) put1(t) }
   })
   return deco
 }
@@ -291,11 +313,12 @@ export function drawAmbient(ctx, time, mood) {
       ctx.beginPath(); ctx.roundRect(cx - 0.13, cy - 0.13, 0.26, 0.26, 0.06); ctx.fill()
       ctx.fillStyle = on ? `rgb(${col})` : '#5a4a2a'
       ctx.beginPath(); ctx.arc(cx, cy, 0.085, 0, Math.PI * 2); ctx.fill()
-    } else if (d.type === 'lantern' || d.type === 'porthole' || d.type === 'cannon' || d.type === 'leak') {
+    } else if (d.type === 'lantern' || d.type === 'porthole' || d.type === 'cannon' || d.type === 'leak' || d.set === 'tavern') {
       // decoração do casco: um brilho que muda por tipo + o desenho em pixel (no tamanho nativo)
       let glow = null // [cor 'r, g, b', força, raio]
       if (d.type === 'lantern') glow = ['255, 150, 50', (0.85 + 0.15 * Math.sin(time * 9 + d.phase) + 0.08 * Math.sin(time * 23 + d.phase * 2)) * 0.42, 1.5] // chama tremendo
       else if (d.type === 'porthole') glow = ['80, 230, 220', 0.16 + 0.05 * Math.sin(time * 1.4 + d.phase), 1.1] // luz do mar
+      else if (d.type === 'window') glow = ['90, 150, 255', 0.14 + 0.04 * Math.sin(time * 1.1 + d.phase), 1.1] // luar da janela
       else if (d.type === 'leak') glow = ['170, 90, 255', (0.5 + 0.3 * Math.sin(time * 4 + d.x)) * 0.55, 0.7] // energia roxa
       if (glow) {
         ctx.save()
@@ -307,7 +330,7 @@ export function drawAmbient(ctx, time, mood) {
         ctx.fillRect(cx - glow[2], cy - glow[2], glow[2] * 2, glow[2] * 2)
         ctx.restore()
       }
-      const img = decoSprite(`hull_${d.type}`)
+      const img = decoSprite(`${d.set ?? 'hull'}_${d.type}`)
       if (img) { const [w, h] = decoSize(img, 0.6); put(ctx, img, cx - w / 2, cy - h / 2 - 0.02, w, h) }
     } else if (d.type === 'pipes') {
       // o trecho inteiro em 2 pedaços longos (menos emendas que um por casa)

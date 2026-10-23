@@ -139,6 +139,13 @@ const PIXEL_FILES = {
   deco_hull_cannon: '/solo/pixel/deco-hull-cannon.png',
   deco_hull_lantern: '/solo/pixel/deco-hull-lantern.png',
   deco_hull_leak: '/solo/pixel/deco-hull-leak.png',
+  // decoração da borda da taverna (fase 1): janela redonda, lampião, prateleira, cartaz, âncora e rede
+  deco_tavern_window: '/solo/pixel/deco-tavern-window.png',
+  deco_tavern_lantern: '/solo/pixel/deco-tavern-lantern.png',
+  deco_tavern_shelf: '/solo/pixel/deco-tavern-shelf.png',
+  deco_tavern_poster: '/solo/pixel/deco-tavern-poster.png',
+  deco_tavern_anchor: '/solo/pixel/deco-tavern-anchor.png',
+  deco_tavern_net: '/solo/pixel/deco-tavern-net.png',
   // vazamento animado da fase 2: 2 desenhos (a, b) de 3 quadros cada
   leak_a_1: '/solo/pixel/leak-a-1.png',
   leak_a_2: '/solo/pixel/leak-a-2.png',
