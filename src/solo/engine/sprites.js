@@ -126,7 +126,12 @@ const PIXEL_FILES = {
   floor_deck_3: '/solo/pixel/floor-deck-3.png', // 3 e 5: mais formatos de rachadura; 4: outro chão liso
   floor_deck_4: '/solo/pixel/floor-deck-4.png',
   floor_deck_5: '/solo/pixel/floor-deck-5.png',
-  floor_tavern_0: '/solo/pixel/floor-tavern-0.png', // piso da taverna (fase 1): tábuas largas na VERTICAL, 3 por quadrado (mais desenhos virão)
+  floor_tavern_0: '/solo/pixel/floor-tavern-0.png', // piso da taverna (fase 1): tábuas largas na VERTICAL, 3 por quadrado
+  floor_tavern_1: '/solo/pixel/floor-tavern-1.png', // 1 a 4 = com detalhe (rachadura curta, rachadura longa, mancha de cerveja, serragem e marca de bota); 5 = liso
+  floor_tavern_2: '/solo/pixel/floor-tavern-2.png',
+  floor_tavern_3: '/solo/pixel/floor-tavern-3.png',
+  floor_tavern_4: '/solo/pixel/floor-tavern-4.png',
+  floor_tavern_5: '/solo/pixel/floor-tavern-5.png',
   // casco de navio antigo (fase 2): 4 blocos de parede (0 a 2 = caixotes de ferro e madeira; 3 = moldura lisa) e a decoração da borda
   wall_hull_0: '/solo/pixel/wall-hull-0.png',
   wall_hull_1: '/solo/pixel/wall-hull-1.png',
@@ -285,8 +290,8 @@ const FLOOR_SETS = {
   // taverna: tábuas na VERTICAL (3 faixas de 16 colunas); o deslocamento e o espelhamento são de cima pra baixo
   tavern: {
     vertical: true,
-    strips: [[0], [0], [0]],
-    cracked: [],
+    strips: [[0, 5], [0, 5], [0, 5]], // tábuas lisas (a 0 tem emendas, a 5 não), embaralhadas por faixa
+    cracked: [1, 2, 3, 4], // quadrados com detalhe, só em uma parte pequena do mapa
     shifts: [0, 12, 24, 36],
   },
 }
