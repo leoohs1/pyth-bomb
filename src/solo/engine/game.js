@@ -111,12 +111,14 @@ function loadLevel(run, random) {
     x: hidden[i][0], y: hidden[i][1], kind, revealed: false, taken: false,
   }))
 
-  // inimigos nascem em chão livre, longe do jogador
-  let spots = shuffle(cellsOf(level, FLOOR).filter(([x, y]) => far(x, y) >= 6), random)
+  // inimigos nascem em chão livre, longe do jogador e ESPALHADOS (cada um numa região diferente do mapa)
+  const spots = cellsOf(level, FLOOR).filter(([x, y]) => far(x, y) >= 6)
+  const taken = [[start.x, start.y]] // casas já "ocupadas": o início, e depois cada bicho e poça colocados
   const enemies = []
   for (const [type, n] of Object.entries(cfg.enemies)) {
     for (let i = 0; i < n; i++) {
-      let spot = spots.shift()
+      let spot = spreadPick(spots, taken, random, [5, 4, 3, 0])
+      if (spot) spots.splice(spots.indexOf(spot), 1)
       if (!spot) {
         // mapa muito cheio: abre espaço num bloco qualquer longe do início
         const b = hidden.find(([x, y]) => far(x, y) >= 6 && tileAt(level, x, y) === BLOCK &&
@@ -125,19 +127,33 @@ function loadLevel(run, random) {
         setTile(level, b[0], b[1], FLOOR)
         spot = b
       }
+      taken.push([spot[0], spot[1]])
       enemies.push(makeEnemy(type, spot[0], spot[1]))
     }
   }
 
-  // poças d'água (só enfeite, levels.js `puddles: [mínimo, máximo]`): em casas livres desde o começo, longe do
-  // início e longe uma da outra, pra nunca ficarem escondidas debaixo de caixa
+  // poças d'água (só enfeite, levels.js `puddles: N`) com uma RACHADURA ao lado de cada uma (por onde a água entra,
+  // levels.js `puddleCracks`). Sempre bem distribuídas: uma em cada região do mapa (em cima à direita, embaixo à
+  // esquerda e no meio/baixo à direita), em casa livre desde o começo (nunca escondida debaixo de caixa), longe
+  // do início e dos bichos
   const puddles = []
+  const cracks = []
   if (cfg.puddles) {
-    const [lo, hi] = cfg.puddles
-    const want = lo + Math.floor(random() * (hi - lo + 1))
-    for (const [x, y] of shuffle(cellsOf(level, FLOOR).filter(([cx, cy]) => far(cx, cy) >= 4), random)) {
-      if (puddles.length >= want) break
-      if (puddles.every((p) => Math.abs(p.x - x) + Math.abs(p.y - y) >= 5)) puddles.push({ x, y, seed: random() * 100 })
+    const { cols, rows } = level
+    const regions = [
+      ([x, y]) => x >= Math.ceil(cols * 0.62) && y <= Math.floor(rows * 0.42), // em cima à direita
+      ([x, y]) => x <= Math.floor(cols * 0.4) && y >= Math.ceil(rows * 0.5), // embaixo à esquerda
+      ([x, y]) => x >= Math.floor(cols * 0.42) && x <= Math.ceil(cols * 0.8) && y >= Math.ceil(rows * 0.55), // meio/baixo
+    ]
+    const free = cellsOf(level, FLOOR).filter(([cx, cy]) => far(cx, cy) >= 4)
+    for (let i = 0; i < cfg.puddles; i++) {
+      const inRegion = free.filter(regions[i % regions.length])
+      const spot = spreadPick(inRegion, taken, random, [4, 3, 2, 0]) ?? spreadPick(free, taken, random, [4, 3, 2, 0])
+      if (!spot) break
+      free.splice(free.indexOf(spot), 1)
+      taken.push([spot[0], spot[1]])
+      puddles.push({ x: spot[0], y: spot[1], seed: random() * 100 })
+      if (cfg.puddleCracks) cracks.push(makeCrack(spot[0], spot[1], random))
     }
   }
 
@@ -153,6 +169,7 @@ function loadLevel(run, random) {
     },
     enemies,
     puddles,
+    cracks,
     boss: null,
     chest: null, // aparece quando a porta abre: { x, y, state: 'closed'|'opening'|'opened', result, dismissed }
     door: { x: doorCell[0], y: doorCell[1], revealed: false },
@@ -199,6 +216,47 @@ function loadBossLevel(run) {
     shake: 0,
     events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...
   }
+}
+
+// Escolhe uma casa entre as candidatas, bem LONGE das já ocupadas (taken): sorteia entre as 20% mais afastadas, pra
+// espalhar bichos e poças em vez de amontoar. minDist: distância mínima (em casas) das ocupadas; null se não sobra nenhuma.
+function spreadPick(cells, taken, random, minDist = 0) {
+  if (Array.isArray(minDist)) { // lista de distâncias: tenta a maior primeiro e vai afrouxando até achar alguma
+    for (const d of minDist) { const c = spreadPick(cells, taken, random, d); if (c) return c }
+    return null
+  }
+  const scored = cells
+    .map((c) => [c, taken.reduce((m, t) => Math.min(m, Math.abs(t[0] - c[0]) + Math.abs(t[1] - c[1])), 99)])
+    .filter(([, d]) => d >= minDist)
+    .sort((a, b) => b[1] - a[1])
+  if (!scored.length) return null
+  const top = scored.slice(0, Math.max(1, Math.ceil(scored.length * 0.2)))
+  return top[Math.floor(random() * top.length)][0]
+}
+
+// Rachadura grande no chão, passando pela poça da casa (tx, ty): caminho de pixels do mapa (1 pixel = 1/48 de
+// casa), saindo dos dois lados da poça pela fresta entre as tábuas, torta, com um ou dois galhinhos.
+// Devolve { pts: [x, y, x, y, ...] }. Só enfeite (render.js desenha só onde o chão está livre).
+function makeCrack(tx, ty, random) {
+  const pts = []
+  const x0 = tx * 48 + 24, y0 = ty * 48 + 32
+  const dir0 = random() < 0.5 ? -1 : 1
+  for (const [dir, len] of [[dir0, 70 + Math.floor(random() * 50)], [-dir0, 34 + Math.floor(random() * 30)]]) {
+    let yf = y0, slope = (random() - 0.5) * 0.5, next = 8 + Math.floor(random() * 8)
+    const branchAt = Math.floor(len * (0.35 + random() * 0.3))
+    for (let i = 0; i < len; i++) {
+      if (i === next) { slope = (random() - 0.5) * 0.7; next += 8 + Math.floor(random() * 10) }
+      yf += slope + (random() - 0.5) * 0.7
+      yf = Math.max(y0 - 11, Math.min(y0 + 11, yf))
+      pts.push(x0 + dir * (i + 3), Math.round(yf))
+      if (i === branchAt && dir === dir0) { // galhinho: sai torto pra cima ou pra baixo
+        const bs = (random() < 0.5 ? -1 : 1) * (0.7 + random() * 0.5), bl = 9 + Math.floor(random() * 9)
+        let bx = x0 + dir * (i + 3), by = yf
+        for (let j = 0; j < bl; j++) { bx += dir; by += bs + (random() - 0.5) * 0.4; pts.push(Math.round(bx), Math.round(by)) }
+      }
+    }
+  }
+  return { pts }
 }
 
 function cellsOf(level, type) {

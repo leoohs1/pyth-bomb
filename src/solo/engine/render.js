@@ -1,9 +1,9 @@
 // Desenha o estado do jogo num <canvas>, por enquanto só com formas simples (sem arte).
 // Tudo é desenhado em "casas": 1 unidade = 1 casa da grade; a escala vem de fora.
-import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
+import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, floorVariants, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorTile, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -49,134 +49,106 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3] },
 }
 
-// Poça com BALEIA (fase 2: tem uma baleia embaixo do convés). Mancha d'água com um buraco no meio (o
-// respiradouro). De tempos em tempos a baleia SOLTA UM JATO (baixinho) e a água VOLTA:
-//   1) SAI: uma coluna fina d'água sobe do buraco;
-//   2) lá em cima abre num leque e solta gotas, que caem em arco;
-//   3) VOLTA: o jato se solta e cai como um risco d'água de volta na poça;
-//   4) ao bater, a água espirra em COROA (dedos pontudos pra cima e pros lados, gotas voando) e abre ondinhas
-//      em arco pros dois lados; depois fica calma de novo, com brilhos piscando.
-// Pixel grosso, como a referência: a água é montada numa grade de 24x24 "quadradões" (cada um 2x2 pixels da
-// arte, 1/24 de casa), com contorno azul e pontos de brilho. Só enfeite: não muda nada no jogo.
+// Poça de ÁGUA ENTRANDO NO NAVIO (fase 2: o convés está vazando). A água brota por uma fissura na fresta entre
+// as tábuas:
+//   - a madeira em volta fica escura e molhada;
+//   - a poça sobe e desce devagar (a maré), com a fresta das tábuas aparecendo por baixo da água;
+//   - bolhas sobem da fissura e estouram na superfície; de vez em quando sai um esguicho baixinho;
+//   - ondinhas abrem devagar, e a água escorre pela fresta pros dois lados (um riozinho com brilhos andando).
+// Pixel grosso: tudo numa grade de 24x24 "quadradões" (cada um 2x2 pixels da arte, 1/24 de casa), com contorno
+// azul nas bolhas e no esguicho. Só enfeite: não muda nada no jogo.
 const WATER = {
-  rim: 'rgb(30, 92, 158)', fill: 'rgb(46, 132, 200)', deep: 'rgb(36, 108, 178)', hole: 'rgb(20, 62, 120)',
-  edge: 'rgb(52, 158, 224)', cyan: 'rgb(112, 238, 255)', white: 'rgb(226, 255, 255)',
+  rim: 'rgb(30, 92, 158)', fill: 'rgb(46, 132, 200)', deep: 'rgb(36, 108, 178)', seam: 'rgb(26, 80, 146)', hole: 'rgb(16, 44, 86)',
+  edge: 'rgb(52, 158, 224)', cyan: 'rgb(112, 238, 255)', white: 'rgb(226, 255, 255)', wet: 'rgb(18, 9, 4)',
 }
 const noise2 = (x, y, s) => { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v) }
 const WQ = 2 // tamanho do quadradão da água, em pixels da arte
 const WG = PX_TILE / WQ // grade da casa: 24x24 quadradões
-const SPOUT = { cycle: 4, outAt: 0.6, topAt: 0.95, fallAt: 1.2, landAt: 1.8, height: 6, gravity: 20 } // alturas em quadradões
-const PUD_CX = 12, PUD_CY = 16 // centro da poça na grade (mais embaixo: sobra lugar pro jato)
-const wbuf = new Uint8Array(WG * WG) // 0 vazio, 1 água, 2 brilho, 3 contorno
+const PUD_CX = 12, PUD_CY = 16 // centro da poça na grade; a linha 16 (pixels 32 e 33) é a fresta entre as tábuas do piso
+const wbuf = new Uint8Array(WG * WG) // bolhas e esguicho: 0 vazio, 1 água, 2 brilho, 3 contorno
 const wput = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < WG && y >= 0 && y < WG) wbuf[y * WG + x] = 1 }
-function wdisc(x, y, r) {
-  const R = Math.ceil(r)
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) if (dx * dx + dy * dy <= r * r + 0.3) wput(x + dx, y + dy)
-}
-// dedo pontudo do respingo: sai de (x0, y0) na direção angle (0 = pra cima, + = pra direita), afinando até a ponta
-function wfinger(x0, y0, angle, len, bend) {
-  const sx = Math.sin(angle), sy = -Math.cos(angle)
-  for (let j = 0; j <= len; j += 0.5) wdisc(x0 + sx * j, y0 + sy * j + bend * j * j * 0.06, (1 - j / len) * 1.0 + 0.2)
-}
-const poolCache = new WeakMap()
-
-// a poça parada (mancha com borda irregular e o buraco no meio), desenhada uma vez só por poça
-function poolImage(p) {
-  let c = poolCache.get(p)
-  if (c) return c
-  c = document.createElement('canvas')
-  c.width = PX_TILE
-  c.height = PX_TILE
-  const g = c.getContext('2d')
-  const rx = 7.5, ry = 3.3
-  for (let iy = -5; iy <= 5; iy++) {
-    for (let ix = -9; ix <= 9; ix++) {
-      const edge = (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry) + (noise2(ix, iy, p.seed) - 0.5) * 0.25 // contorno irregular
-      if (edge > 1) continue
-      g.fillStyle = (ix * ix) / 3.6 + (iy * iy) / 1.2 < 1 ? WATER.hole : edge > 0.72 ? WATER.rim : edge > 0.3 ? WATER.deep : WATER.fill
-      g.fillRect((PUD_CX + ix) * WQ, (PUD_CY + iy) * WQ, WQ, WQ)
-    }
-  }
-  poolCache.set(p, c)
-  return c
-}
 
 function drawPuddle(ctx, p, time, scale) {
   const u = 1 / PX_TILE
   const q = WQ * u + 1 / scale // um quadradão (um tiquinho maior, pra não aparecer risco entre eles)
-  const cx = PUD_CX, cy = PUD_CY, top = cy - 1 - SPOUT.height // topo do jato, em quadradões
-  const t = (time + p.seed * 0.37) % SPOUT.cycle // onde estamos no ciclo
+  const cx = PUD_CX, cy = PUD_CY
   const cell = (gx, gy, color) => { ctx.fillStyle = color; ctx.fillRect(p.x + gx * WQ * u, p.y + gy * WQ * u, q, q) }
+  const tide = 1 + 0.13 * Math.sin(time * 0.9 + p.seed) // a água sobe e desce devagar
+  const rx = 7.2 * tide, ry = 3.0 * tide
+  const inPool = (ix, iy, slack = 0) => (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry) <= 1 + slack
 
-  // 1) a poça parada (e os brilhos piscando enquanto está calma)
   ctx.save()
-  ctx.imageSmoothingEnabled = false
-  ctx.globalAlpha = 0.95
-  ctx.drawImage(poolImage(p), p.x, p.y, 1 + 1 / scale, 1 + 1 / scale)
-  ctx.globalAlpha = 1
-  if (t < SPOUT.outAt || t >= SPOUT.landAt + 1.4) {
-    for (let k = 0; k < 4; k++) {
-      if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
-      const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * 10), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * 3.5)
-      if ((gx * gx) / 40 + (gy * gy) / 7 > 0.6) continue
-      cell(cx + gx, cy + gy, WATER.white)
+  // 1) madeira molhada em volta da poça (mais escura perto da água)
+  for (let iy = -6; iy <= 6; iy++) {
+    for (let ix = -12; ix <= 11; ix++) {
+      const e = (ix * ix) / 121 + (iy * iy) / 25 + (noise2(ix + 40, iy, p.seed) - 0.5) * 0.3
+      if (e > 1 || inPool(ix, iy, 0.05)) continue
+      ctx.globalAlpha = 0.36 * (1 - e)
+      cell(cx + ix, cy + iy, WATER.wet)
     }
+  }
+  // 2) riozinho: a água escorre pela fresta pros dois lados e some nas pontas, com brilhos que andam
+  for (let x = 0; x < WG; x++) {
+    const d = Math.abs(x - cx)
+    if (d <= rx) continue
+    const a = 1 - (d - rx) / (WG / 2 - rx)
+    if (a < 0.15) continue
+    ctx.globalAlpha = 0.85 * a
+    cell(x, cy, WATER.deep)
+  }
+  for (let k = 0; k < 3; k++) {
+    const ph = (time * 0.55 + k / 3 + p.seed * 0.1) % 1
+    const d = rx + ph * (WG / 2 - 0.5 - rx)
+    ctx.globalAlpha = 1 - ph
+    for (const side of [-1, 1]) cell(Math.round(cx + side * d), cy, WATER.cyan)
+  }
+  // 3) a poça (e a fresta das tábuas aparecendo por baixo da água, e a fissura escura de onde a água sai)
+  ctx.globalAlpha = 0.96
+  for (let iy = -5; iy <= 5; iy++) {
+    for (let ix = -10; ix <= 10; ix++) {
+      const e = (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry) + (noise2(ix, iy, p.seed) - 0.5) * 0.25 // contorno irregular
+      if (e > 1) continue
+      let color = e > 0.72 ? WATER.rim : e > 0.3 ? WATER.deep : WATER.fill
+      if (iy === 0 && e <= 0.72) color = WATER.seam
+      cell(cx + ix, cy + iy, color)
+    }
+  }
+  const crackDy = [0, 0, 1, 0, -1, 0, 0]
+  crackDy.forEach((dy, i) => cell(cx - 3 + i, cy + dy, WATER.hole))
+  // 4) ondinhas lentas, abrindo da fissura
+  ctx.globalAlpha = 0.85
+  for (const off of [0, 0.5]) {
+    const age = (time * 0.4 + p.seed * 0.13 + off) % 1
+    const r = 1.5 + age * (rx - 1.4), rr = r * 0.4
+    for (let ph = 0; ph < Math.PI * 2; ph += 0.2) {
+      if (age > 0.7 && Math.round(ph * 5) % 2) continue // no fim, a ondinha vai ficando tracejada
+      cell(Math.round(cx + Math.cos(ph) * r), Math.round(cy + Math.sin(ph) * rr), WATER.cyan)
+    }
+  }
+  ctx.globalAlpha = 1
+  // brilhos que piscam na água
+  for (let k = 0; k < 4; k++) {
+    if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
+    const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * 10), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * 3.5)
+    if (inPool(gx, gy, -0.35)) cell(cx + gx, cy + gy, WATER.white)
   }
 
-  // 2) a água que sai, cai, espirra e abre ondas, montada na grade
+  // 5) bolhas subindo da fissura (estouram na superfície) e, de vez em quando, um esguicho baixinho
   wbuf.fill(0)
-  const ease = (k) => 1 - (1 - k) * (1 - k)
-  const g = SPOUT.gravity
-  // SAI: coluna fina subindo do buraco (e segura no topo um instante)
-  if (t >= SPOUT.outAt && t < SPOUT.fallAt) {
-    const head = t < SPOUT.topAt ? SPOUT.height * ease((t - SPOUT.outAt) / (SPOUT.topAt - SPOUT.outAt)) : SPOUT.height
-    for (let r = 0; r < head; r++) wput(cx, cy - 1 - r)
-    // leque no topo (quando chega lá em cima)
-    if (t >= SPOUT.topAt - 0.05) for (const a of [-1.1, -0.55, 0.55, 1.1]) wfinger(cx, top, a, 2.5, 1)
+  for (let k = 0; k < 4; k++) {
+    const P = 1.9 + k * 0.37
+    const ph = ((time + p.seed + k * 0.9) % P) / P
+    const bx = cx - 3 + k * 2 + Math.round((noise2(k, 1, p.seed) - 0.5) * 2)
+    if (ph < 0.86) wput(bx, cy - ph * 3)
+    else { wput(bx, cy - 3); wput(bx - 1, cy - 3.8); wput(bx + 1, cy - 3.8) } // estourou: gotinhas
   }
-  // VOLTA: o jato se solta lá de cima e cai como um risco d'água até bater na poça
-  if (t >= SPOUT.fallAt && t < SPOUT.landAt) {
-    const tau = t - SPOUT.fallAt
-    const y0 = top + 0.5 * g * tau * tau // ponta de cima do risco
-    for (let y = y0; y < Math.min(y0 + 4, cy - 1); y++) wput(cx, y)
+  const sp = (time + p.seed * 1.3) % 4.6
+  if (sp < 0.8) {
+    const h = 3.2 * Math.sin((sp / 0.8) * Math.PI)
+    for (let j = 0; j < h; j++) wput(cx, cy - 1 - j)
+    if (h > 2) { wput(cx - 1, cy - 1 - h - 0.5); wput(cx + 1, cy - 1 - h - 0.5) }
   }
-  // gotas lançadas do topo: sobem um pouco, abrem pros lados e caem de volta
-  if (t >= SPOUT.topAt && t < SPOUT.landAt + 0.6) {
-    for (let i = 0; i < 5; i++) {
-      const tau = t - SPOUT.topAt - (i % 3) * 0.1
-      if (tau < 0) continue
-      const a = (i / 4) * 2 - 1
-      const x = cx + (a * 9 + (noise2(i, 9, p.seed) - 0.5) * 2) * tau
-      const y = top + (-3 + noise2(i, 8, p.seed) * 2) * tau + 0.5 * g * tau * tau
-      if (y < cy - 1) wput(x, y)
-    }
-  }
-  // BATE: respingo em coroa (dedos pra cima e pros lados) + gotas voando + ondinhas em arco
-  const k = (t - SPOUT.landAt) / 0.9
-  if (k >= 0 && k < 1) {
-    const grow = Math.pow(Math.sin(Math.min(1, k * 1.15) * Math.PI), 0.6)
-    wdisc(cx, cy - 1, 1.3 * grow) // o monte d'água no meio
-    const angles = [-1.3, -0.85, -0.4, 0, 0.4, 0.85, 1.3]
-    const lens = [3, 4.5, 5.5, 6.5, 5.5, 4.5, 3]
-    angles.forEach((a, i) => wfinger(cx + Math.sin(a) * 1.2, cy - 1, a, lens[i] * grow * (0.85 + noise2(i, 3, p.seed + Math.floor(time / SPOUT.cycle)) * 0.3), Math.abs(a) * 1.8))
-    for (let i = 0; i < 6; i++) { // gotas do respingo, bem separadas
-      const tau = t - SPOUT.landAt
-      const vx = (i - 2.5) * 4, vy = -(8 + noise2(i, 4, p.seed) * 4)
-      const x = cx + vx * tau, y = cy - 3 + vy * tau + 0.5 * 32 * tau * tau
-      if (y < cy - 1) wput(x, y)
-    }
-  }
-  for (const age of [(t - SPOUT.landAt) / 1.3, (t - SPOUT.landAt - 0.35) / 1.3]) {
-    if (age < 0 || age >= 1) continue
-    const r = 2.5 + age * 8, ry = r * 0.34
-    for (let ph = -1.05; ph <= 1.05; ph += 0.12) { // arco da direita e arco da esquerda
-      if (age > 0.7 && Math.round(ph * 25) % 2) continue // no fim, o arco vai ficando tracejado
-      wput(cx + Math.cos(ph) * r, cy + Math.sin(ph) * ry)
-      wput(cx - Math.cos(ph) * r, cy + Math.sin(ph) * ry)
-    }
-  }
-  // brilho nos quadradões de cima/esquerda da água e contorno azul em volta
-  for (let y = 0; y < WG; y++) {
+  for (let y = 0; y < WG; y++) { // brilho nos quadradões de cima/esquerda e contorno azul em volta
     for (let x = 0; x < WG; x++) {
       if (wbuf[y * WG + x] !== 1) continue
       const upEmpty = y === 0 || wbuf[(y - 1) * WG + x] === 0, leftEmpty = x === 0 || wbuf[y * WG + x - 1] === 0
@@ -199,11 +171,25 @@ function drawPuddle(ctx, p, time, scale) {
   ctx.restore()
 }
 
-// chão de convés na casa (x, y): ~88% liso (12 variações) e ~12% com rachadura (8 formatos), sorteados pela posição
-function deckTile(deck, x, y) {
-  const h = ((x * 19349663) ^ (y * 83492791)) >>> 0
-  const list = h % 100 < 88 ? deck.plain : deck.cracked
-  return list[(h >>> 8) % list.length]
+// Rachadura grande no chão (por onde a água entra): linha escura de 2 pixels com uma beirada clara em cima,
+// desenhada pixel a pixel só onde o chão está livre (some debaixo de caixas e paredes e aparece quando a caixa
+// queima). Os pontos vêm de game.js (makeCrack), em pixels do mapa.
+function drawCrack(ctx, crack, level, scale) {
+  const u = 1 / PX_TILE
+  const size = u + 1 / scale
+  const pts = crack.pts
+  ctx.save()
+  for (let i = 0; i < pts.length; i += 2) {
+    const gx = pts[i], gy = pts[i + 1]
+    const tx = Math.floor(gx / PX_TILE), ty = Math.floor(gy / PX_TILE)
+    if (tx < 0 || ty < 0 || tx >= level.cols || ty >= level.rows || level.tiles[ty * level.cols + tx] !== FLOOR) continue
+    ctx.fillStyle = 'rgba(190, 130, 80, 0.5)'
+    ctx.fillRect(gx * u, (gy - 1) * u, size, size)
+    ctx.fillStyle = 'rgb(16, 8, 5)'
+    ctx.fillRect(gx * u, gy * u, size, size)
+    ctx.fillRect(gx * u, (gy + 1) * u, size, size)
+  }
+  ctx.restore()
 }
 
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
@@ -232,7 +218,6 @@ export function draw(ctx, s, tilePx, dpr) {
   const mood = MOODS[s.mood]
   const crateSteps = CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
   const floorImg = tileSprite(s.tileset, 'floor')
-  const deck = s.floor ? floorVariants(s.floor) : null // chão próprio da fase (convés), variações sorteadas pela posição
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
   // ~30% vermelho, sorteados pela posição (o mesmo lugar sempre tem a mesma cor). A borda fica azul.
@@ -256,7 +241,7 @@ export function draw(ctx, s, tilePx, dpr) {
         }
       }
       else {
-        const floorHere = deck ? deckTile(deck, x, y) : floorImg
+        const floorHere = (s.floor && floorTile(s.floor, x, y, 0.12)) || floorImg // chão próprio da fase (convés): montado por posição, ~12% rachado
         if (floorHere) {
           // um tiquinho maior que a casa, pra não aparecer risquinho entre uma e outra
           blit(ctx, floorHere, x, y, 1 + seam, 1 + seam)
@@ -292,6 +277,7 @@ export function draw(ctx, s, tilePx, dpr) {
     }
   }
 
+  for (const c of s.cracks ?? []) drawCrack(ctx, c, level, scale)
   for (const p of s.puddles ?? []) drawPuddle(ctx, p, s.time, scale)
 
   // vinheta: escurece de leve os cantos, puxando o olho pro meio da arena

@@ -180,39 +180,69 @@ export function tileSprite(set, kind, variant = 0) {
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
 
-// chão alternativo da fase (levels.js `floor`, ex.: 'deck'). Devolve { plain, cracked } (listas de imagens) ou null
-// se ainda não carregou (ou no estilo pintado). Imagens do convés: 0 e 4 = lisas, 1, 2, 3 e 5 = rachaduras diferentes.
-// Delas saem mais variações: cada chão liso ganha 6 (espelhado e "dado a volta" de lado, as tábuas seguem
-// alinhadas) e cada rachadura ganha a versão espelhada.
-const FLOOR_SETS = { deck: { plain: [0, 4], cracked: [1, 2, 3, 5] } }
-const floorSets = new Map()
-export function floorVariants(name) {
+// chão alternativo da fase (levels.js `floor`, ex.: 'deck'). Cada quadrado é MONTADO: as 3 tábuas (faixas de 16
+// linhas, cada uma começando na sua fresta) vêm de desenhos diferentes, espelhadas e "dadas a volta" de lado
+// de jeitos diferentes, então quase não tem 2 quadrados iguais. Faixas SEM rachadura por posição da tábua
+// (0 = de cima, 1 = do meio, 2 = de baixo); os desenhos com rachadura entram inteiros (e espelhados) só em
+// uma parte pequena dos quadrados. Devolve a imagem (cacheada) ou null se ainda não carregou / estilo pintado.
+const FLOOR_SETS = {
+  deck: {
+    strips: [[0, 1, 2, 3, 4], [0, 4, 5], [0, 1, 3, 4]], // desenhos que têm essa tábua lisa
+    cracked: [1, 2, 3, 5], // desenhos com rachadura
+    shifts: [0, 12, 24, 36],
+  },
+}
+const floorCache = new Map()
+const floorByPos = new Map()
+const mixBits = (x, y, k) => Math.imul(Math.imul(x + 101 * k, 73856093) ^ Math.imul(y + 37 * k, 19349663), 83492791) >>> 0
+export function floorTile(name, x, y, crackedShare) {
   const def = FLOOR_SETS[name]
   const img = (i) => sprite(`floor_${name}_${i}`)
-  if (!def || ![...def.plain, ...def.cracked].every(img) || typeof document === 'undefined') return null
-  const key = img(def.plain[0])
-  if (floorSets.has(key)) return floorSets.get(key)
-  const make = (img, flip, shift) => {
-    const w = img.naturalWidth, h = img.naturalHeight
-    const c = document.createElement('canvas')
-    c.width = w
-    c.height = h
-    const g = c.getContext('2d')
-    g.imageSmoothingEnabled = false
-    if (flip) { g.translate(w, 0); g.scale(-1, 1) }
-    g.drawImage(img, -shift, 0)
-    if (shift) g.drawImage(img, w - shift, 0) // o que sai de um lado volta pelo outro
-    c.naturalWidth = w
-    c.naturalHeight = h
-    pixelImgs.add(c)
-    return c
+  if (!def || typeof document === 'undefined') return null
+  const pk = name + crackedShare
+  let byPos = floorByPos.get(pk)
+  if (!byPos) floorByPos.set(pk, byPos = new Map())
+  const hit = byPos.get(y * 64 + x)
+  if (hit) return hit
+  const all = new Set([...def.strips.flat(), ...def.cracked])
+  for (const i of all) if (!img(i)) return null
+  const h0 = mixBits(x, y, 1)
+  let parts // [desenho, espelhar, deslocar] de cada uma das 3 tábuas
+  if (h0 % 1000 < crackedShare * 1000) {
+    const i = def.cracked[(h0 >>> 10) % def.cracked.length]
+    const flip = (h0 >>> 20) & 1
+    parts = [[i, flip, 0], [i, flip, 0], [i, flip, 0]]
+  } else {
+    parts = def.strips.map((list, s) => {
+      const h = mixBits(x, y, 2 + s)
+      return [list[h % list.length], (h >>> 8) & 1, def.shifts[(h >>> 12) % def.shifts.length]]
+    })
   }
-  const set = {
-    plain: def.plain.flatMap((i) => [[0, 0], [1, 0], [0, 16], [1, 16], [0, 32], [1, 32]].map(([f, s]) => make(img(i), f, s))),
-    cracked: def.cracked.flatMap((i) => [0, 1].map((f) => make(img(i), f, 0))),
-  }
-  floorSets.set(key, set)
-  return set
+  const key = `${name}|${parts.join('|')}`
+  let c = floorCache.get(key)
+  if (c) { byPos.set(y * 64 + x, c); return c }
+  c = document.createElement('canvas')
+  c.width = PX_TILE
+  c.height = PX_TILE
+  const g = c.getContext('2d')
+  g.imageSmoothingEnabled = false
+  parts.forEach(([i, flip, shift], s) => {
+    const src = img(i)
+    g.save()
+    g.beginPath()
+    g.rect(0, s * 16, PX_TILE, 16) // só a faixa desta tábua
+    g.clip()
+    if (flip) { g.translate(PX_TILE, 0); g.scale(-1, 1) }
+    g.drawImage(src, -shift, 0)
+    if (shift) g.drawImage(src, PX_TILE - shift, 0) // o que sai de um lado volta pelo outro
+    g.restore()
+  })
+  c.naturalWidth = PX_TILE
+  c.naturalHeight = PX_TILE
+  pixelImgs.add(c)
+  floorCache.set(key, c)
+  byPos.set(y * 64 + x, c)
+  return c
 }
 
 // Cópia do desenho com o AZUL trocado por outra cor (delta = quantos graus girar a cor: +135 vira vermelho,
