@@ -384,7 +384,7 @@ export default function SoloGame() {
         )}
         {hud?.status === 'cleared' && (
           <Overlay win title={`Level ${hud.level} clear!`} button="Next level"
-            text={`Next: ${LEVELS[hud.level].name} · Prizes so far: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
+            text={`Next: ${LEVELS[hud.level].name}${LEVELS[hud.level].arrival ? ` — ${LEVELS[hud.level].arrival}` : ""} · Prizes so far: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'won' && (
           <Overlay win title="You escaped the dungeon!" button="Play again"
