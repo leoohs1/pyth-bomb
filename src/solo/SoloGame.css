@@ -358,6 +358,17 @@
 .solo-page.is-military .solo-hud { background: rgba(14, 10, 26, 0.88); }
 .solo-title, .solo-title h1, .solo-back { white-space: nowrap; }
 
+/* Bear Market: o mesmo quartel, mas o fundo ganha um tom vermelho (a 1ª camada multiplica as outras) */
+.solo-page.is-military.is-mood-bear {
+  background:
+    linear-gradient(rgb(255, 120, 120), rgb(255, 120, 120)),
+    radial-gradient(ellipse at center, rgba(10, 8, 18, 0) 45%, rgba(10, 8, 18, 0.55) 100%),
+    linear-gradient(rgba(10, 8, 18, 0.33), rgba(10, 8, 18, 0.33)),
+    url('/solo/bg-military.webp') center 58% / cover no-repeat,
+    #0d0b14;
+  background-blend-mode: multiply, normal, normal, normal, normal;
+}
+
 /* baú com arte na janela do prêmio */
 .solo-chest-img { width: 170px; height: auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6)); }
 .solo-chest-img.is-shaking { animation: solo-chest-shake 0.25s ease-in-out infinite; }
@@ -418,6 +429,25 @@
       linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
       url('/solo/pixel/bg-military-wide.png') center 58% / cover no-repeat,
       #0d0b14;
+  }
+}
+/* Bear Market em pixel (normal e tela larga): mesmo fundo do quartel com o tom vermelho */
+.solo-page.is-military.is-pixel.is-mood-bear {
+  background:
+    linear-gradient(rgb(255, 120, 120), rgb(255, 120, 120)),
+    linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
+    url('/solo/pixel/bg-military.png') center 58% / cover no-repeat,
+    #0d0b14;
+  background-blend-mode: multiply, normal, normal, normal;
+}
+@media (min-aspect-ratio: 19/10) {
+  .solo-page.is-military.is-pixel.is-mood-bear {
+    background:
+      linear-gradient(rgb(255, 120, 120), rgb(255, 120, 120)),
+      linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
+      url('/solo/pixel/bg-military-wide.png') center 58% / cover no-repeat,
+      #0d0b14;
+    background-blend-mode: multiply, normal, normal, normal;
   }
 }
 /* estilo pixel: fundo quase sem escurecer; a sombra forte em volta da moldura separa a arena */

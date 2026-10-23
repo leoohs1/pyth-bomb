@@ -104,6 +104,16 @@ export function draw(ctx, s, tilePx, dpr) {
     }
   }
 
+  // clima Bear Market: cenário (chão, paredes, caixotes) com tom vermelho; personagens ficam com a cor normal
+  if (s.mood === 'bear') {
+    ctx.save()
+    ctx.globalCompositeOperation = 'color' // troca só a cor (azul vira vinho, verde-oliva vira laranja), mantém o claro/escuro
+    ctx.globalAlpha = 0.3
+    ctx.fillStyle = 'rgb(215, 50, 65)'
+    ctx.fillRect(0, 0, level.cols, level.rows)
+    ctx.restore()
+  }
+
   // vinheta: escurece de leve os cantos, puxando o olho pro meio da arena
   const vg = ctx.createRadialGradient(level.cols / 2, level.rows / 2, level.rows * 0.32,
     level.cols / 2, level.rows / 2, Math.hypot(level.cols, level.rows) * 0.55)
@@ -112,7 +122,7 @@ export function draw(ctx, s, tilePx, dpr) {
   ctx.fillStyle = vg
   ctx.fillRect(0, 0, level.cols, level.rows)
   drawWarmLight(ctx, level.cols, level.rows)
-  drawAmbient(ctx, s.time)
+  drawAmbient(ctx, s.time, s.mood)
 
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)

@@ -106,6 +106,7 @@ function hudOf(s, paused) {
     levelName: levelInfo(s).name,
     tagline: levelInfo(s).tagline ?? '',
     tileset: s.tileset,
+    mood: s.mood ?? null,
     lives: s.lives,
     enemies: enemiesLeft(s),
     door: s.door.revealed ? (doorOpen(s) ? 'open' : 'locked') : null,
@@ -293,7 +294,7 @@ export default function SoloGame() {
   const time = hud ? `${Math.floor(hud.secs / 60)}:${String(hud.secs % 60).padStart(2, '0')}` : '0:00'
 
   return (
-    <div className={`solo-page is-${hud?.tileset ?? 'temple'}${PIXEL ? ' is-pixel' : ''}`}>
+    <div className={`solo-page is-${hud?.tileset ?? 'temple'}${hud?.mood ? ` is-mood-${hud.mood}` : ''}${PIXEL ? ' is-pixel' : ''}`}>
       <SoundToggle className="sound-fixed" />
       <header className="solo-top">
         <div className="solo-title">

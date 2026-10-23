@@ -183,7 +183,7 @@ const SCORCH_TIME = 2.5
 
 // luzes e rachaduras desenhadas nas paredes da borda (fica embaixo dos personagens),
 // e as marcas de queimado no chão
-export function drawAmbient(ctx, time) {
+export function drawAmbient(ctx, time, mood) {
   for (const m of scorch) {
     const a = 0.45 * (1 - m.t / SCORCH_TIME)
     const g = ctx.createRadialGradient(m.x + 0.5, m.y + 0.5, 0, m.x + 0.5, m.y + 0.5, m.r)
@@ -199,7 +199,8 @@ export function drawAmbient(ctx, time) {
       // luz de alerta amarela que pisca; de vez em quando uma pisca roxo (a Pyth chegando)
       const purple = d.phase % 5 < 1
       const on = Math.sin(time * 3 + d.phase) > -0.2
-      const col = purple ? '190, 110, 255' : '255, 196, 60'
+      // Bear Market: as luzes de alerta ficam vermelhas (a roxa continua aparecendo de vez em quando)
+      const col = purple ? '190, 110, 255' : mood === 'bear' ? '255, 70, 70' : '255, 196, 60'
       if (on) {
         // poça de luz que "vaza" pro chão em volta
         ctx.save()
