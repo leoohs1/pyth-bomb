@@ -37,11 +37,17 @@ function target() {
   return VOLUME * st.musicVolume * (duck || onPlay ? DUCK : 1)
 }
 
+// Quanto dura a entrada da música quando ela COMEÇA a tocar (ms); null = o padrão. O Solo usa uma entrada curtinha,
+// pra não engolir a abertura da música (as batidas do começo).
+let startFade = null
+export function setMusicStartFade(ms) { startFade = ms }
+
 function rampTo(to, ms = FADE_MS) {
   const a = ensure()
   clearInterval(fadeTimer)
   if (to > 0 && a.paused) {
     a.play().then(() => { playing = true; stopListening() }).catch(() => { /* ainda sem gesto (iPhone só aceita toque/clique): tenta de novo no próximo */ })
+    if (startFade != null) ms = Math.min(ms, startFade)
   }
   const from = a.volume
   const t0 = performance.now()

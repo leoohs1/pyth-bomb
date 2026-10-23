@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './SoloGame.css'
 import SoundToggle from '../SoundToggle.jsx'
-import { setMusicSilenced, setMusicTrack } from '../music'
+import { setMusicSilenced, setMusicStartFade, setMusicTrack } from '../music'
 import { setSoundTheme } from '../sound'
 import { createSoloSfx } from './sfx.js'
 import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
@@ -149,7 +149,8 @@ export default function SoloGame() {
   const track = LEVELS[levelNo - 1]?.music ?? '/music/solo.mp3'
   useEffect(() => {
     setSoundTheme('solo')
-    return () => { setSoundTheme(null); setMusicTrack() }
+    setMusicStartFade(120) // a música entra quase na hora: não engole a abertura (batidas do começo)
+    return () => { setSoundTheme(null); setMusicStartFade(null); setMusicTrack() }
   }, [])
   useEffect(() => {
     let on = true
