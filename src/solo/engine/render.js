@@ -78,14 +78,17 @@ export function draw(ctx, s, tilePx, dpr) {
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
   // ~30% vermelho, sorteados pela posição (o mesmo lugar sempre tem a mesma cor). A borda fica azul.
-  const wallColors = s.wallMix && wallImg ? [wallImg, hueShifted(wallImg, 188, 0.04), hueShifted(wallImg, 135)] : null
+  // Todas as cores menos vivas (30%), com cara de desgastado.
+  const wallColors = s.wallMix && wallImg
+    ? [hueShifted(wallImg, 0, -0.03, 0.68), hueShifted(wallImg, 188, 0, 0.68), hueShifted(wallImg, 135, -0.02, 0.7)]
+    : null
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
       if (t === WALL) {
         const inner = x > 0 && y > 0 && x < level.cols - 1 && y < level.rows - 1
-        const wallHere = wallColors && inner ? wallColors[wallColorOf(x, y)] : wallImg
+        const wallHere = wallColors ? wallColors[inner ? wallColorOf(x, y) : 0] : wallImg // borda: o azul gasto
         if (wallHere) blit(ctx, wallHere, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
         // a borda da arena fica só um tiquinho mais escura, pra fechar a arena
