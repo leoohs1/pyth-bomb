@@ -171,3 +171,32 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// Cópia do desenho com o tom trocado (mesma forma e mesmo brilho; só a cor muda): color = 'rgb(...)',
+// alpha de 0 a 1 = o quanto a cor nova manda. Pixel art continua pixel art. Fica guardada pra não refazer a cada quadro.
+const tintCache = new WeakMap()
+export function tinted(img, color, alpha = 1) {
+  if (!img || typeof document === 'undefined') return img
+  const key = `${color}|${alpha}`
+  let byKey = tintCache.get(img)
+  if (!byKey) tintCache.set(img, byKey = new Map())
+  if (byKey.has(key)) return byKey.get(key)
+  const w = img.naturalWidth, h = img.naturalHeight
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')
+  g.drawImage(img, 0, 0)
+  g.globalCompositeOperation = 'color'
+  g.globalAlpha = alpha
+  g.fillStyle = color
+  g.fillRect(0, 0, w, h)
+  g.globalAlpha = 1
+  g.globalCompositeOperation = 'destination-in' // devolve o recorte original (a cor não vaza pra fora do desenho)
+  g.drawImage(img, 0, 0)
+  c.naturalWidth = w // o resto do jogo mede as imagens por naturalWidth/Height
+  c.naturalHeight = h
+  if (pixelImgs.has(img)) pixelImgs.add(c)
+  byKey.set(key, c)
+  return c
+}

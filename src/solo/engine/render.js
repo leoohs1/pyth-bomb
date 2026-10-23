@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, walkFrames, playerCanFlip, isPixel, PX_TILE } from './sprites.js'
+import { sprite, tileSprite, tinted, walkFrames, playerCanFlip, isPixel, PX_TILE } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -38,6 +38,11 @@ const C = {
   player: '#47c2ff', playerDark: '#1d6f99', eye: '#0d0b14',
 }
 
+// climas (levels.js `mood`): [cor, força] das paredes e dos caixotes, pra tinted() em sprites.js
+const MOODS = {
+  bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(255, 205, 40)', 0.85] },
+}
+
 export function draw(ctx, s, tilePx, dpr) {
   const { level } = s
   const scale = tilePx * dpr
@@ -54,8 +59,10 @@ export function draw(ctx, s, tilePx, dpr) {
   ctx.setTransform(scale, 0, 0, scale, ox * scale, oy * scale)
 
   // chão e paredes
+  // clima Bear Market: paredes puxadas pro vinho e caixotes amarelos (o chão fica como é); troca só a cor
+  const mood = MOODS[s.mood]
   const floorImg = tileSprite(s.tileset, 'floor')
-  const wallImg = tileSprite(s.tileset, 'wall')
+  const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
@@ -98,20 +105,11 @@ export function draw(ctx, s, tilePx, dpr) {
           const burn = s.burning.find((b) => b.x === x && b.y === y)
           // variação do caixote sorteada pela posição (a comum aparece mais)
           const variant = [0, 0, 0, 1, 2, 3][(x * 7 + y * 11) % 6]
-          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, tileSprite(s.tileset, 'block', variant))
+          const blockImg = tileSprite(s.tileset, 'block', variant)
+          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, mood ? tinted(blockImg, ...mood.block) : blockImg)
         }
       }
     }
-  }
-
-  // clima Bear Market: cenário (chão, paredes, caixotes) com tom vermelho; personagens ficam com a cor normal
-  if (s.mood === 'bear') {
-    ctx.save()
-    ctx.globalCompositeOperation = 'color' // troca só a cor (azul vira vinho, verde-oliva vira laranja), mantém o claro/escuro
-    ctx.globalAlpha = 0.3
-    ctx.fillStyle = 'rgb(215, 50, 65)'
-    ctx.fillRect(0, 0, level.cols, level.rows)
-    ctx.restore()
   }
 
   // vinheta: escurece de leve os cantos, puxando o olho pro meio da arena
