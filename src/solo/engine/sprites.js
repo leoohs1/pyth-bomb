@@ -174,12 +174,40 @@ export function tileSprite(set, kind, variant = 0) {
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
 
+// ---- ANDAR em pixel (sem girar nem esticar a imagem, que é o que fazia parecer papel): o desenho do
+// inimigo é cortado em partes e cada parte pula de pixel em pixel, quadro a quadro, como num sprite de
+// verdade. src = [x, y, largura, altura] em pixels da arte. off[quadro] = [passo, dy]: dy sobe/desce a
+// parte (negativo = sobe) e passo é o quanto ela vai pra frente, na direção em que o inimigo anda.
+// fps = quadros por segundo; idle = quadro usado quando está parado.
+export const RIGS = {
+  // esqueleto 31x47: tronco/cabeça de um lado; as duas pernas (do joelho pra baixo) levantam uma de cada vez
+  skeleton: {
+    fps: 8, idle: 1,
+    parts: [
+      { src: [0, 0, 31, 39], off: [[0, 0], [0, 1], [0, 0], [0, 1]] },
+      { src: [0, 39, 16, 8], off: [[1, -2], [0, 0], [0, 0], [0, 0]] },
+      { src: [16, 39, 15, 8], off: [[0, 0], [0, 0], [1, -2], [0, 0]] },
+    ],
+  },
+  // caranguejo 44x32: casco e garras balançam rápido; as pernas andam em dois grupos (esquerda+direita, depois o meio)
+  crab: {
+    fps: 13, idle: 1,
+    parts: [
+      { src: [0, 0, 44, 28], off: [[0, 1], [0, 0], [0, 1], [0, 0]] },
+      { src: [0, 28, 14, 4], off: [[1, -1], [0, 0], [0, 0], [0, 0]] },
+      { src: [14, 28, 16, 4], off: [[0, 0], [0, 0], [1, -1], [0, 0]] },
+      { src: [30, 28, 14, 4], off: [[1, -1], [0, 0], [0, 0], [0, 0]] },
+    ],
+  },
+}
+
 // Cópia do desenho com o tom trocado (mesma forma e mesmo brilho; só a cor muda): color = 'rgb(...)',
 // alpha de 0 a 1 = o quanto a cor nova manda. Pixel art continua pixel art. Fica guardada pra não refazer a cada quadro.
+// mode: 'color' (troca a cor, mantém o claro/escuro) ou 'screen' (clareia).
 const tintCache = new WeakMap()
-export function tinted(img, color, alpha = 1) {
+export function tinted(img, color, alpha = 1, mode = 'color') {
   if (!img || typeof document === 'undefined') return img
-  const key = `${color}|${alpha}`
+  const key = `${color}|${alpha}|${mode}`
   let byKey = tintCache.get(img)
   if (!byKey) tintCache.set(img, byKey = new Map())
   if (byKey.has(key)) return byKey.get(key)
@@ -189,7 +217,7 @@ export function tinted(img, color, alpha = 1) {
   c.height = h
   const g = c.getContext('2d')
   g.drawImage(img, 0, 0)
-  g.globalCompositeOperation = 'color'
+  g.globalCompositeOperation = mode
   g.globalAlpha = alpha
   g.fillStyle = color
   g.fillRect(0, 0, w, h)

@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, walkFrames, playerCanFlip, isPixel, PX_TILE } from './sprites.js'
+import { sprite, tileSprite, tinted, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -40,7 +40,7 @@ const C = {
 
 // climas (levels.js `mood`): [cor, força] das paredes e dos caixotes, pra tinted() em sprites.js
 const MOODS = {
-  bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(255, 205, 40)', 0.85] },
+  bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(150, 88, 42)', 0.85], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
 }
 
 export function draw(ctx, s, tilePx, dpr) {
@@ -59,9 +59,9 @@ export function draw(ctx, s, tilePx, dpr) {
   ctx.setTransform(scale, 0, 0, scale, ox * scale, oy * scale)
 
   // chão e paredes
-  // clima Bear Market: paredes puxadas pro vinho e caixotes amarelos (o chão fica como é); troca só a cor
+  // clima Bear Market: paredes puxadas pro vinho, caixotes marrons e o chão um tom mais claro; troca só a cor
   const mood = MOODS[s.mood]
-  const floorImg = tileSprite(s.tileset, 'floor')
+  const floorImg = mood ? tinted(tileSprite(s.tileset, 'floor'), ...mood.floor) : tileSprite(s.tileset, 'floor')
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
@@ -429,22 +429,36 @@ function drawPowerupBox(ctx, pu, time, lift) {
 // e ao morrer pisca branco, achata e some.
 const ENEMY_H = { marine: 1.15, sarge: 1.25 } // o sargento é maior
 
+// desenha o inimigo em partes, cada uma no quadro certo da caminhada (só deslocamentos de pixel inteiro)
+function drawRigged(ctx, img, rig, e, w, h) {
+  const moving = e.alive && (e.x !== e.tx || e.y !== e.ty)
+  const n = rig.parts[0].off.length
+  const f = moving ? Math.floor(e.walkT * rig.fps) % n : rig.idle
+  const dirx = e.dir === 'right' ? 1 : e.dir === 'left' ? -1 : 0
+  const smooth = ctx.imageSmoothingEnabled
+  ctx.imageSmoothingEnabled = false
+  for (const { src: [sx, sy, sw, sh], off } of rig.parts) {
+    const [step, dy] = off[f]
+    ctx.drawImage(img, sx, sy, sw, sh, -w / 2 + (sx + step * dirx) / PX_TILE, -h + (sy + dy) / PX_TILE, sw / PX_TILE, sh / PX_TILE)
+  }
+  ctx.imageSmoothingEnabled = smooth
+}
+
 function drawEnemySprite(ctx, e, time, img) {
   const dying = e.alive ? 0 : Math.min(1, e.deathT / 0.6)
   const [w, h] = sizeByH(img, ENEMY_H[e.type] ?? 1.15)
   const feetY = e.y + 0.92
   const heavy = e.type === 'sarge' // o sargento anda pesado: passo lento, pisa forte e "respira"
-  // o caranguejo anda de LADO: sempre de frente (nunca espelha nem vira de costas), em passinhos curtos e
-  // rápidos (as perninhas "arrastam": o corpo estica e encolhe) e inclina um pouco pra onde está indo
-  const crab = e.type === 'crab'
-  const phase = e.walkT * (crab ? (e.angry ? 24 : 18) : heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
+  // inimigo com "rig" (esqueleto, caranguejo): anda com partes de pixel (sprites.js RIGS), sem girar, esticar
+  // nem espelhar; sempre de frente (o caranguejo anda de LADO como caranguejo de verdade)
+  const rig = isPixel(img) ? RIGS[e.type] : null
+  const phase = e.walkT * (heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
   const k = Math.abs(Math.sin(phase))
-  const hop = e.alive ? k * (heavy ? 0.04 : crab ? 0.025 : 0.06) : 0
-  const lean = crab ? (e.dir === 'right' ? 0.07 : e.dir === 'left' ? -0.07 : 0) : 0
-  const tilt = e.alive ? (crab ? lean + Math.sin(phase) * 0.025 : Math.sin(phase) * (heavy ? 0.09 : 0.06)) : 0
-  const breathe = e.alive ? (heavy ? 1 + Math.sin(e.walkT * 2.5) * 0.04 : crab ? 1 + Math.sin(phase * 2) * 0.04 : 1) : 1
+  const hop = e.alive && !rig ? k * (heavy ? 0.04 : 0.06) : 0
+  const tilt = e.alive && !rig ? Math.sin(phase) * (heavy ? 0.09 : 0.06) : 0
+  const breathe = heavy && e.alive ? 1 + Math.sin(e.walkT * 2.5) * 0.04 : 1
   const stomp = heavy && e.alive ? 0.92 + k * 0.08 : 1 // amassa ao pisar
-  const flip = !crab && e.dir === 'left' ? -1 : 1
+  const flip = !rig && e.dir === 'left' ? -1 : 1
 
   ctx.save()
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
@@ -455,7 +469,8 @@ function drawEnemySprite(ctx, e, time, img) {
   const blink = Math.sin(time * 40) > 0 ? 1 : 0.35
   ctx.globalAlpha = dying ? (1 - dying) * blink : e.hurtT > 0 ? blink : 1
   ctx.imageSmoothingQuality = 'high'
-  blit(ctx, img, -w / 2, -h, w, h)
+  if (rig) drawRigged(ctx, img, rig, e, w, h)
+  else blit(ctx, img, -w / 2, -h, w, h)
   ctx.restore()
 
   // bravo: sinalzinho vermelho de raiva em cima da cabeça
