@@ -116,6 +116,9 @@ const PIXEL_FILES = {
   block_military_0: '/solo/pixel/crate-military.png',
   enemy_marine: '/solo/pixel/marine.png',
   enemy_sarge: '/solo/pixel/sarge.png',
+  floor_deck_0: '/solo/pixel/floor-deck-0.png', // convés de navio pirata (fase 2): sem rachadura, rachadura pequena, rachadura grande
+  floor_deck_1: '/solo/pixel/floor-deck-1.png',
+  floor_deck_2: '/solo/pixel/floor-deck-2.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -173,6 +176,12 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// chão alternativo da fase (levels.js `floor`, ex.: 'deck'), com 3 variações; null se ainda não carregou (ou no estilo pintado)
+export const floorVariants = (name) => {
+  const list = [0, 1, 2].map((i) => sprite(`floor_${name}_${i}`))
+  return list.every(Boolean) ? list : null
+}
 
 // Cópia do desenho com o AZUL trocado por outra cor (delta = quantos graus girar a cor: +135 vira vermelho,
 // +188 vira amarelo). Só mexe no que é azul de verdade: a estrela branca, as listras amarelas e os contornos

@@ -152,6 +152,7 @@ function loadLevel(run, random) {
     mood: cfg.mood ?? null, // clima por cima do cenário (levels.js)
     wallMix: !!cfg.wallMix, // blocos fixos em várias cores (levels.js)
     crateTone: cfg.crateTone ?? null, // cor dos caixotes quebráveis (levels.js)
+    floor: cfg.floor ?? null, // chão próprio da fase (levels.js)
     time: 0,
     shake: 0,
     events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...

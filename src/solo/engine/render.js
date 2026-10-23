@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorVariants, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -44,9 +44,15 @@ const CRATE_TONES = {
   wood: [['rgb(168, 112, 58)', 0.92]],
 }
 
-// climas (levels.js `mood`): [cor, força] das paredes e do chão, pra tinted() em sprites.js
+// climas (levels.js `mood`): [cor, força] das paredes, pra tinted() em sprites.js
 const MOODS = {
-  bear: { wall: ['rgb(215, 50, 65)', 0.3], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
+  bear: { wall: ['rgb(215, 50, 65)', 0.3] },
+}
+
+// variação do chão de convés na casa (x, y): ~68% sem rachadura, ~20% rachadura pequena, ~12% rachadura grande
+function floorVariantOf(x, y) {
+  const h = (((x * 19349663) ^ (y * 83492791)) >>> 0) % 100
+  return h < 68 ? 0 : h < 88 ? 1 : 2
 }
 
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
@@ -74,13 +80,14 @@ export function draw(ctx, s, tilePx, dpr) {
   // clima Bear Market: paredes puxadas pro vinho, caixotes marrons e o chão um tom mais claro; troca só a cor
   const mood = MOODS[s.mood]
   const crateSteps = CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
-  const floorImg = mood ? tinted(tileSprite(s.tileset, 'floor'), ...mood.floor) : tileSprite(s.tileset, 'floor')
+  const floorImg = tileSprite(s.tileset, 'floor')
+  const deck = s.floor ? floorVariants(s.floor) : null // chão próprio da fase (convés), 3 variações sorteadas pela posição
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
   // ~30% vermelho, sorteados pela posição (o mesmo lugar sempre tem a mesma cor). A borda fica azul.
-  // Todas as cores menos vivas (30%), com cara de desgastado.
+  // Todas as cores bem menos vivas (pela metade), com cara de desgastado.
   const wallColors = s.wallMix && wallImg
-    ? [hueShifted(wallImg, 0, -0.03, 0.68), hueShifted(wallImg, 188, 0, 0.68), hueShifted(wallImg, 135, -0.02, 0.7)]
+    ? [hueShifted(wallImg, 0, -0.04, 0.45), hueShifted(wallImg, 188, -0.02, 0.45), hueShifted(wallImg, 135, -0.03, 0.48)]
     : null
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
@@ -98,9 +105,10 @@ export function draw(ctx, s, tilePx, dpr) {
         }
       }
       else {
-        if (floorImg) {
+        const floorHere = deck ? deck[floorVariantOf(x, y)] : floorImg
+        if (floorHere) {
           // um tiquinho maior que a casa, pra não aparecer risquinho entre uma e outra
-          blit(ctx, floorImg, x, y, 1 + seam, 1 + seam)
+          blit(ctx, floorHere, x, y, 1 + seam, 1 + seam)
         } else {
           ctx.fillStyle = (x + y) % 2 ? C.floorA : C.floorB
           ctx.fillRect(x, y, 1, 1)
