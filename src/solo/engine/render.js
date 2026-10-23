@@ -346,29 +346,30 @@ export function draw(ctx, s, tilePx, dpr) {
   drawParticles(ctx, level.cols, level.rows)
 }
 
-// The Whale: baleia azul gigante (2x2). Pisca branco quando leva dano, fica roxa quando brava.
-// Na transformação (enrageT), treme, cresce um pouco e pisca azul/roxo antes de ficar roxa de vez.
+// The Loan Shark (provisório, desenhado em código até chegar a arte em pixel): tubarão grande (2x2 casas) de lado,
+// virado pro lado em que o jogador está. Pisca branco quando leva dano e fica vermelho-escuro quando brava.
+// Na transformação (enrageT), treme, cresce um pouco e pisca cinza/vermelho antes de ficar vermelho de vez.
 function drawWhale(ctx, b, time) {
   if (!b.alive && b.deathT > 1.2) return
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0 // 0 -> 1 durante a transformação
-  // transformando: pisca entre azul e roxo, cada vez mais roxo
   const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
   const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
   const bob = Math.sin(b.walkT * 4) * 0.05
   const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : 0
   const grow = b.enrageT > 0 ? 1 + 0.12 * Math.sin(enraging * Math.PI) : 1
+  const face = (b.face ?? -1) < 0 ? 1 : -1 // desenhado olhando pra ESQUERDA; vira quando o jogador está à direita
 
   ctx.save()
   ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob)
-  ctx.scale(grow, grow)
+  ctx.scale(grow * face, grow)
   if (b.enrageT > 0) {
-    // ondas do rugido saindo da cabeça
-    ctx.strokeStyle = `rgba(214, 160, 255, ${0.8 * (1 - enraging * 0.6)})`
+    // ondas de raiva saindo do focinho
+    ctx.strokeStyle = `rgba(255, 120, 130, ${0.8 * (1 - enraging * 0.6)})`
     ctx.lineWidth = 0.07
     for (let i = 0; i < 3; i++) {
       const r = 0.95 + ((time * 2.2 + i / 3) % 1) * 0.7
-      ctx.beginPath(); ctx.arc(0, -0.1, r, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke()
+      ctx.beginPath(); ctx.arc(0, 0, r, Math.PI * 0.8, Math.PI * 1.2); ctx.stroke()
     }
   }
   ctx.globalAlpha = 1 - dying
@@ -377,53 +378,72 @@ function drawWhale(ctx, b, time) {
 
   // sombra
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
-  ctx.beginPath(); ctx.ellipse(0, 0.85, 0.85, 0.14, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.beginPath(); ctx.ellipse(0, 0.82, 0.9, 0.13, 0, 0, Math.PI * 2); ctx.fill()
 
-  const body = flash ? '#ffffff' : angry ? '#5b2a6e' : '#2b4f8f'
-  const belly = flash ? '#ffffff' : angry ? '#d7a3e0' : '#a9c6ee'
+  const body = flash ? '#ffffff' : angry ? '#6b2a3c' : '#5b7388'
+  const dark = flash ? '#e8e8e8' : angry ? '#45192a' : '#3c4f60'
+  const belly = flash ? '#ffffff' : angry ? '#e0a8b0' : '#dfe9f0'
 
-  // rabo
+  // cauda (bifurcada, à direita)
   ctx.fillStyle = body
   ctx.beginPath()
-  ctx.moveTo(0.7, 0.1)
-  ctx.quadraticCurveTo(1.0, -0.2, 1.0, -0.55)
-  ctx.quadraticCurveTo(0.85, -0.3, 0.7, -0.35)
+  ctx.moveTo(0.6, 0.05)
+  ctx.lineTo(1.05, -0.45); ctx.lineTo(0.95, 0.0); ctx.lineTo(1.05, 0.5)
   ctx.closePath(); ctx.fill()
-  // corpo
-  ctx.beginPath(); ctx.ellipse(0, 0.1, 0.9, 0.7, 0, 0, Math.PI * 2); ctx.fill()
+  // corpo (focinho pontudo à esquerda)
+  ctx.beginPath()
+  ctx.moveTo(-1.0, 0.12)
+  ctx.quadraticCurveTo(-0.5, -0.62, 0.35, -0.38)
+  ctx.quadraticCurveTo(0.8, -0.2, 0.7, 0.05)
+  ctx.quadraticCurveTo(0.5, 0.55, -0.3, 0.5)
+  ctx.quadraticCurveTo(-0.8, 0.45, -1.0, 0.12)
+  ctx.closePath(); ctx.fill()
   // barriga
   ctx.fillStyle = belly
-  ctx.beginPath(); ctx.ellipse(-0.05, 0.38, 0.62, 0.32, 0, 0, Math.PI); ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(-0.95, 0.16)
+  ctx.quadraticCurveTo(-0.5, 0.42, 0.4, 0.38)
+  ctx.quadraticCurveTo(0.1, 0.55, -0.35, 0.5)
+  ctx.quadraticCurveTo(-0.8, 0.45, -0.95, 0.16)
+  ctx.closePath(); ctx.fill()
+  // barbatana de cima
+  ctx.fillStyle = dark
+  ctx.beginPath()
+  ctx.moveTo(-0.1, -0.5); ctx.lineTo(0.2, -0.98); ctx.lineTo(0.38, -0.4)
+  ctx.closePath(); ctx.fill()
+  // barbatana de baixo
+  ctx.beginPath()
+  ctx.moveTo(-0.1, 0.4); ctx.lineTo(0.12, 0.8); ctx.lineTo(0.3, 0.4)
+  ctx.closePath(); ctx.fill()
+  // guelras
+  ctx.strokeStyle = dark
+  ctx.lineWidth = 0.045
+  ctx.beginPath()
+  for (const gx of [-0.02, 0.1, 0.22]) { ctx.moveTo(gx, -0.12); ctx.lineTo(gx - 0.03, 0.1) }
+  ctx.stroke()
 
-  // jato d'água (quando para pra soltar FUD)
-  if (b.pauseT > 0 && b.alive) {
-    ctx.fillStyle = '#7fd3ff'
-    const h = 0.5 + Math.sin(time * 30) * 0.08
-    ctx.fillRect(-0.06, -0.6 - h, 0.12, h)
-    ctx.beginPath(); ctx.arc(-0.15, -0.65 - h, 0.12, 0, Math.PI * 2); ctx.arc(0.15, -0.65 - h, 0.12, 0, Math.PI * 2); ctx.fill()
+  // boca com dentes (quando para pra soltar FUD, abre mais)
+  const open = b.pauseT > 0 && b.alive ? 0.12 + Math.abs(Math.sin(time * 30)) * 0.05 : 0.05
+  ctx.fillStyle = '#2a0f18'
+  ctx.beginPath()
+  ctx.moveTo(-0.98, 0.14); ctx.quadraticCurveTo(-0.55, 0.3 + open, -0.15, 0.2); ctx.lineTo(-0.2, 0.15)
+  ctx.quadraticCurveTo(-0.55, 0.18, -0.98, 0.14)
+  ctx.closePath(); ctx.fill()
+  ctx.fillStyle = '#ffffff'
+  for (let i = 0; i < 6; i++) {
+    const tx = -0.9 + i * 0.12
+    ctx.beginPath(); ctx.moveTo(tx, 0.17 + (i % 2) * 0.01); ctx.lineTo(tx + 0.05, 0.27 + open * 0.5); ctx.lineTo(tx + 0.1, 0.17); ctx.closePath(); ctx.fill()
   }
 
-  // coroa dourada
-  ctx.fillStyle = '#e6c25a'
-  ctx.beginPath()
-  ctx.moveTo(-0.3, -0.5); ctx.lineTo(-0.3, -0.8); ctx.lineTo(-0.15, -0.65); ctx.lineTo(0, -0.88)
-  ctx.lineTo(0.15, -0.65); ctx.lineTo(0.3, -0.8); ctx.lineTo(0.3, -0.5)
-  ctx.closePath(); ctx.fill()
-
-  // olhos bravos
+  // olho bravo
   if (!dying) {
-    for (const ex of [-0.38, 0.12]) {
-      ctx.fillStyle = '#fff'
-      ctx.beginPath(); ctx.arc(ex, -0.05, 0.13, 0, Math.PI * 2); ctx.fill()
-      ctx.fillStyle = angry ? '#c4314b' : C.eye
-      ctx.beginPath(); ctx.arc(ex + 0.02, -0.03, 0.07, 0, Math.PI * 2); ctx.fill()
-    }
+    ctx.fillStyle = '#fff'
+    ctx.beginPath(); ctx.arc(-0.55, -0.08, 0.12, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = angry ? '#e8303f' : C.eye
+    ctx.beginPath(); ctx.arc(-0.57, -0.06, 0.065, 0, Math.PI * 2); ctx.fill()
     ctx.strokeStyle = C.eye
     ctx.lineWidth = 0.06
-    ctx.beginPath()
-    ctx.moveTo(-0.55, -0.25); ctx.lineTo(-0.28, -0.15)
-    ctx.moveTo(0.29, -0.25); ctx.lineTo(0.02, -0.15)
-    ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(-0.72, -0.24); ctx.lineTo(-0.42, -0.13); ctx.stroke()
   }
   ctx.restore()
 }

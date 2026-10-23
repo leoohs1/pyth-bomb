@@ -1,4 +1,4 @@
-// Chefe do modo Solo: The Whale (a baleia que manipula o mercado).
+// Chefe do modo Solo: The Loan Shark (o tubarão agiota: cobra a dívida em explosões). Antes era a Whale (baleia).
 // - Ocupa 2x2 casas, anda devagar atrás do jogador; bombas não a seguram (ela passa por cima).
 // - Leva BOSS_HP explosões; depois de cada uma fica piscando um pouco sem levar dano.
 // - De tempos em tempos para e solta FUDs na arena.
@@ -9,7 +9,7 @@ import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
 
 export const BOSS = {
-  name: 'The Whale',
+  name: 'The Loan Shark',
   hp: 6,
   half: 0.9,           // metade do tamanho (caixa de 1.8 casa)
   speed: 1.2,
@@ -115,6 +115,7 @@ export function updateBoss(s, dt, random = Math.random) {
   // anda na direção do jogador (um eixo de cada vez, pra deslizar nas paredes)
   const p = s.player
   const dx = p.x - b.x, dy = p.y - b.y
+  if (Math.abs(dx) > 0.25) b.face = Math.sign(dx) // o tubarão olha pro lado em que o jogador está
   const len = Math.hypot(dx, dy)
   if (len < 0.05) return
   const step = (angry(b) ? BOSS.angrySpeed : BOSS.speed) * dt

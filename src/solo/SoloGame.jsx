@@ -90,7 +90,7 @@ const DEATH_LINES = {
   skeleton: ['Dead sailors tell no tales.', 'The drowned sailor says hi.'],
   crab: ['Pinched by a pirate crab.', 'Crabs walk sideways. You walked into it.'],
   rug: ['Rug pulled. Classic.', 'Never trust a rug.'],
-  boss: ['The Whale ate your bags.', 'Whale-sized loss.', 'Market manipulated.'],
+  boss: ['The Loan Shark collected.', 'Margin called by a shark.', 'You owed the shark. Interest was brutal.'],
   any: ['Rekt.', 'Liquidated.', 'Should have done your own research.', 'Not financial advice.', 'GG. Go again.'],
 }
 function deathLine(s) {
@@ -143,13 +143,19 @@ export default function SoloGame() {
   // O Solo tem o próprio som: efeitos 8 bits (src/solo/sfx.js) e música própria (public/music/solo.mp3, baixinha,
   // por baixo dos efeitos). Enquanto a música do Solo não estiver valendo, silêncio: a do Pyth Bomb (Athens)
   // nunca toca aqui. Ao sair, tudo volta ao normal nos outros modos.
+  // Cada fase pode ter a própria música (levels.js `music`); sem isso, toca a padrão do Solo.
   const [ownMusic, setOwnMusic] = useState(false)
+  const levelNo = hud?.level ?? START_LEVEL + 1
+  const track = LEVELS[levelNo - 1]?.music ?? '/music/solo.mp3'
+  useEffect(() => {
+    setSoundTheme('solo')
+    return () => { setSoundTheme(null); setMusicTrack() }
+  }, [])
   useEffect(() => {
     let on = true
-    setSoundTheme('solo')
-    setMusicTrack('/music/solo.mp3').then((ok) => { if (on) setOwnMusic(ok) })
-    return () => { on = false; setSoundTheme(null); setMusicTrack() }
-  }, [])
+    setMusicTrack(track).then((ok) => { if (on) setOwnMusic(ok) })
+    return () => { on = false }
+  }, [track])
   useEffect(() => {
     setMusicSilenced(!ownMusic)
     return () => setMusicSilenced(false)

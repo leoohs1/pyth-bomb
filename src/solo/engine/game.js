@@ -208,6 +208,10 @@ function loadBossLevel(run) {
     boss: makeBoss((level.cols - 1) / 2, (level.rows - 1) / 2),
     tileset: LEVELS[run.levelIndex].tileset ?? 'temple',
     mood: LEVELS[run.levelIndex].mood ?? null,
+    floor: LEVELS[run.levelIndex].floor ?? null, // visual próprio da arena do chefe (levels.js)
+    wall: LEVELS[run.levelIndex].wall ?? null,
+    decor: LEVELS[run.levelIndex].decor ?? null,
+    doorSet: LEVELS[run.levelIndex].door ?? null,
     chest: null,
     door: { x: -1, y: -1, revealed: false },
     powerups: [],

@@ -8,7 +8,7 @@
 // - Marinheiro Esqueleto (afogado): lento, vaga sem rumo (o FUD da fase 2).
 // - Caranguejo Pirata: anda de LADO como caranguejo de verdade (prefere andar pra esquerda/direita e
 //   nunca vira de costas) e persegue o jogador quando ele está por perto (o Bear da fase 2).
-// Os FUDs continuam existindo: é o que a Whale solta na arena do chefe.
+// Os FUDs continuam existindo: é o que o chefe (o Tubarão) solta na arena.
 import { FLOOR } from './constants.js'
 import { tileAt } from './level.js'
 
