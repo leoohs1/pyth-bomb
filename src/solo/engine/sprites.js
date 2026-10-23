@@ -122,6 +122,22 @@ const PIXEL_FILES = {
   floor_deck_3: '/solo/pixel/floor-deck-3.png', // 3 e 5: mais formatos de rachadura; 4: outro chão liso
   floor_deck_4: '/solo/pixel/floor-deck-4.png',
   floor_deck_5: '/solo/pixel/floor-deck-5.png',
+  // casco de navio antigo (fase 2): 4 blocos de parede (0 a 2 = caixotes de ferro e madeira; 3 = moldura lisa) e a decoração da borda
+  wall_hull_0: '/solo/pixel/wall-hull-0.png',
+  wall_hull_1: '/solo/pixel/wall-hull-1.png',
+  wall_hull_2: '/solo/pixel/wall-hull-2.png',
+  wall_hull_3: '/solo/pixel/wall-hull-3.png',
+  deco_hull_porthole: '/solo/pixel/deco-hull-porthole.png',
+  deco_hull_cannon: '/solo/pixel/deco-hull-cannon.png',
+  deco_hull_lantern: '/solo/pixel/deco-hull-lantern.png',
+  deco_hull_leak: '/solo/pixel/deco-hull-leak.png',
+  // vazamento animado da fase 2: 2 desenhos (a, b) de 3 quadros cada
+  leak_a_1: '/solo/pixel/leak-a-1.png',
+  leak_a_2: '/solo/pixel/leak-a-2.png',
+  leak_a_3: '/solo/pixel/leak-a-3.png',
+  leak_b_1: '/solo/pixel/leak-b-1.png',
+  leak_b_2: '/solo/pixel/leak-b-2.png',
+  leak_b_3: '/solo/pixel/leak-b-3.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -179,6 +195,18 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// os 3 quadros do vazamento 'a' ou 'b' (ou null se ainda não carregou / estilo pintado)
+export const leakFrames = (kind) => {
+  const list = [1, 2, 3].map((i) => sprite(`leak_${kind}_${i}`))
+  return list.every(Boolean) ? list : null
+}
+
+// blocos de parede alternativos da fase (levels.js `wall`, ex.: 'hull'): lista de imagens ou null se ainda não carregou (ou estilo pintado)
+export const wallVariants = (name) => {
+  const list = [0, 1, 2, 3].map((i) => sprite(`wall_${name}_${i}`))
+  return list.every(Boolean) ? list : null
+}
 
 // chão alternativo da fase (levels.js `floor`, ex.: 'deck'). Cada quadrado é MONTADO: as 3 tábuas (faixas de 16
 // linhas, cada uma começando na sua fresta) vêm de desenhos diferentes, espelhadas e "dadas a volta" de lado

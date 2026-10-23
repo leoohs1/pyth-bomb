@@ -431,23 +431,22 @@
       #0d0b14;
   }
 }
-/* Bear Market em pixel (normal e tela larga): mesmo fundo do quartel com o tom vermelho */
+/* Fase 2 (porão do navio antigo) em pixel: fundo próprio (418x235). Tela larga: por enquanto o mesmo, coberto
+   (quando vier a versão ultrawide, é só trocar o arquivo aqui embaixo) */
 .solo-page.is-military.is-pixel.is-mood-bear {
   background:
-    linear-gradient(rgb(255, 120, 120), rgb(255, 120, 120)),
     linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
-    url('/solo/pixel/bg-military.png') center 58% / cover no-repeat,
+    url('/solo/pixel/bg-hold.png') center 50% / cover no-repeat,
     #0d0b14;
-  background-blend-mode: multiply, normal, normal, normal;
+  background-blend-mode: normal;
 }
 @media (min-aspect-ratio: 19/10) {
   .solo-page.is-military.is-pixel.is-mood-bear {
     background:
-      linear-gradient(rgb(255, 120, 120), rgb(255, 120, 120)),
       linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
-      url('/solo/pixel/bg-military-wide.png') center 58% / cover no-repeat,
+      url('/solo/pixel/bg-hold.png') center 50% / cover no-repeat,
       #0d0b14;
-    background-blend-mode: multiply, normal, normal, normal;
+    background-blend-mode: normal;
   }
 }
 /* estilo pixel: fundo quase sem escurecer; a sombra forte em volta da moldura separa a arena */

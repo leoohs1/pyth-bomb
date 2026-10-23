@@ -112,7 +112,8 @@ export function consumeEvents(s) {
 
 // ---- decoração viva das bordas (canos, luzes piscando, ventilação soltando fumaça, placas
 // e a energia roxa da "invasão Pyth"). Por enquanto só no quartel (tileset 'military').
-function setupAmbient(level, tileset) {
+function setupAmbient(level, tileset, decor) {
+  if (decor === 'hull') return setupHull(level)
   if (tileset !== 'military') return []
   const { cols, rows } = level
   const deco = []
@@ -140,8 +141,27 @@ function setupAmbient(level, tileset) {
   return deco.sort((a, b) => (a.type === 'pipes' ? -1 : 0) - (b.type === 'pipes' ? -1 : 0))
 }
 
+// casco de navio antigo (fase 2): lampiões, escotilhas, portas de canhão e rachaduras com energia roxa nas
+// paredes da borda (sorteio fixo pela posição, igual ao quartel)
+function setupHull(level) {
+  const { cols, rows } = level
+  const deco = []
+  const spots = []
+  for (let x = 1; x < cols - 1; x++) spots.push([x, 0], [x, rows - 1])
+  for (let y = 1; y < rows - 1; y++) spots.push([0, y], [cols - 1, y])
+  spots.forEach(([x, y], i) => {
+    if (tileAt(level, x, y) !== WALL) return
+    const k = (x * 7 + y * 13) % 9
+    if (k === 0 || k === 5) deco.push({ type: 'lantern', x, y, phase: i * 1.3 })
+    else if (k === 2) deco.push({ type: 'porthole', x, y, phase: i * 0.9 })
+    else if (k === 4) deco.push({ type: 'cannon', x, y })
+    else if (k === 7 && deco.filter((d) => d.type === 'leak').length < 3) deco.push({ type: 'leak', x, y, next: rand(0.2, 1) })
+  })
+  return deco
+}
+
 export function update(s, dt) {
-  if (ambientLevel !== s.level) { ambient = setupAmbient(s.level, s.tileset); ambientLevel = s.level }
+  if (ambientLevel !== s.level) { ambient = setupAmbient(s.level, s.tileset, s.decor); ambientLevel = s.level }
   flash = Math.max(0, flash - dt)
   for (const m of scorch) m.t += dt
   for (let i = scorch.length - 1; i >= 0; i--) if (scorch[i].t > SCORCH_TIME) scorch.splice(i, 1)
@@ -159,11 +179,11 @@ export function update(s, dt) {
       d.next = rand(1.2, 3.2)
       for (let i = 0; i < 3; i++) add({ kind: 'steam', x: d.x + 0.5 + rand(-0.15, 0.15), y: d.y + 0.35, life: rand(0.9, 1.4), vx: rand(-0.1, 0.1), vy: -rand(0.25, 0.45), size: rand(0.12, 0.2) })
     }
-    if (d.type === 'crack' && (d.next -= dt) <= 0) {
+    if ((d.type === 'crack' || d.type === 'leak') && (d.next -= dt) <= 0) {
       d.next = rand(0.25, 0.7)
       add({ kind: 'mote', x: d.x + 0.5 + rand(-0.2, 0.2), y: d.y + 0.5, life: rand(0.8, 1.3), vx: rand(-0.15, 0.15), vy: -rand(0.3, 0.6), size: rand(0.03, 0.06) })
     }
-    if (d.type === 'lamp' && Math.random() < dt * 0.15) {
+    if ((d.type === 'lamp' || d.type === 'lantern') && Math.random() < dt * 0.15) {
       for (let i = 0; i < 4; i++) add({ kind: 'spark', x: d.x + 0.5, y: d.y + 0.4, life: rand(0.2, 0.4), vx: rand(-1.2, 1.2), vy: rand(-0.4, 1.4), color: '255, 220, 120' })
     }
   }
@@ -217,6 +237,24 @@ export function drawAmbient(ctx, time, mood) {
       ctx.beginPath(); ctx.roundRect(cx - 0.13, cy - 0.13, 0.26, 0.26, 0.06); ctx.fill()
       ctx.fillStyle = on ? `rgb(${col})` : '#5a4a2a'
       ctx.beginPath(); ctx.arc(cx, cy, 0.085, 0, Math.PI * 2); ctx.fill()
+    } else if (d.type === 'lantern' || d.type === 'porthole' || d.type === 'cannon' || d.type === 'leak') {
+      // decoração do casco: um brilho que muda por tipo + o desenho em pixel (no tamanho nativo)
+      let glow = null // [cor 'r, g, b', força, raio]
+      if (d.type === 'lantern') glow = ['255, 150, 50', (0.85 + 0.15 * Math.sin(time * 9 + d.phase) + 0.08 * Math.sin(time * 23 + d.phase * 2)) * 0.42, 1.5] // chama tremendo
+      else if (d.type === 'porthole') glow = ['80, 230, 220', 0.16 + 0.05 * Math.sin(time * 1.4 + d.phase), 1.1] // luz do mar
+      else if (d.type === 'leak') glow = ['170, 90, 255', (0.5 + 0.3 * Math.sin(time * 4 + d.x)) * 0.55, 0.7] // energia roxa
+      if (glow) {
+        ctx.save()
+        ctx.globalCompositeOperation = 'screen'
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, glow[2])
+        g.addColorStop(0, `rgba(${glow[0]}, ${glow[1]})`)
+        g.addColorStop(1, `rgba(${glow[0]}, 0)`)
+        ctx.fillStyle = g
+        ctx.fillRect(cx - glow[2], cy - glow[2], glow[2] * 2, glow[2] * 2)
+        ctx.restore()
+      }
+      const img = decoSprite(`hull_${d.type}`)
+      if (img) { const [w, h] = decoSize(img, 0.6); put(ctx, img, cx - w / 2, cy - h / 2 - 0.02, w, h) }
     } else if (d.type === 'pipes') {
       // o trecho inteiro em 2 pedaços longos (menos emendas que um por casa)
       const img = decoSprite('pipes')

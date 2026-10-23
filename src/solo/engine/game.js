@@ -152,7 +152,7 @@ function loadLevel(run, random) {
       if (!spot) break
       free.splice(free.indexOf(spot), 1)
       taken.push([spot[0], spot[1]])
-      puddles.push({ x: spot[0], y: spot[1], seed: random() * 100 })
+      puddles.push({ x: spot[0], y: spot[1], seed: random() * 100, variant: i % 2, flip: i === 2 }) // desenhos a/b da arte; o 3º espelhado
       if (cfg.puddleCracks) cracks.push(makeCrack(spot[0], spot[1], random))
     }
   }
@@ -183,6 +183,8 @@ function loadLevel(run, random) {
     wallMix: !!cfg.wallMix, // blocos fixos em várias cores (levels.js)
     crateTone: cfg.crateTone ?? null, // cor dos caixotes quebráveis (levels.js)
     floor: cfg.floor ?? null, // chão próprio da fase (levels.js)
+    wall: cfg.wall ?? null, // blocos fixos próprios da fase (levels.js)
+    decor: cfg.decor ?? null, // decoração da borda própria da fase (levels.js)
     time: 0,
     shake: 0,
     events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...
@@ -239,7 +241,7 @@ function spreadPick(cells, taken, random, minDist = 0) {
 // Devolve { pts: [x, y, x, y, ...] }. Só enfeite (render.js desenha só onde o chão está livre).
 function makeCrack(tx, ty, random) {
   const pts = []
-  const x0 = tx * 48 + 24, y0 = ty * 48 + 32
+  const x0 = tx * 48 + 24, y0 = ty * 48 + 8 // sai da rachadura de cima do vazamento (o fio d'água cai dali)
   const dir0 = random() < 0.5 ? -1 : 1
   for (const [dir, len] of [[dir0, 70 + Math.floor(random() * 50)], [-dir0, 34 + Math.floor(random() * 30)]]) {
     let yf = y0, slope = (random() - 0.5) * 0.5, next = 8 + Math.floor(random() * 8)

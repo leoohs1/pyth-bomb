@@ -3,7 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, floorTile, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -68,7 +68,40 @@ const PUD_CX = 12, PUD_CY = 16 // centro da poça na grade; a linha 16 (pixels 3
 const wbuf = new Uint8Array(WG * WG) // bolhas e esguicho: 0 vazio, 1 água, 2 brilho, 3 contorno
 const wput = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < WG && y >= 0 && y < WG) wbuf[y * WG + x] = 1 }
 
+// Vazamento da fase 2 com a ARTE em 3 quadros (rachadura + fio d'água caindo numa poça): toca os quadros em
+// sequência (6 por segundo, cada vazamento começando num ponto diferente do ciclo), com a madeira escura e
+// molhada em volta. Se a arte ainda não carregou (ou no estilo pintado), usa o vazamento desenhado pelo código.
 function drawPuddle(ctx, p, time, scale) {
+  const frames = leakFrames(p.variant === 1 ? 'b' : 'a')
+  if (!frames) return drawPuddleProcedural(ctx, p, time, scale)
+  const u = 1 / PX_TILE
+  const q = WQ * u + 1 / scale
+  const img = frames[(((Math.floor(time * 6 + p.seed) % 3) + 3) % 3)]
+  const [w, h] = [img.naturalWidth, img.naturalHeight]
+  ctx.save()
+  // madeira molhada: mancha escura e irregular em volta da poça (que fica no pé do desenho)
+  const hx = 12, hy = 19 // centro da mancha, na grade de quadradões
+  for (let iy = -5; iy <= 5; iy++) {
+    for (let ix = -9; ix <= 9; ix++) {
+      const e = (ix * ix) / 81 + (iy * iy) / 20 + (noise2(ix + 40, iy, p.seed) - 0.5) * 0.35
+      if (e > 1) continue
+      ctx.globalAlpha = 0.34 * (1 - e)
+      ctx.fillStyle = WATER.wet
+      ctx.fillRect(p.x + (hx + ix) * WQ * u, p.y + (hy + iy) * WQ * u, q, q)
+    }
+  }
+  ctx.globalAlpha = 1
+  ctx.imageSmoothingEnabled = false
+  const dx = p.x + (PX_TILE - w) / 2 * u, dy = p.y + (44 - h) * u
+  if (p.flip) { // espelhado (o mesmo desenho em outro vazamento)
+    ctx.translate(dx * 2 + w * u, 0)
+    ctx.scale(-1, 1)
+  }
+  ctx.drawImage(img, dx, dy, w * u, h * u)
+  ctx.restore()
+}
+
+function drawPuddleProcedural(ctx, p, time, scale) {
   const u = 1 / PX_TILE
   const q = WQ * u + 1 / scale // um quadradão (um tiquinho maior, pra não aparecer risco entre eles)
   const cx = PUD_CX, cy = PUD_CY
@@ -192,6 +225,12 @@ function drawCrack(ctx, crack, level, scale) {
   ctx.restore()
 }
 
+// bloco fixo do casco na casa (x, y): 0 a 2 = os caixotes de ferro e madeira (parelhos), 3 = a moldura lisa (~20%)
+function hullWallOf(x, y) {
+  const h = ((x * 83492791) ^ (y * 73856093)) >>> 0
+  return h % 100 < 20 ? 3 : (h >>> 8) % 3
+}
+
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
 function wallColorOf(x, y) {
   const h = (((x * 73856093) ^ (y * 19349663)) >>> 0) % 10
@@ -225,13 +264,16 @@ export function draw(ctx, s, tilePx, dpr) {
   const wallColors = s.wallMix && wallImg
     ? [hueShifted(wallImg, 0, -0.04, 0.45), hueShifted(wallImg, 188, -0.02, 0.45), hueShifted(wallImg, 135, -0.03, 0.48)]
     : null
+  const hullWalls = s.wall ? wallVariants(s.wall) : null // blocos fixos próprios da fase (casco de navio)
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
       if (t === WALL) {
         const inner = x > 0 && y > 0 && x < level.cols - 1 && y < level.rows - 1
-        const wallHere = wallColors ? wallColors[inner ? wallColorOf(x, y) : 0] : wallImg // borda: o azul gasto
+        const wallHere = hullWalls ? hullWalls[hullWallOf(x, y)] // fase 2: blocos do casco misturados por posição
+          : wallColors ? wallColors[inner ? wallColorOf(x, y) : 0] : wallImg // fase 1: borda no azul gasto
+        if (hullWalls && floorImg) blit(ctx, (s.floor && floorTile(s.floor, x, y, 0.12)) || floorImg, x, y, 1 + seam, 1 + seam) // cantos transparentes do bloco: o chão aparece
         if (wallHere) blit(ctx, wallHere, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
         // a borda da arena fica só um tiquinho mais escura, pra fechar a arena
