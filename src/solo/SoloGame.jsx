@@ -90,7 +90,7 @@ const DEATH_LINES = {
   skeleton: ['Dead sailors tell no tales.', 'The drowned sailor says hi.'],
   crab: ['Pinched by a pirate crab.', 'Crabs walk sideways. You walked into it.'],
   rug: ['Rug pulled. Classic.', 'Never trust a rug.'],
-  boss: ['The Loan Shark collected.', 'Margin called by a shark.', 'You owed the shark. Interest was brutal.'],
+  boss: ['CHOP collected.', 'Margin called by a shark.', 'You owed CHOP. The interest was brutal.', 'CHOP says: pay up.'],
   any: ['Rekt.', 'Liquidated.', 'Should have done your own research.', 'Not financial advice.', 'GG. Go again.'],
 }
 function deathLine(s) {
@@ -346,7 +346,7 @@ export default function SoloGame() {
 
       {hud?.boss && (
         <div className="solo-boss" title={`${hud.boss.name}: ${hud.boss.hp}/${hud.boss.max}`}>
-          <span>🐋 {hud.boss.name}</span>
+          <span>🦈 {hud.boss.name}</span>
           <div className="solo-boss-bar">
             <div style={{ width: `${(hud.boss.hp / hud.boss.max) * 100}%` }} />
           </div>

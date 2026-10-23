@@ -9,7 +9,7 @@ import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
 
 export const BOSS = {
-  name: 'The Loan Shark',
+  name: 'CHOP', // o tubarão agiota (The Loan Shark)
   hp: 6,
   half: 0.9,           // metade do tamanho (caixa de 1.8 casa)
   speed: 1.2,

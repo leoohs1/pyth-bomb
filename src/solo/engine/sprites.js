@@ -140,6 +140,10 @@ const PIXEL_FILES = {
   leak_b_1: '/solo/pixel/leak-b-1.png',
   leak_b_2: '/solo/pixel/leak-b-2.png',
   leak_b_3: '/solo/pixel/leak-b-3.png',
+  // CHOP, o chefe tubarão (fase 3): 3 poses de 91x84 (normal, boca aberta, furioso)
+  boss_shark_1: '/solo/pixel/boss-shark-1.png',
+  boss_shark_2: '/solo/pixel/boss-shark-2.png',
+  boss_shark_3: '/solo/pixel/boss-shark-3.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -197,6 +201,12 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// as 3 poses do chefe [normal, boca aberta, furioso] (ou null se ainda não carregou / estilo pintado)
+export const bossFrames = () => {
+  const list = [1, 2, 3].map((i) => sprite(`boss_shark_${i}`))
+  return list.every(Boolean) ? list : null
+}
 
 // os 3 quadros do vazamento 'a' ou 'b' (ou null se ainda não carregou / estilo pintado)
 export const leakFrames = (kind) => {

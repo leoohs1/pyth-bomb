@@ -3,7 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -346,10 +346,65 @@ export function draw(ctx, s, tilePx, dpr) {
   drawParticles(ctx, level.cols, level.rows)
 }
 
+// CHOP, o chefe, com a ARTE em pixel: 3 poses no tamanho nativo (normal, boca aberta quando solta reforço, furioso
+// quando fica com metade da vida). Olha pro lado em que o jogador está (espelha), pisca branco quando leva dano,
+// treme e cresce na transformação. O nome dele aparece numa plaquinha de ouro pendurada no colar.
+const TAG_FONT = { // letras 3x5
+  C: ['111', '100', '100', '100', '111'],
+  H: ['101', '101', '111', '101', '101'],
+  O: ['111', '101', '101', '101', '111'],
+  P: ['111', '101', '111', '100', '100'],
+}
+const TAG_AT = [[24, 64], [21, 66], [24, 64]] // onde a plaquinha fica no colar de cada pose (pixels do desenho)
+function drawChopTag(ctx, pose, face, w, h) {
+  const u = 1 / PX_TILE
+  const [sx, sy] = TAG_AT[pose]
+  const tw = 19, th = 9
+  const left = face === 1 ? -w / 2 + sx * u : w / 2 - (sx + tw) * u // espelhado: o texto nunca fica de trás pra frente
+  const top = 0.9 - h + sy * u
+  const px = (ix, iy, color) => { ctx.fillStyle = color; ctx.fillRect(left + ix * u, top + iy * u, u + 0.004, u + 0.004) }
+  for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) px(x, y, x === 0 || y === 0 || x === tw - 1 || y === th - 1 ? '#6b4300' : '#e8b923')
+  px(1, 1, '#fff2a6'); px(2, 1, '#fff2a6') // brilho
+  'CHOP'.split('').forEach((ch, i) => TAG_FONT[ch].forEach((row, y) => row.split('').forEach((on, x) => { if (on === '1') px(2 + i * 4 + x, 2 + y, '#3a1f00') })))
+}
+function drawBossSprite(ctx, b, time, [normal, open, fury]) {
+  if (!b.alive && b.deathT > 1.2) return
+  const dying = b.alive ? 0 : b.deathT / 1.2
+  const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0
+  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
+  const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
+  const summoning = b.pauseT > 0 && b.alive
+  let pose = angry ? (summoning ? 1 : 2) : (summoning ? 1 : 0)
+  let img = angry && summoning ? hueShifted(open, 140, -0.12, 1.15) :[normal, open, fury][pose] // boca aberta e furioso: a pose aberta vira vermelha
+  if (flash) img = tinted(img, 'rgb(255, 255, 255)', 0.9, 'screen')
+  const w = img.naturalWidth / PX_TILE, h = img.naturalHeight / PX_TILE
+  const bob = Math.sin(b.walkT * 4) * 0.04
+  const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : 0
+  const grow = b.enrageT > 0 ? 1 + 0.1 * Math.sin(enraging * Math.PI) : 1
+  const face = (b.face ?? -1) < 0 ? 1 : -1 // as poses olham pra ESQUERDA
+
+  ctx.save()
+  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob)
+  ctx.scale(grow, grow)
+  ctx.globalAlpha = 1 - dying
+  ctx.rotate(dying * 1.5)
+  ctx.scale(1 - dying * 0.5, 1 - dying * 0.5)
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath(); ctx.ellipse(0, 0.86, 0.85, 0.14, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.save()
+  ctx.scale(face, 1)
+  blit(ctx, img, -w / 2, 0.9 - h, w, h)
+  ctx.restore()
+  if (!flash) drawChopTag(ctx, pose, face, w, h)
+  ctx.restore()
+}
+
 // The Loan Shark (provisório, desenhado em código até chegar a arte em pixel): tubarão grande (2x2 casas) de lado,
 // virado pro lado em que o jogador está. Pisca branco quando leva dano e fica vermelho-escuro quando brava.
 // Na transformação (enrageT), treme, cresce um pouco e pisca cinza/vermelho antes de ficar vermelho de vez.
 function drawWhale(ctx, b, time) {
+  const art = bossFrames()
+  if (art) return drawBossSprite(ctx, b, time, art)
   if (!b.alive && b.deathT > 1.2) return
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0 // 0 -> 1 durante a transformação

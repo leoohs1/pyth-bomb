@@ -23,7 +23,7 @@ export const LEVELS = [
   { name: 'Blue Barracks', tagline: 'The Blue Marines are on patrol', tileset: 'military', wallMix: true, crateTone: 'wood', enemies: { marine: 3, sarge: 2 }, powerups: ['bomb', 'fire', 'bomb', 'fire', 'speed'], bonus: { count: 2, pool: ['bomb', 'fire', 'speed', 'shield'] }, blockChance: 0.5 },
   { name: 'Bear Market', tagline: 'Below deck, the old hull is leaking', music: '/music/solo-hull.mp3', arrival: 'down the hatch, into the old hull', tileset: 'military', mood: 'bear', floor: 'deck', wall: 'hull', decor: 'hull', door: 'hull', puddles: 3, puddleCracks: true, crateTone: 'wood', enemies: { skeleton: 3, crab: 3 }, powerups: ['bomb', 'fire', 'kick'], bonus: { count: 3, pool: ['bomb', 'fire', 'speed', 'speed', 'shield'] }, blockChance: 0.55 },
   // fase 3 = o CHEFE (arena aberta, sem blocos). Por enquanto reaproveita o visual do porão da fase 2.
-  { name: 'Shark Tank', tagline: 'The Loan Shark wants his money back', music: '/music/solo-boss.mp3', arrival: 'down the lowest hatch, into the flooded hold', tileset: 'military', mood: 'bear', floor: 'deck', wall: 'hull', decor: 'hull', door: 'hull', boss: 'shark', enemies: {}, powerups: [] },
+  { name: 'Shark Tank', tagline: 'CHOP the Loan Shark wants his money back', music: '/music/solo-boss.mp3', arrival: 'down the lowest hatch, into the flooded hold', tileset: 'military', mood: 'bear', floor: 'deck', wall: 'hull', decor: 'hull', door: 'hull', boss: 'shark', enemies: {}, powerups: [] },
 ]
 
 // Fases guardadas pra uma continuação (ou outro tema): ainda NÃO entram na corrida. Pra usar, é só acrescentar em LEVELS.
