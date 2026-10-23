@@ -108,6 +108,19 @@ export function consumeEvents(s) {
         const a = rand(0, Math.PI * 2), sp = rand(1.5, 3.5)
         add({ kind: 'spark', x: cx, y: cy, life: rand(0.4, 0.8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0.5, 1.5), color: '190, 235, 255' })
       }
+    } else if (ev.type === 'frenzy') {
+      // o CHOP vai disparar: anel vermelho e o aviso por cima dele
+      add({ kind: 'ring', x: cx, y: cy, life: 0.6, color: '255, 90, 90', big: true })
+      add({ kind: 'text', text: 'FRENZY!', x: cx, y: cy - 1.6, vy: -0.25, life: 1.1, color: '#ff5a5a', big: true })
+    } else if (ev.type === 'bossCrash') {
+      // bateu na parede/caixa: pancada, poeira e pedaços voando
+      add({ kind: 'ring', x: cx, y: cy, life: 0.5, color: '255, 255, 255', big: true })
+      add({ kind: 'burst', x: cx, y: cy, life: 0.14 })
+      for (let i = 0; i < 12; i++) {
+        const a = rand(0, Math.PI * 2), sp = rand(1.5, 3.5)
+        add({ kind: 'chunk', x: cx, y: cy, life: rand(0.45, 0.8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.6, vz: rand(2, 4), rot: rand(0, 6), vr: rand(-12, 12), size: rand(0.1, 0.17), color: '#7a4a24' })
+      }
+      for (let i = 0; i < 6; i++) add({ kind: 'dust', x: cx + rand(-0.5, 0.5), y: cy + rand(-0.4, 0.4), life: rand(0.4, 0.7), size: rand(0.18, 0.3) })
     } else if (ev.type === 'collectors') {
       add({ kind: 'text', text: 'DEBT COLLECTORS!', x: cx, y: cy - 1.8, vy: -0.2, life: 2.2, color: '#ffe7a0', big: true })
     } else if (ev.type === 'itemDrop') {

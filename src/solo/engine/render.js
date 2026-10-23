@@ -333,6 +333,7 @@ export function draw(ctx, s, tilePx, dpr) {
   drawWarmLight(ctx, level.cols, level.rows)
   drawAmbient(ctx, s.time, s.mood)
 
+  if (s.boss) drawFrenzyLane(ctx, s.boss, s.time)
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.doorSet ?? s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
   if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
@@ -432,32 +433,92 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0
   const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
   const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
-  const summoning = b.alive && (b.mode === 'sinking' || b.mode === 'rising') // rugindo ao mergulhar e ao voltar: boca aberta
+  const frenzy = b.alive && (b.mode === 'frenzyWind' || b.mode === 'frenzyDash') // frenesi: rosnando, boca aberta
+  const stunned = b.alive && b.mode === 'frenzyStun'
+  const summoning = b.alive && (b.mode === 'sinking' || b.mode === 'rising' || frenzy) // rugindo ao mergulhar, ao voltar e no frenesi: boca aberta
   let pose = angry ? (summoning ? 1 : 2) : (summoning ? 1 : 0)
   let img = angry && summoning ? hueShifted(open, 140, -0.12, 1.15) :[normal, open, fury][pose] // boca aberta e furioso: a pose aberta vira vermelha
   if (flash) img = tinted(img, 'rgb(255, 255, 255)', 0.9, 'screen')
   const w = img.naturalWidth / PX_TILE, h = img.naturalHeight / PX_TILE
   const bob = Math.sin(b.walkT * 4) * 0.04
-  const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : 0
+  const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : b.mode === 'frenzyWind' ? Math.sin(time * 90) * 0.06 : 0
   const grow = b.enrageT > 0 ? 1 + 0.1 * Math.sin(enraging * Math.PI) : 1
   const face = (b.face ?? -1) < 0 ? 1 : -1 // as poses olham pra ESQUERDA
+  const sway = stunned ? Math.sin(time * 7) * 0.08 : 0 // tonto: balançando
 
-  ctx.save()
-  if (rise < 1) { // saindo da água: só aparece o que está acima da linha d'água do buraco
-    ctx.beginPath(); ctx.rect(b.x - 3, b.y - 4, 7, 4.65); ctx.clip()
+  // linhas de velocidade atrás dele na investida (e 2 "fantasmas" do desenho ficando pra trás)
+  if (b.mode === 'frenzyDash' && b.dash) {
+    const u = 1 / PX_TILE, { dx, dy } = b.dash
+    ctx.save()
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)'
+    for (let i = 0; i < 7; i++) {
+      const v = (i - 3) * 0.26 + Math.sin(i * 5.1) * 0.05, len = 1.2 + ((i * 7) % 5) * 0.35, off = 0.9 + ((time * 9 + i * 0.37) % 1) * 0.6
+      const lx = dx ? b.x + 0.5 - dx * (off + len) : b.x + 0.5 + v
+      const ly = dx ? b.y + 0.5 + v : b.y + 0.5 - dy * (off + len)
+      ctx.fillRect(Math.round(lx / u) * u, Math.round(ly / u) * u, dx ? len : 2 * u, dx ? 2 * u : len)
+    }
+    ctx.restore()
   }
-  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob + (1 - rise) * 1.9)
-  ctx.scale(grow, grow)
-  ctx.globalAlpha = 1 - dying
-  ctx.rotate(dying * 1.5)
-  ctx.scale(1 - dying * 0.5, 1 - dying * 0.5)
-  ctx.fillStyle = 'rgba(0,0,0,0.3)'
-  ctx.beginPath(); ctx.ellipse(0, 0.86, 0.85, 0.14, 0, 0, Math.PI * 2); ctx.fill()
+  const paint = (ox, oy, alpha, withTag) => {
+    ctx.save()
+    if (rise < 1) { // saindo da água: só aparece o que está acima da linha d'água do buraco
+      ctx.beginPath(); ctx.rect(b.x - 3, b.y - 4, 7, 4.65); ctx.clip()
+    }
+    ctx.translate(b.x + 0.5 + tremble + ox, b.y + 0.5 + bob + oy + (1 - rise) * 1.9)
+    ctx.scale(grow, grow)
+    ctx.globalAlpha = alpha * (1 - dying)
+    ctx.rotate(dying * 1.5 + sway)
+    ctx.scale(1 - dying * 0.5, 1 - dying * 0.5)
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'
+    ctx.beginPath(); ctx.ellipse(0, 0.86, 0.85, 0.14, 0, 0, Math.PI * 2); ctx.fill()
+    ctx.save()
+    ctx.scale(face, 1)
+    blit(ctx, img, -w / 2, 0.9 - h, w, h)
+    ctx.restore()
+    if (withTag && !flash) drawChopTag(ctx, pose, face, w, h)
+    ctx.restore()
+  }
+  if (b.mode === 'frenzyDash' && b.dash) { paint(-b.dash.dx * 1.1, -b.dash.dy * 1.1, 0.14, false); paint(-b.dash.dx * 0.55, -b.dash.dy * 0.55, 0.26, false) }
+  paint(0, 0, 1, true)
+  if (stunned) { // tonto: estrelinhas girando em volta da cabeça
+    const u = 1 / PX_TILE, hy = b.y + 0.5 + 0.9 - h + 0.15
+    for (let i = 0; i < 3; i++) {
+      const a = time * 5 + (i * Math.PI * 2) / 3
+      const sx = Math.round((b.x + 0.5 + Math.cos(a) * 0.7) / u) * u, sy = Math.round((hy + Math.sin(a) * 0.2) / u) * u
+      ctx.fillStyle = '#4a2a00' // contorno escuro (aparece sobre o fundo claro de madeira)
+      ctx.fillRect(sx - 5 * u, sy - 2 * u, 10 * u, 4 * u); ctx.fillRect(sx - 2 * u, sy - 5 * u, 4 * u, 10 * u)
+      ctx.fillStyle = '#ffe27a' // estrelinha em cruz com o miolo branco
+      ctx.fillRect(sx - 4 * u, sy - u, 8 * u, 2 * u); ctx.fillRect(sx - u, sy - 4 * u, 2 * u, 8 * u)
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(sx - u, sy - u, 2 * u, 2 * u)
+    }
+  }
+}
+
+// FRENESI: a faixa vermelha no chão por onde o CHOP vai passar (pisca durante o aviso; setas correm na direção da investida)
+function drawFrenzyLane(ctx, b, time) {
+  if ((b.mode !== 'frenzyWind' && b.mode !== 'frenzyDash') || !b.lane || !b.dash) return
+  const u = 1 / PX_TILE, { dx, dy } = b.dash, { x0, y0, x1, y1 } = b.lane
+  const wind = b.mode === 'frenzyWind'
+  const alpha = wind ? 0.2 + 0.13 * Math.sin(time * 26) : 0.14
+  const lx0 = Math.min(x0, x1) + 0.5 - BOSS.half, lx1 = Math.max(x0, x1) + 0.5 + BOSS.half
+  const ly0 = Math.min(y0, y1) + 0.5 - BOSS.half, ly1 = Math.max(y0, y1) + 0.5 + BOSS.half
   ctx.save()
-  ctx.scale(face, 1)
-  blit(ctx, img, -w / 2, 0.9 - h, w, h)
-  ctx.restore()
-  if (!flash) drawChopTag(ctx, pose, face, w, h)
+  ctx.fillStyle = `rgba(255, 50, 50, ${alpha})`
+  ctx.fillRect(lx0, ly0, lx1 - lx0, ly1 - ly0)
+  ctx.fillStyle = `rgba(255, 120, 120, ${wind ? 0.6 : 0.3})` // bordas da faixa
+  if (dx) { ctx.fillRect(lx0, ly0, lx1 - lx0, 2 * u); ctx.fillRect(lx0, ly1 - 2 * u, lx1 - lx0, 2 * u) }
+  else { ctx.fillRect(lx0, ly0, 2 * u, ly1 - ly0); ctx.fillRect(lx1 - 2 * u, ly0, 2 * u, ly1 - ly0) }
+  // setas (>) correndo pela faixa
+  const ox = x0 + 0.5, oy = y0 + 0.5, len = Math.abs(x1 - x0) + Math.abs(y1 - y0) + BOSS.half
+  ctx.fillStyle = `rgba(255, 200, 200, ${wind ? 0.55 : 0.3})`
+  for (let t = ((time * 5) % 1.4) + 0.4; t < len; t += 1.4) {
+    for (let i = -4; i <= 4; i++) {
+      const v = i * 0.1, a = t - Math.abs(v) * 0.9
+      const wx = dx ? ox + dx * a : ox + v * -dy, wy = dx ? oy + v * dx : oy + dy * a
+      ctx.fillRect(Math.round(wx / u) * u - u, Math.round(wy / u) * u - u, 3 * u, 3 * u)
+    }
+  }
   ctx.restore()
 }
 

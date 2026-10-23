@@ -6,8 +6,13 @@
 //   com METADE da vida: 'toHole' (foge correndo pro buraco) -> 'sinking' (mergulha, splash) -> 'under'
 //              (embaixo d'água: invencível e inofensivo; aparecem os COBRADORES, 1 caranguejo e 1 esqueleto) ->
 //              'rising' (volta furioso, mais rápido) -> 'surface' de novo.
+// FRENESI: de tempos em tempos ele PARA e treme (aviso: faixa vermelha no chão e "FRENZY!"), dispara em linha reta
+// bem rápido na direção do jogador (mata quem estiver no caminho) e, ao bater numa parede ou caixa, fica TONTO por
+// uns segundos (inofensivo e parado: a hora de acertar ele com bombas). Se bater numa caixa, ela quebra.
+// CAIXAS: ele é largo e as caixas o travam; quando não consegue andar, contorna pelo caminho mais curto até o jogador
+// (planPath) e, se não existe caminho (preso entre caixas), dá o frenesi pra quebrar a caixa.
 // A cada dano que ele leva cai um item útil na arena.
-import { FLOOR, HOLE, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './constants.js'
+import { FLOOR, BLOCK, HOLE, MAX_BOMBS, MAX_RANGE, MAX_SPEED, BURN_TIME } from './constants.js'
 import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
 
@@ -26,6 +31,18 @@ export const BOSS = {
   riseTime: 0.9,       // tempo voltando à tona
   underMin: 3,         // fica embaixo d'água pelo menos isso (segundos) ...
   underMax: 25,        // ... e no máximo isso, mesmo que os cobradores ainda estejam vivos
+  // frenesi (a versão furiosa é mais rápida e dá menos aviso)
+  frenzyFirst: 5,      // 1º frenesi: tantos segundos depois que ele começa a lutar
+  frenzyEvery: 9,      // depois, de tantos em tantos segundos
+  frenzyEveryAngry: 6,
+  windTime: 0.9,       // aviso antes de disparar
+  windTimeAngry: 0.65,
+  dashSpeed: 10,       // casas por segundo na investida
+  dashSpeedAngry: 12.5,
+  stunTime: 2.2,       // tontura depois de bater
+  stunTimeAngry: 1.6,
+  detourTime: 1.5,     // quando uma caixa barra o caminho, contorna seguindo o caminho mais curto por tanto tempo
+  jamFrenzy: 2.2,      // se não consegue andar nem contornando (preso entre caixas), dá o frenesi e quebra a caixa
 }
 
 export function makeBoss(x, y) {
@@ -33,8 +50,13 @@ export function makeBoss(x, y) {
     x, y, hp: BOSS.hp, alive: true, deathT: 0,
     hurtT: 0, pauseT: 0, walkT: 0, enrageT: 0,
     mode: 'intro', introT: 0, sinkT: 0, riseT: 0, underT: 0, holeT: 0, dived: false,
+    frenzyT: BOSS.frenzyFirst, windT: 0, stunT: 0, dash: null, lane: null,
+    stuckT: 0, jamT: 0, pathT: 0, replanT: 0, path: null,
   }
 }
+
+// o chefe machuca quem encosta nele? (não machuca quando está tonto, embaixo d'água ou saindo da água)
+export const bossDangerous = (b) => b.mode === 'surface' || b.mode === 'frenzyWind' || b.mode === 'frenzyDash'
 
 // A cada dano que o chefe leva, cai um item na arena (bomba, fogo, bota ou escudo, o que o jogador ainda pode usar)
 // numa casa livre, longe dele e do jogador: dá pra se recuperar sem a luta virar moleza.
@@ -100,6 +122,49 @@ function nearestFloor(s, x, y) {
   return best ?? [1, 1]
 }
 
+// FRENESI: escolhe a direção (a do jogador, no eixo em que ele está mais longe), acha até onde dá pra ir em linha
+// reta (a faixa vermelha do aviso) e para pra tremer antes de disparar
+function startFrenzy(s, b) {
+  const p = s.player
+  const dx = p.x - b.x, dy = p.y - b.y
+  const horiz = Math.abs(dx) >= Math.abs(dy)
+  b.dash = horiz ? { dx: Math.sign(dx) || 1, dy: 0 } : { dx: 0, dy: Math.sign(dy) || 1 }
+  let x = b.x, y = b.y
+  for (let i = 0; i < 400 && fits(s, x + b.dash.dx * 0.1, y + b.dash.dy * 0.1); i++) { x += b.dash.dx * 0.1; y += b.dash.dy * 0.1 }
+  b.lane = { x0: b.x, y0: b.y, x1: x, y1: y }
+  if (b.dash.dx) b.face = b.dash.dx
+  b.mode = 'frenzyWind'
+  b.jamT = 0; b.stuckT = 0; b.pathT = 0; b.path = null
+  b.windT = angry(b) ? BOSS.windTimeAngry : BOSS.windTime
+  s.shake = Math.min(0.3, s.shake + 0.15)
+  s.events.push({ type: 'frenzy', x: b.x, y: b.y })
+}
+
+// a investida: anda rápido em linha reta; ao bater, quebra as caixas da frente (parede não quebra) e fica tonto
+function dashStep(s, b, dt) {
+  const speed = angry(b) ? BOSS.dashSpeedAngry : BOSS.dashSpeed
+  const total = speed * dt
+  let moved = 0, crashed = false
+  while (moved < total) {
+    const d = Math.min(0.05, total - moved)
+    const nx = b.x + b.dash.dx * d, ny = b.y + b.dash.dy * d
+    if (!fits(s, nx, ny)) { crashed = true; break }
+    b.x = nx; b.y = ny; moved += d
+  }
+  if (!crashed) return
+  for (const [tx, ty] of tilesUnder(b.x + b.dash.dx * 0.7, b.y + b.dash.dy * 0.7)) {
+    if (tileAt(s.level, tx, ty) === BLOCK && !s.burning.some((q) => q.x === tx && q.y === ty)) {
+      s.burning.push({ x: tx, y: ty, t: BURN_TIME })
+      s.events.push({ type: 'blockBroken', x: tx, y: ty })
+    }
+  }
+  b.mode = 'frenzyStun'
+  b.stunT = angry(b) ? BOSS.stunTimeAngry : BOSS.stunTime
+  b.hurtT = 0
+  s.shake = Math.min(0.6, s.shake + 0.5)
+  s.events.push({ type: 'bossCrash', x: b.x + b.dash.dx * 0.9, y: b.y + b.dash.dy * 0.9 })
+}
+
 // os COBRADORES (1 caranguejo e 1 esqueleto) saem em volta do buraco, longe do jogador
 function spawnCollectors(s, random) {
   const hole = s.level.hole, p = s.player
@@ -117,6 +182,44 @@ function spawnCollectors(s, random) {
     s.enemies.push(makeEnemy(type, x, y))
   }
   s.events.push({ type: 'collectors', x: s.boss.x, y: s.boss.y })
+}
+
+// O chefe é largo (1,8 casa) e as caixas e pilares da arena fecham "corredores" onde ele não passa em linha reta.
+// Quando trava, procura o caminho mais curto até encostar no jogador numa grade de 0.25 casa que parte da posição
+// dele (só passos retos, só onde ele cabe). Devolve os pontos a seguir, [] se já está encostando, ou null se não tem caminho.
+const PATH_STEP = 0.25
+function planPath(s, b) {
+  const p = s.player, S = PATH_STEP
+  const touching = (x, y) => Math.abs(x - p.x) < BOSS.half + 0.1 && Math.abs(y - p.y) < BOSS.half + 0.1
+  const key = (i, j) => (i + 128) * 256 + (j + 128)
+  const prev = new Map([[key(0, 0), null]])
+  const queue = [[0, 0]]
+  for (let q = 0; q < queue.length; q++) {
+    const [i, j] = queue[q]
+    if (touching(b.x + i * S, b.y + j * S)) {
+      const out = []
+      for (let cur = [i, j]; cur[0] !== 0 || cur[1] !== 0; cur = prev.get(key(cur[0], cur[1]))) out.push({ x: b.x + cur[0] * S, y: b.y + cur[1] * S })
+      return out.reverse()
+    }
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ni = i + di, nj = j + dj
+      if (Math.abs(ni) > 100 || Math.abs(nj) > 100 || prev.has(key(ni, nj))) continue
+      if (!fits(s, b.x + ni * S, b.y + nj * S)) continue
+      prev.set(key(ni, nj), [i, j])
+      queue.push([ni, nj])
+    }
+  }
+  return null
+}
+
+// anda `step` casas pelos pontos do caminho
+function followPath(b, step) {
+  let left = step
+  while (left > 1e-9 && b.path.length) {
+    const t = b.path[0]
+    const dx = t.x - b.x, dy = t.y - b.y, d = Math.hypot(dx, dy)
+    if (d <= left) { b.x = t.x; b.y = t.y; left -= d; b.path.shift() } else { b.x += (dx / d) * left; b.y += (dy / d) * left; left = 0 }
+  }
 }
 
 export function updateBoss(s, dt, random = Math.random) {
@@ -191,12 +294,13 @@ export function updateBoss(s, dt, random = Math.random) {
   // ...e volta furioso
   if (b.mode === 'rising') {
     b.riseT += dt
-    if (b.riseT >= BOSS.riseTime) { b.mode = 'surface'; b.hurtT = 0.6 }
+    if (b.riseT >= BOSS.riseTime) { b.mode = 'surface'; b.hurtT = 0.6; b.frenzyT = 3 }
     return
   }
 
   // levou explosão? (a pontinha de fogo desenhada dentro das caixas não conta)
-  if (b.hurtT === 0 && s.flames.some((f) => !f.visual && bossTouchesTile(b, f.x, f.y))) {
+  const canHurt = b.mode === 'surface' || b.mode === 'frenzyWind' || b.mode === 'frenzyStun' // (na investida ele passa direto)
+  if (canHurt && b.hurtT === 0 && s.flames.some((f) => !f.visual && bossTouchesTile(b, f.x, f.y))) {
     b.hp--
     b.hurtT = BOSS.invulnerable
     s.shake = Math.min(0.35, s.shake + 0.25)
@@ -221,15 +325,48 @@ export function updateBoss(s, dt, random = Math.random) {
     return
   }
 
+  if (b.mode === 'frenzyWind') { b.windT -= dt; if (b.windT <= 0) b.mode = 'frenzyDash'; return }
+  if (b.mode === 'frenzyDash') { dashStep(s, b, dt); return }
+  if (b.mode === 'frenzyStun') {
+    b.stunT -= dt
+    if (b.stunT <= 0) { b.mode = 'surface'; b.frenzyT = angry(b) ? BOSS.frenzyEveryAngry : BOSS.frenzyEvery }
+    return
+  }
+
   // anda na direção do jogador (um eixo de cada vez, pra deslizar nas paredes)
   const p = s.player
   const dx = p.x - b.x, dy = p.y - b.y
   if (Math.abs(dx) > 0.25) b.face = Math.sign(dx) // o tubarão olha pro lado em que o jogador está
   const len = Math.hypot(dx, dy)
+  b.frenzyT -= dt
+  if (b.frenzyT <= 0 && p.alive && len > 2.5) { startFrenzy(s, b); return }
+  if (b.jamT > BOSS.jamFrenzy && p.alive) { startFrenzy(s, b); return } // sem caminho (preso entre caixas): parte pra cima e quebra
   if (len < 0.05) return
-  const step = (angry(b) ? BOSS.angrySpeed : BOSS.speed) * dt
+  const speed = angry(b) ? BOSS.angrySpeed : BOSS.speed
+  const step = speed * dt
+
+  // contornando: segue o caminho mais curto até o jogador (refeito de tempos em tempos) por um tempinho
+  if (b.pathT > 0) {
+    b.pathT -= dt
+    b.replanT -= dt
+    if (b.replanT <= 0 || !b.path?.length) {
+      b.path = planPath(s, b)
+      b.replanT = 0.3
+      if (!b.path) { b.pathT = 0; b.jamT = BOSS.jamFrenzy + 1; return } // não existe caminho: frenesi
+    }
+    followPath(b, step)
+    return
+  }
+
+  // normalmente vai reto no jogador; se uma caixa barra o caminho, passa a contornar
+  const ox = b.x, oy = b.y
   const nx = b.x + (dx / len) * step
   if (fits(s, nx, b.y)) b.x = nx
   const ny = b.y + (dy / len) * step
   if (fits(s, b.x, ny)) b.y = ny
+  if (Math.hypot(b.x - ox, b.y - oy) >= step * 0.5) { b.jamT = Math.max(0, b.jamT - dt); b.stuckT = 0; return }
+  b.jamT += dt
+  b.stuckT += dt
+  if (b.stuckT >= 0.25) { b.pathT = BOSS.detourTime; b.replanT = 0; b.stuckT = 0 }
 }
+

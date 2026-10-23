@@ -14,7 +14,7 @@ import {
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
 import { makeEnemy, updateEnemy, ENEMY_TYPES, BOMBHEAD } from './enemies.js'
-import { makeBoss, updateBoss, bossTouchesPlayer } from './boss.js'
+import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous } from './boss.js'
 
 const DIRS = {
   up: { dx: 0, dy: -1 },
@@ -664,7 +664,7 @@ export function update(s, controls, dt) {
     const touching = s.enemies.find((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)
     if (flameAt(s, px, py)) killPlayer(s, 'fire')
     else if (touching) { if (touching.bombT != null) touching.bombT = 0; else killPlayer(s, touching.type) } // cabeça-bomba encostou: explode
-    else if (s.boss?.alive && s.boss.mode === 'surface' && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
+    else if (s.boss?.alive && bossDangerous(s.boss) && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
 
     // pega power-up
     for (const pu of s.powerups) {

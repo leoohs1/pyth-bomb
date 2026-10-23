@@ -44,6 +44,8 @@ export function createSoloSfx() {
       else if (ev.type === 'bombhead') say('solo_bomb', now)
       else if (ev.type === 'bossIntro') say('solo_roar', now)
       else if (ev.type === 'bossDive') say('solo_boom', now)
+      else if (ev.type === 'frenzy') say('solo_roar', now)
+      else if (ev.type === 'bossCrash') say('solo_boom', now)
       else if (ev.type === 'collectors') say('solo_door', now)
       else if (ev.type === 'itemDrop') say('solo_door', now)
       else if (ev.type === 'enemyHit') say(ev.killed ? 'solo_enemy_die' : 'solo_hit', now)
