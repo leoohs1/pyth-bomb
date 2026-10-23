@@ -39,14 +39,14 @@ const C = {
 }
 
 // cor dos caixotes quebráveis (levels.js `crateTone`): lista de passos pra tinted() em sprites.js, um depois do outro
-// 'wood' = madeira escura e quente: 1) troca o verde-oliva por marrom, 2) escurece
+// 'wood' = madeira num tom padrão (marrom médio, como pinho/carvalho): troca o verde-oliva por marrom
 const CRATE_TONES = {
-  wood: [['rgb(150, 80, 35)', 0.9], ['rgb(185, 145, 125)', 1, 'multiply']],
+  wood: [['rgb(168, 112, 58)', 0.92]],
 }
 
-// climas (levels.js `mood`): [cor, força] das paredes e dos caixotes, pra tinted() em sprites.js
+// climas (levels.js `mood`): [cor, força] das paredes e do chão, pra tinted() em sprites.js
 const MOODS = {
-  bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(150, 88, 42)', 0.85], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
+  bear: { wall: ['rgb(215, 50, 65)', 0.3], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
 }
 
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
@@ -73,7 +73,7 @@ export function draw(ctx, s, tilePx, dpr) {
   // chão e paredes
   // clima Bear Market: paredes puxadas pro vinho, caixotes marrons e o chão um tom mais claro; troca só a cor
   const mood = MOODS[s.mood]
-  const crateSteps = mood ? [mood.block] : CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
+  const crateSteps = CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
   const floorImg = mood ? tinted(tileSprite(s.tileset, 'floor'), ...mood.floor) : tileSprite(s.tileset, 'floor')
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
