@@ -695,7 +695,7 @@ function drawWhale(ctx, b, time) {
 
 function drawDoor(ctx, d, open, time, tileset) {
   const art = sprite(`door_${tileset}_${open ? 'open' : 'closed'}`)
-  if (art) return drawDoorSprite(ctx, d, open, time, art, tileset === 'hull' ? '90, 230, 220' : '255, 210, 120')
+  if (art) return drawDoorSprite(ctx, d, open, time, art, tileset === 'hull' || tileset === 'tavern' ? '90, 230, 220' : '255, 210, 120')
   const { x, y } = d
   ctx.fillStyle = '#7a5c1c'
   ctx.beginPath(); ctx.roundRect(x + 0.12, y + 0.08, 0.76, 0.86, [0.38, 0.38, 0.04, 0.04]); ctx.fill()

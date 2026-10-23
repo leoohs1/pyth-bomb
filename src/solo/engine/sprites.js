@@ -105,6 +105,8 @@ const PIXEL_FILES = {
   pu_speed: '/solo/pixel/pu-speed.png',
   door_hull_closed: '/solo/pixel/door-hull-closed.png', // escotilha da fase 2 (desce pro casco antigo)
   door_hull_open: '/solo/pixel/door-hull-open.png',
+  door_tavern_closed: '/solo/pixel/door-tavern-closed.png', // alçapão da taverna (fase 1): desce pro porão dos contrabandistas e o navio
+  door_tavern_open: '/solo/pixel/door-tavern-open.png',
   door_military_closed: '/solo/pixel/door-closed.png',
   door_military_open: '/solo/pixel/door-open.png',
   chest_closed: '/solo/pixel/chest-closed.png',
