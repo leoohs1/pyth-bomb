@@ -43,6 +43,13 @@ export const SOLO_SOUNDS = [
   'solo_hit',         // acertou um inimigo ou o chefe (sem derrotar)
   'solo_enemy_die',   // derrotou um inimigo
   'solo_roar',        // o chefe se enfureceu
+  'solo_chop_intro',  // o CHOP salta do buraco (splash + risada grave)
+  'solo_chop_frenzy', // o CHOP vai investir (rosnado crescendo)
+  'solo_chop_crash',  // o CHOP bate na parede ou numa caixa (pancada e tontura)
+  'solo_chop_hurt',   // o CHOP leva uma explosão (grunhido)
+  'solo_chop_die',    // o CHOP cai (gemido longo e splash)
+  'solo_splash',      // o CHOP mergulha no buraco (splash grande)
+  'solo_jet',         // um jato d'água estoura no chão
   'solo_door',        // a porta abriu
   'solo_chest_open',  // clicou no baú: tensão enquanto abre (espera o resultado)
   'solo_chest_win',   // abriu o baú e ganhou
@@ -248,6 +255,46 @@ Object.assign(SYNTH, {
   solo_hit: () => { tone({ type: 'square', f0: 260, f1: 170, dur: 0.07, gain: 0.15 }); swish({ f0: 2500, f1: 900, dur: 0.07, gain: 0.16 }) },
   solo_enemy_die: () => { tone({ type: 'square', f0: 640, f1: 140, dur: 0.2, gain: 0.14 }); swish({ f0: 3000, f1: 400, dur: 0.22, gain: 0.2 }); tone({ type: 'square', f0: 330, f1: 90, dur: 0.18, gain: 0.1, at: 0.1 }) },
   solo_roar: () => { tone({ type: 'sawtooth', f0: 95, f1: 45, dur: 0.7, gain: 0.25 }); swish({ type: 'lowpass', f0: 900, f1: 100, dur: 0.7, gain: 0.3 }); tone({ type: 'square', f0: 70, f1: 35, dur: 0.6, gain: 0.15, at: 0.1 }) },
+  // CHOP (provisórios, até chegarem os arquivos de verdade)
+  solo_chop_intro: () => {
+    swish({ type: 'lowpass', f0: 3200, f1: 180, q: 0.7, dur: 0.75, gain: 0.5 }) // o splash
+    tone({ type: 'sine', f0: 220, f1: 70, dur: 0.4, gain: 0.25, at: 0.05 })
+    ;[0, 1, 2].forEach((i) => { // "rá-rá-rá" grave
+      tone({ type: 'sawtooth', f0: 112 - i * 9, f1: 62 - i * 5, dur: 0.15, gain: 0.22, at: 0.7 + i * 0.2 })
+      swish({ type: 'lowpass', f0: 700, f1: 150, dur: 0.15, gain: 0.18, at: 0.7 + i * 0.2 })
+    })
+  },
+  solo_chop_frenzy: () => {
+    tone({ type: 'sawtooth', f0: 70, f1: 190, dur: 0.85, gain: 0.24 })
+    tone({ type: 'square', f0: 105, f1: 280, dur: 0.8, gain: 0.1, at: 0.1 })
+    swish({ type: 'lowpass', f0: 300, f1: 2200, q: 0.8, dur: 0.85, gain: 0.3 })
+  },
+  solo_chop_crash: () => {
+    tone({ type: 'triangle', f0: 130, f1: 32, dur: 0.38, gain: 0.55 })
+    swish({ type: 'lowpass', f0: 2200, f1: 90, q: 0.7, dur: 0.32, gain: 0.45 })
+    swish({ type: 'highpass', f0: 3200, f1: 1600, dur: 0.1, gain: 0.25 }) // madeira estalando
+    chip([740, 520, 740, 520, 620], { type: 'triangle', step: 0.09, dur: 0.1, gain: 0.09, at: 0.32 }) // tontura
+  },
+  solo_chop_hurt: () => {
+    tone({ type: 'sawtooth', f0: 165, f1: 70, dur: 0.28, gain: 0.26 })
+    tone({ type: 'square', f0: 110, f1: 55, dur: 0.22, gain: 0.12, at: 0.05 })
+    swish({ type: 'lowpass', f0: 1300, f1: 180, dur: 0.22, gain: 0.2 })
+  },
+  solo_chop_die: () => {
+    tone({ type: 'sawtooth', f0: 140, f1: 38, dur: 1.4, gain: 0.25 })
+    tone({ type: 'square', f0: 95, f1: 28, dur: 1.2, gain: 0.12, at: 0.1 })
+    swish({ type: 'lowpass', f0: 3000, f1: 160, q: 0.7, dur: 0.9, gain: 0.4, at: 0.95 }) // cai na água
+  },
+  solo_splash: () => {
+    swish({ type: 'lowpass', f0: 3600, f1: 260, q: 0.7, dur: 0.9, gain: 0.55 })
+    swish({ type: 'highpass', f0: 6000, f1: 2400, dur: 0.5, gain: 0.14 })
+    tone({ type: 'sine', f0: 210, f1: 70, dur: 0.5, gain: 0.22, at: 0.1 })
+  },
+  solo_jet: () => {
+    swish({ type: 'bandpass', f0: 500, f1: 2800, q: 1.1, dur: 0.38, gain: 0.35 })
+    swish({ type: 'highpass', f0: 5200, f1: 3000, dur: 0.5, gain: 0.12, at: 0.08 })
+    tone({ type: 'sine', f0: 170, f1: 80, dur: 0.28, gain: 0.22 })
+  },
   solo_door: () => chip([392, 523, 659, 784, 1047], { step: 0.08, dur: 0.12, gain: 0.12 }),
   solo_chest_open: () => {
     chip([262, 330, 262, 330, 392, 330, 392, 494, 392, 494, 587], { step: 0.09, dur: 0.1, gain: 0.1 })

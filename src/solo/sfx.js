@@ -7,7 +7,7 @@ import { doorOpen } from './engine/game.js'
 
 const STATUS_SOUND = { dead: 'solo_dead', gameover: 'solo_gameover', cleared: 'solo_clear', won: 'solo_win' }
 const DELAY = { solo_gameover: 0.75 } // a risada entra depois do dano (igual ao Classic: senão um abafa o outro)
-const MIN_GAP = { solo_boom: 0.09, solo_hit: 0.08, solo_enemy_die: 0.08, solo_pickup: 0.08 } // segundos entre repetições
+const MIN_GAP = { solo_jet: 0.25, solo_boom: 0.09, solo_hit: 0.08, solo_enemy_die: 0.08, solo_pickup: 0.08 } // segundos entre repetições
 
 export function createSoloSfx() {
   let game = null // jogo que estou acompanhando (se trocar, recomeço sem tocar nada)
@@ -42,14 +42,14 @@ export function createSoloSfx() {
       else if (ev.type === 'kick') say('solo_kick', now)
       else if (ev.type === 'bossEnrage') say('solo_roar', now)
       else if (ev.type === 'bombhead') say('solo_bomb', now)
-      else if (ev.type === 'bossIntro') say('solo_roar', now)
-      else if (ev.type === 'bossDive') say('solo_boom', now)
-      else if (ev.type === 'frenzy') say('solo_roar', now)
-      else if (ev.type === 'jetBurst') say('solo_boom', now)
-      else if (ev.type === 'bossCrash') say('solo_boom', now)
+      else if (ev.type === 'bossIntro') say(ev.text === 'CHOP' ? 'solo_chop_intro' : 'solo_roar', now) // entrada (splash e risada) ou volta furioso (rugido)
+      else if (ev.type === 'bossDive') say('solo_splash', now)
+      else if (ev.type === 'frenzy') say('solo_chop_frenzy', now)
+      else if (ev.type === 'jetBurst') say('solo_jet', now)
+      else if (ev.type === 'bossCrash') say('solo_chop_crash', now)
       else if (ev.type === 'collectors') say('solo_door', now)
       else if (ev.type === 'itemDrop') say('solo_door', now)
-      else if (ev.type === 'enemyHit') say(ev.killed ? 'solo_enemy_die' : 'solo_hit', now)
+      else if (ev.type === 'enemyHit') say(ev.boss ? (ev.killed ? 'solo_chop_die' : 'solo_chop_hurt') : ev.killed ? 'solo_enemy_die' : 'solo_hit', now)
     }
     // porta abriu (todos os inimigos derrotados)
     const d = !!doorOpen(g)
