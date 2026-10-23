@@ -1,9 +1,12 @@
-// Chefe do modo Solo: The Loan Shark (o tubarão agiota: cobra a dívida em explosões). Antes era a Whale (baleia).
-// - Ocupa 2x2 casas, anda devagar atrás do jogador; bombas não a seguram (ela passa por cima).
-// - Leva BOSS_HP explosões; depois de cada uma fica piscando um pouco sem levar dano.
-// - De tempos em tempos para e solta FUDs na arena.
-// - Com metade da vida fica brava: antes, PARA por um instante (treme, pisca roxo, não leva dano)
-//   pra todo mundo perceber a transformação; depois anda e invoca mais rápido.
+// Chefe do modo Solo: CHOP, o tubarão agiota (The Loan Shark: cobra a dívida em explosões). Antes era a Whale (baleia).
+// A luta, em fases (b.mode):
+//   'intro'    o buraco do meio borbulha e o CHOP salta pra fora (inofensivo e sem levar dano enquanto sai);
+//   'surface'  ele luta: anda atrás do jogador (bombas e o buraco não o seguram; paredes e caixas sim) e leva
+//              BOSS.hp explosões, piscando um pouco sem levar dano depois de cada uma;
+//   com METADE da vida: 'toHole' (foge correndo pro buraco) -> 'sinking' (mergulha, splash) -> 'under'
+//              (embaixo d'água: invencível e inofensivo; aparecem os COBRADORES, 1 caranguejo e 1 esqueleto) ->
+//              'rising' (volta furioso, mais rápido) -> 'surface' de novo.
+// A cada dano que ele leva cai um item útil na arena.
 import { FLOOR, HOLE, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './constants.js'
 import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
@@ -15,20 +18,21 @@ export const BOSS = {
   speed: 1.2,
   angrySpeed: 1.75,
   invulnerable: 1.2,   // segundos piscando depois de levar dano
-  summonEvery: 7,
-  angrySummonEvery: 4.5,
-  summonPause: 0.9,    // fica parada um tiquinho ao invocar
-  maxMinions: 4,
-  enrageTime: 1.6,     // segundos da transformação (parada, piscando, sem levar dano)
+  enrageTime: 1.6,     // (só o desenho usa) duração da antiga transformação
   introSplashAt: 1.0,  // entrada: o buraco borbulha por 1 s e aí o CHOP salta pra fora
   introTime: 2.4,      // entrada inteira (depois disso ele começa a lutar)
+  diveSpeed: 4.2,      // casas por segundo quando foge pro buraco
+  sinkTime: 0.9,       // tempo mergulhando
+  riseTime: 0.9,       // tempo voltando à tona
+  underMin: 3,         // fica embaixo d'água pelo menos isso (segundos) ...
+  underMax: 25,        // ... e no máximo isso, mesmo que os cobradores ainda estejam vivos
 }
 
 export function makeBoss(x, y) {
   return {
     x, y, hp: BOSS.hp, alive: true, deathT: 0,
-    hurtT: 0, summonT: BOSS.summonEvery * 0.6, pauseT: 0, walkT: 0, enrageT: 0,
-    mode: 'intro', introT: 0, // 'intro' = ainda saindo do buraco (inofensivo e sem levar dano); 'surface' = lutando
+    hurtT: 0, pauseT: 0, walkT: 0, enrageT: 0,
+    mode: 'intro', introT: 0, sinkT: 0, riseT: 0, underT: 0, holeT: 0, dived: false,
   }
 }
 
@@ -59,7 +63,7 @@ function dropItem(s, random) {
 
 const angry = (b) => b.hp <= BOSS.hp / 2
 
-// casas que a caixa da baleia encosta
+// casas que a caixa do chefe encosta
 function tilesUnder(cx, cy) {
   const r = BOSS.half + 0.5
   const out = []
@@ -72,7 +76,7 @@ function tilesUnder(cx, cy) {
 // o chefe é barrado pelas paredes e pelas caixas, mas passa por cima do buraco da arena e das bombas
 const fits = (s, cx, cy) => tilesUnder(cx, cy).every(([x, y]) => { const t = tileAt(s.level, x, y); return t === FLOOR || t === HOLE })
 
-// fogo encostando na baleia
+// fogo encostando no chefe
 export function bossTouchesTile(b, x, y) {
   const reach = BOSS.half + 0.3
   return Math.abs(x - b.x) < reach && Math.abs(y - b.y) < reach
@@ -83,11 +87,45 @@ export function bossTouchesPlayer(b, p) {
   return Math.abs(p.x - b.x) < reach && Math.abs(p.y - b.y) < reach
 }
 
+// casa de chão livre mais perto de (x, y): a porta aparece ali quando o chefe cai (não pode ser dentro do buraco)
+function nearestFloor(s, x, y) {
+  let best = null, bestD = Infinity
+  for (let ty = 1; ty < s.level.rows - 1; ty++) {
+    for (let tx = 1; tx < s.level.cols - 1; tx++) {
+      if (tileAt(s.level, tx, ty) !== FLOOR) continue
+      const d = Math.abs(tx - x) + Math.abs(ty - y)
+      if (d < bestD) { bestD = d; best = [tx, ty] }
+    }
+  }
+  return best ?? [1, 1]
+}
+
+// os COBRADORES (1 caranguejo e 1 esqueleto) saem em volta do buraco, longe do jogador
+function spawnCollectors(s, random) {
+  const hole = s.level.hole, p = s.player
+  const ring = []
+  for (let y = hole.y - 1; y <= hole.y + hole.h; y++) {
+    for (let x = hole.x - 1; x <= hole.x + hole.w; x++) {
+      if (tileAt(s.level, x, y) === FLOOR && !s.bombs.some((q) => q.x === x && q.y === y)) ring.push([x, y])
+    }
+  }
+  let spots = ring.filter(([x, y]) => Math.abs(x - p.x) + Math.abs(y - p.y) >= 3)
+  if (spots.length < 2) spots = ring
+  for (const type of ['crab', 'skeleton']) {
+    if (!spots.length) break
+    const [x, y] = spots.splice(Math.floor(random() * spots.length), 1)[0]
+    s.enemies.push(makeEnemy(type, x, y))
+  }
+  s.events.push({ type: 'collectors', x: s.boss.x, y: s.boss.y })
+}
+
 export function updateBoss(s, dt, random = Math.random) {
   const b = s.boss
   if (!b.alive) { b.deathT += dt; return }
   b.hurtT = Math.max(0, b.hurtT - dt)
   b.walkT += dt
+  const hole = s.level.hole
+  const holeX = hole.x + hole.w / 2 - 0.5, holeY = hole.y + hole.h / 2 - 0.5 // onde o chefe fica quando está no buraco
 
   // entrada: o buraco borbulha, o CHOP salta pra fora (splash + nome na tela) e só então começa a lutar
   if (b.mode === 'intro') {
@@ -95,7 +133,7 @@ export function updateBoss(s, dt, random = Math.random) {
     if (!b.introSplash && b.introT >= BOSS.introSplashAt) {
       b.introSplash = true
       s.shake = Math.min(0.5, s.shake + 0.4)
-      s.events.push({ type: 'bossIntro', x: b.x, y: b.y })
+      s.events.push({ type: 'bossIntro', x: b.x, y: b.y, text: 'CHOP', color: '#ffd24a' })
       s.note = `${BOSS.name} the Loan Shark wants his money back`
       s.noteUntil = s.time + 3.5
     }
@@ -106,58 +144,82 @@ export function updateBoss(s, dt, random = Math.random) {
     return
   }
 
+  // metade da vida: foge correndo pro buraco...
+  if (b.mode === 'toHole') {
+    b.holeT += dt
+    const dx = holeX - b.x, dy = holeY - b.y
+    const len = Math.hypot(dx, dy)
+    if (Math.abs(dx) > 0.25) b.face = Math.sign(dx)
+    if (len < 0.15 || b.holeT > 2.5) { // chegou (ou demorou demais, preso numa quina): mergulha de onde está
+      b.x = holeX; b.y = holeY
+      b.mode = 'sinking'
+      b.sinkT = 0
+      s.shake = Math.min(0.5, s.shake + 0.4)
+      s.events.push({ type: 'bossDive', x: b.x, y: b.y })
+    } else {
+      const step = Math.min(len, BOSS.diveSpeed * dt)
+      const nx = b.x + (dx / len) * step
+      if (fits(s, nx, b.y)) b.x = nx
+      const ny = b.y + (dy / len) * step
+      if (fits(s, b.x, ny)) b.y = ny
+    }
+    return
+  }
+  // ...mergulha (splash)...
+  if (b.mode === 'sinking') {
+    b.sinkT += dt
+    if (b.sinkT >= BOSS.sinkTime) {
+      b.mode = 'under'
+      b.underT = 0
+      spawnCollectors(s, random)
+      s.note = 'CHOP dived! The debt collectors are coming'
+      s.noteUntil = s.time + 3.5
+    }
+    return
+  }
+  // ...fica embaixo d'água (invencível e inofensivo) enquanto os cobradores atacam...
+  if (b.mode === 'under') {
+    b.underT += dt
+    if ((b.underT >= BOSS.underMin && !s.enemies.some((e) => e.alive)) || b.underT >= BOSS.underMax) {
+      b.mode = 'rising'
+      b.riseT = 0
+      s.shake = Math.min(0.5, s.shake + 0.4)
+      s.events.push({ type: 'bossIntro', x: b.x, y: b.y, text: 'CHOP IS FURIOUS!', color: '#ff6b6b' })
+    }
+    return
+  }
+  // ...e volta furioso
+  if (b.mode === 'rising') {
+    b.riseT += dt
+    if (b.riseT >= BOSS.riseTime) { b.mode = 'surface'; b.hurtT = 0.6 }
+    return
+  }
+
   // levou explosão? (a pontinha de fogo desenhada dentro das caixas não conta)
   if (b.hurtT === 0 && s.flames.some((f) => !f.visual && bossTouchesTile(b, f.x, f.y))) {
-    const wasAngry = angry(b)
     b.hp--
     b.hurtT = BOSS.invulnerable
     s.shake = Math.min(0.35, s.shake + 0.25)
     s.events.push({ type: 'enemyHit', x: b.x, y: b.y, killed: b.hp <= 0, boss: true })
     if (b.hp <= 0) {
       b.alive = false
-      for (const e of s.enemies) e.alive = false // os FUDs somem junto com a chefe
-      // a porta aparece onde ela caiu
-      s.door = { x: Math.round(b.x), y: Math.round(b.y), revealed: true }
+      for (const e of s.enemies) e.alive = false // os cobradores somem junto com o chefe
+      // a porta aparece onde ele caiu (numa casa de chão: o buraco não serve)
+      const [dx, dy] = nearestFloor(s, Math.round(b.x), Math.round(b.y))
+      s.door = { x: dx, y: dy, revealed: true }
       return
     }
     dropItem(s, random)
-    if (!wasAngry && angry(b)) {
-      // transformação: para, treme e fica invencível até terminar; depois já invoca reforço
-      b.enrageT = BOSS.enrageTime
-      b.hurtT = Math.max(b.hurtT, BOSS.enrageTime)
-      b.summonT = 0
-      s.shake = Math.min(0.5, s.shake + 0.4)
-      s.events.push({ type: 'bossEnrage', x: b.x, y: b.y })
-      s.note = `${BOSS.name} is ENRAGED! Faster, and more FUD`
-      s.noteUntil = s.time + 3.5
+    if (!b.dived && angry(b)) { // metade da vida: ele foge pro buraco (fica invencível a partir daqui)
+      b.dived = true
+      b.mode = 'toHole'
+      b.holeT = 0
+      b.hurtT = BOSS.invulnerable
+      s.note = 'CHOP is hurt! He runs back to the water...'
+      s.noteUntil = s.time + 3
     }
+    return
   }
-  if (b.enrageT > 0) { b.enrageT = Math.max(0, b.enrageT - dt); return }
-
-  // invocar FUDs
-  b.summonT -= dt
-  const minions = s.enemies.filter((e) => e.alive).length
-  if (b.summonT <= 0) {
-    b.summonT = angry(b) ? BOSS.angrySummonEvery : BOSS.summonEvery
-    if (minions < BOSS.maxMinions) {
-      b.pauseT = BOSS.summonPause
-      const p = s.player
-      const spots = []
-      for (let y = 1; y < s.level.rows - 1; y++) {
-        for (let x = 1; x < s.level.cols - 1; x++) {
-          if (tileAt(s.level, x, y) === FLOOR && Math.abs(x - p.x) + Math.abs(y - p.y) >= 4 &&
-            Math.abs(x - b.x) <= 3 && Math.abs(y - b.y) <= 3 && !bossTouchesTile(b, x, y)) spots.push([x, y])
-        }
-      }
-      const n = Math.min(angry(b) ? 2 : 1, BOSS.maxMinions - minions)
-      for (let i = 0; i < n && spots.length; i++) {
-        const [x, y] = spots.splice(Math.floor(random() * spots.length), 1)[0]
-        s.enemies.push(makeEnemy('fud', x, y))
-      }
-    }
-  }
-
-  if (b.pauseT > 0) { b.pauseT -= dt; return }
 
   // anda na direção do jogador (um eixo de cada vez, pra deslizar nas paredes)
   const p = s.player

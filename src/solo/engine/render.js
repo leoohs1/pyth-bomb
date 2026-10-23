@@ -3,7 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, holeFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -351,8 +351,22 @@ export function draw(ctx, s, tilePx, dpr) {
 // redemoinho, com espuma na borda; antes do CHOP sair ele borbulha.
 function drawHole(ctx, h, s) {
   const cx = h.x + h.w / 2, cy = h.y + h.h / 2, t = s.time
-  const intro = s.boss && s.boss.mode === 'intro' ? s.boss.introT : 99
+  const frames = holeFrames()
+  const bm = s.boss?.mode
+  const intro = bm === 'intro' ? s.boss.introT : bm === 'under' || bm === 'sinking' || bm === 'rising' ? 0 : 99
   ctx.save()
+  if (frames) { // a ARTE: redemoinho de 3 quadros (6 por segundo) com o aro de tábuas quebradas
+    blit(ctx, frames[Math.floor(t * 6) % 3], h.x, h.y, h.w, h.h)
+    if (intro < BOSS.introSplashAt + 0.4) { // borbulhando: bolhas por cima
+      ctx.fillStyle = 'rgba(210, 240, 255, 0.9)'
+      for (let i = 0; i < 9; i++) {
+        const ph = (t * 2.2 + i * 0.37) % 1
+        ctx.fillRect(cx + Math.sin(i * 2.3) * 0.9 - 0.04, cy + Math.cos(i * 1.7) * 0.7 - ph * 0.5 - 0.04, 0.08, 0.08)
+      }
+    }
+    ctx.restore()
+    return
+  }
   ctx.fillStyle = '#150c06'
   ctx.beginPath(); ctx.ellipse(cx, cy, 1.55, 1.5, 0, 0, Math.PI * 2); ctx.fill() // aro escuro (tábuas quebradas)
   const g = ctx.createRadialGradient(cx, cy, 0.1, cx, cy, 1.45)
@@ -401,15 +415,24 @@ function drawChopTag(ctx, pose, face, w, h) {
   px(1, 1, '#fff2a6'); px(2, 1, '#fff2a6') // brilho
   'CHOP'.split('').forEach((ch, i) => TAG_FONT[ch].forEach((row, y) => row.split('').forEach((on, x) => { if (on === '1') px(2 + i * 4 + x, 2 + y, '#3a1f00') })))
 }
+// o chefe está escondido (debaixo d'água)? E quanto dele já saiu da água (0 a 1, suavizado)?
+const bossHidden = (b) => b.mode === 'under' || (b.mode === 'intro' && b.introT < BOSS.introSplashAt)
+function bossRise(b) {
+  const k = b.mode === 'intro' ? (b.introT - BOSS.introSplashAt) / 0.9
+    : b.mode === 'rising' ? b.riseT / BOSS.riseTime
+    : b.mode === 'sinking' ? 1 - b.sinkT / BOSS.sinkTime : 1
+  const c = Math.max(0, Math.min(1, k))
+  return c * (2 - c)
+}
 function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   if (!b.alive && b.deathT > 1.2) return
-  if (b.mode === 'intro' && b.introT < BOSS.introSplashAt) return // ainda não saiu: só o buraco borbulha
-  const rise = b.mode === 'intro' ? Math.min(1, (b.introT - BOSS.introSplashAt) / 0.9) : 1 // 0 = no fundo, 1 = fora
+  if (bossHidden(b)) return // ainda não saiu (ou já mergulhou): só o buraco, borbulhando
+  const rise = bossRise(b) // 0 = no fundo, 1 = fora
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0
   const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
   const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
-  const summoning = b.pauseT > 0 && b.alive
+  const summoning = b.alive && (b.mode === 'sinking' || b.mode === 'rising') // rugindo ao mergulhar e ao voltar: boca aberta
   let pose = angry ? (summoning ? 1 : 2) : (summoning ? 1 : 0)
   let img = angry && summoning ? hueShifted(open, 140, -0.12, 1.15) :[normal, open, fury][pose] // boca aberta e furioso: a pose aberta vira vermelha
   if (flash) img = tinted(img, 'rgb(255, 255, 255)', 0.9, 'screen')
@@ -423,7 +446,7 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   if (rise < 1) { // saindo da água: só aparece o que está acima da linha d'água do buraco
     ctx.beginPath(); ctx.rect(b.x - 3, b.y - 4, 7, 4.65); ctx.clip()
   }
-  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob + (1 - rise * (2 - rise)) * 1.9)
+  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob + (1 - rise) * 1.9)
   ctx.scale(grow, grow)
   ctx.globalAlpha = 1 - dying
   ctx.rotate(dying * 1.5)
@@ -442,7 +465,7 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
 // virado pro lado em que o jogador está. Pisca branco quando leva dano e fica vermelho-escuro quando brava.
 // Na transformação (enrageT), treme, cresce um pouco e pisca cinza/vermelho antes de ficar vermelho de vez.
 function drawWhale(ctx, b, time) {
-  if (b.mode === 'intro' && b.introT < BOSS.introSplashAt) return
+  if (bossHidden(b)) return
   const art = bossFrames()
   if (art) return drawBossSprite(ctx, b, time, art)
   if (!b.alive && b.deathT > 1.2) return

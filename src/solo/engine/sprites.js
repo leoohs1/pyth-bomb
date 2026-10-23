@@ -144,6 +144,10 @@ const PIXEL_FILES = {
   boss_shark_1: '/solo/pixel/boss-shark-1.png',
   boss_shark_2: '/solo/pixel/boss-shark-2.png',
   boss_shark_3: '/solo/pixel/boss-shark-3.png',
+  // o buraco com redemoinho da arena do chefe: 3 quadros de 144x144 (3x3 casas)
+  hole_1: '/solo/pixel/hole-1.png',
+  hole_2: '/solo/pixel/hole-2.png',
+  hole_3: '/solo/pixel/hole-3.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -201,6 +205,12 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// os 3 quadros do buraco do chefe (ou null se ainda não carregou / estilo pintado)
+export const holeFrames = () => {
+  const list = [1, 2, 3].map((i) => sprite(`hole_${i}`))
+  return list.every(Boolean) ? list : null
+}
 
 // as 3 poses do chefe [normal, boca aberta, furioso] (ou null se ainda não carregou / estilo pintado)
 export const bossFrames = () => {

@@ -100,7 +100,16 @@ export function consumeEvents(s) {
         const a = rand(0, Math.PI * 2), sp = rand(2, 4.5)
         add({ kind: 'spark', x: cx, y: cy, life: rand(0.5, 0.9), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0.5, 2), color: Math.random() < 0.6 ? '170, 225, 255' : '255, 255, 255' })
       }
-      add({ kind: 'text', text: 'CHOP', x: cx, y: cy - 1.8, vy: -0.2, life: 2.4, color: '#ffd24a', big: true })
+      add({ kind: 'text', text: ev.text ?? 'CHOP', x: cx, y: cy - 1.8, vy: -0.2, life: 2.4, color: ev.color ?? '#ffd24a', big: true })
+    } else if (ev.type === 'bossDive') {
+      // o CHOP mergulha: splash grande e gotas
+      add({ kind: 'ring', x: cx, y: cy, life: 0.7, color: '170, 225, 255', big: true })
+      for (let i = 0; i < 20; i++) {
+        const a = rand(0, Math.PI * 2), sp = rand(1.5, 3.5)
+        add({ kind: 'spark', x: cx, y: cy, life: rand(0.4, 0.8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0.5, 1.5), color: '190, 235, 255' })
+      }
+    } else if (ev.type === 'collectors') {
+      add({ kind: 'text', text: 'DEBT COLLECTORS!', x: cx, y: cy - 1.8, vy: -0.2, life: 2.2, color: '#ffe7a0', big: true })
     } else if (ev.type === 'itemDrop') {
       // um item caiu na arena: anel dourado e faíscas
       add({ kind: 'ring', x: cx, y: cy, life: 0.5, color: '255, 230, 150', big: true })
