@@ -716,6 +716,7 @@ const ENEMY_H = { marine: 1.15, sarge: 1.25 } // o sargento é maior
 
 // desenha o inimigo em partes, cada uma no quadro certo da caminhada (só deslocamentos de pixel inteiro)
 function drawRigged(ctx, img, rig, e, w, h) {
+  if (e.bombT != null) return drawLoneHead(ctx, img, e, w, h)
   const moving = e.alive && (e.x !== e.tx || e.y !== e.ty)
   const n = rig.parts[0].off.length
   const f = moving ? Math.floor(e.walkT * rig.fps) % n : rig.idle
@@ -727,28 +728,17 @@ function drawRigged(ctx, img, rig, e, w, h) {
     ctx.drawImage(img, sx, sy, sw, sh, -w / 2 + (sx + step * dirx) / PX_TILE, -h + (sy + dy) / PX_TILE, sw / PX_TILE, sh / PX_TILE)
   }
   ctx.imageSmoothingEnabled = smooth
-  if (e.bombT != null) drawBombHead(ctx, e, w, h, rig.parts[0].off[f][1])
 }
 
-// A cabeça do esqueleto virou uma BOMBA (pixel a pixel, no lugar da cabeça): roxa-escura com brilho e pavio com faísca;
-// nos últimos 1,5 s pisca vermelho, avisando que vai explodir.
-function drawBombHead(ctx, e, w, h, dy) {
-  const u = 1 / PX_TILE
-  const px = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(-w / 2 + x * u, -h + (y + dy) * u, u + 0.004, u + 0.004) }
-  const urgent = e.bombT < 1.5 && Math.sin(e.walkT * 26) > 0
-  const body = urgent ? '#d8323c' : '#2a1f42', edge = '#0d0916', shine = urgent ? '#ffd0d0' : '#8774c4'
-  const cx = 15, cy = 9, R = urgent ? 9 : 8
-  for (let y = -R - 1; y <= R + 1; y++) {
-    for (let x = -R - 1; x <= R + 1; x++) {
-      const d2 = x * x + y * y
-      if (d2 > (R + 0.5) * (R + 0.5)) continue
-      px(cx + x, cy + y, d2 > (R - 1) * (R - 1) ? edge : body)
-    }
-  }
-  for (const [x, y] of [[-4, -4], [-3, -4], [-4, -3], [-2, -5]]) px(cx + x, cy + y, shine)
-  for (const [x, y] of [[3, -R - 1], [4, -R - 2], [5, -R - 2], [6, -R - 3]]) px(cx + x, cy + y, '#b89b6a') // pavio
-  const spark = Math.floor(e.walkT * 14) % 2 ? '#ffe066' : '#ff8a2a'
-  for (const [x, y] of [[6, -R - 5], [7, -R - 4], [7, -R - 5], [8, -R - 5]]) px(cx + x, cy + y, spark) // faísca
+// O esqueleto derrotado: o CORPO some e sobra só a CABEÇA (idêntica à dele, com o quepe), pulando atrás do jogador.
+// Ninguém sabe que é uma bomba até ela explodir (por isso nada de pavio nem de piscar). Só pulinhos de pixel inteiro.
+function drawLoneHead(ctx, img, e, w, h) {
+  const smooth = ctx.imageSmoothingEnabled
+  ctx.imageSmoothingEnabled = false
+  const hop = Math.round(Math.abs(Math.sin(e.walkT * 9)) * 6) // pulinho, de pixel em pixel
+  const wob = Math.round(Math.sin(e.walkT * 9 + 1)) // e um balanço de 1 pixel pro lado
+  ctx.drawImage(img, 0, 0, 31, 17, -w / 2 + wob / PX_TILE, -h + (47 - 17 - hop) / PX_TILE, 31 / PX_TILE, 17 / PX_TILE)
+  ctx.imageSmoothingEnabled = smooth
 }
 
 function drawEnemySprite(ctx, e, time, img) {
@@ -758,7 +748,7 @@ function drawEnemySprite(ctx, e, time, img) {
   const heavy = e.type === 'sarge' // o sargento anda pesado: passo lento, pisa forte e "respira"
   // inimigo com "rig" (esqueleto, caranguejo): anda com partes de pixel (sprites.js RIGS), sem girar, esticar
   // nem espelhar; sempre de frente (o caranguejo anda de LADO como caranguejo de verdade)
-  const rig = isPixel(img) ? RIGS[e.bombT != null ? `${e.type}_bomb` : e.type] : null // cabeça-bomba: esqueleto sem cabeça
+  const rig = isPixel(img) ? RIGS[e.type] : null
   const phase = e.walkT * (heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
   const k = Math.abs(Math.sin(phase))
   const hop = e.alive && !rig ? k * (heavy ? 0.04 : 0.06) : 0

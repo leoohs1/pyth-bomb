@@ -343,15 +343,6 @@ export const RIGS = {
       { src: [16, 39, 15, 8], off: [[0, 0], [0, 0], [1, -2], [0, 0]] },
     ],
   },
-  // esqueleto SEM CABEÇA (a cabeça virou uma bomba, que o render.js desenha por cima): do pescoço pra baixo
-  skeleton_bomb: {
-    fps: 12, idle: 1,
-    parts: [
-      { src: [0, 17, 31, 22], off: [[0, 0], [0, 1], [0, 0], [0, 1]] },
-      { src: [0, 39, 16, 8], off: [[1, -2], [0, 0], [0, 0], [0, 0]] },
-      { src: [16, 39, 15, 8], off: [[0, 0], [0, 0], [1, -2], [0, 0]] },
-    ],
-  },
   // caranguejo 44x32: casco e garras balançam rápido; as pernas andam em dois grupos (esquerda+direita, depois o meio)
   crab: {
     fps: 13, idle: 1,
