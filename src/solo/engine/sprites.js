@@ -149,10 +149,13 @@ const PIXEL_FILES = {
   deco_tavern_anchor: '/solo/pixel/deco-tavern-anchor.png',
   deco_tavern_net: '/solo/pixel/deco-tavern-net.png',
   // vazamento animado da fase 2: 2 desenhos (a, b) de 3 quadros cada
-  // poça de cerveja da taverna (fase 1): 1 desenho de 3 quadros (36x43); o 2º desenho ('b') ainda vem, até lá usa o 'a'
+  // poça de cerveja da taverna (fase 1): 2 desenhos (a, b) de 3 quadros cada, ~36x43
   leak_ale_a_1: '/solo/pixel/leak-ale-a-1.png',
   leak_ale_a_2: '/solo/pixel/leak-ale-a-2.png',
   leak_ale_a_3: '/solo/pixel/leak-ale-a-3.png',
+  leak_ale_b_1: '/solo/pixel/leak-ale-b-1.png', // 2º desenho (tábua inclinada, 33x43)
+  leak_ale_b_2: '/solo/pixel/leak-ale-b-2.png',
+  leak_ale_b_3: '/solo/pixel/leak-ale-b-3.png',
   leak_a_1: '/solo/pixel/leak-a-1.png',
   leak_a_2: '/solo/pixel/leak-a-2.png',
   leak_a_3: '/solo/pixel/leak-a-3.png',
