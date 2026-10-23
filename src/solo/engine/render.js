@@ -332,7 +332,7 @@ export function draw(ctx, s, tilePx, dpr) {
   drawWarmLight(ctx, level.cols, level.rows)
   drawAmbient(ctx, s.time, s.mood)
 
-  if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.tileset)
+  if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.doorSet ?? s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
   if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
   for (const b of s.bombs) {
@@ -430,7 +430,7 @@ function drawWhale(ctx, b, time) {
 
 function drawDoor(ctx, d, open, time, tileset) {
   const art = sprite(`door_${tileset}_${open ? 'open' : 'closed'}`)
-  if (art) return drawDoorSprite(ctx, d, open, time, art)
+  if (art) return drawDoorSprite(ctx, d, open, time, art, tileset === 'hull' ? '90, 230, 220' : '255, 210, 120')
   const { x, y } = d
   ctx.fillStyle = '#7a5c1c'
   ctx.beginPath(); ctx.roundRect(x + 0.12, y + 0.08, 0.76, 0.86, [0.38, 0.38, 0.04, 0.04]); ctx.fill()
@@ -452,14 +452,14 @@ function drawDoor(ctx, d, open, time, tileset) {
 }
 
 // Porta com arte: fechada ou aberta (aberta, a luz de dentro pulsa e brilha no chão)
-function drawDoorSprite(ctx, d, open, time, img) {
+function drawDoorSprite(ctx, d, open, time, img, glow = '255, 210, 120') {
   const [w, h] = sizeByW(img, 1.0)
   const cx = d.x + 0.5, bottom = d.y + 0.98
   if (open) {
     const a = 0.4 + 0.15 * Math.sin(time * 5)
     const g = ctx.createRadialGradient(cx, bottom - 0.3, 0, cx, bottom - 0.3, 1)
-    g.addColorStop(0, `rgba(255, 210, 120, ${a})`)
-    g.addColorStop(1, 'rgba(255, 210, 120, 0)')
+    g.addColorStop(0, `rgba(${glow}, ${a})`)
+    g.addColorStop(1, `rgba(${glow}, 0)`)
     ctx.fillStyle = g
     ctx.fillRect(cx - 1, bottom - 1.3, 2, 2)
   }

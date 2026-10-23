@@ -185,6 +185,7 @@ function loadLevel(run, random) {
     floor: cfg.floor ?? null, // chão próprio da fase (levels.js)
     wall: cfg.wall ?? null, // blocos fixos próprios da fase (levels.js)
     decor: cfg.decor ?? null, // decoração da borda própria da fase (levels.js)
+    doorSet: cfg.door ?? null, // porta própria da fase (levels.js): 'hull' = escotilha
     time: 0,
     shake: 0,
     events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...
