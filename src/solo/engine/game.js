@@ -150,6 +150,7 @@ function loadLevel(run, random) {
     status: 'playing', // 'playing' | 'dead' | 'gameover' | 'cleared' | 'won'
     tileset: cfg.tileset ?? 'temple', // cenário da fase (sprites.js TILESETS)
     mood: cfg.mood ?? null, // clima por cima do cenário (levels.js)
+    wallMix: !!cfg.wallMix, // blocos fixos em várias cores (levels.js)
     time: 0,
     shake: 0,
     events: [], // avisos pros efeitos visuais (fx.js): explosão, caixa quebrando, inimigo atingido...

@@ -3,7 +3,7 @@
 import { WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -43,6 +43,12 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(150, 88, 42)', 0.85], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
 }
 
+// cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
+function wallColorOf(x, y) {
+  const h = (((x * 73856093) ^ (y * 19349663)) >>> 0) % 10
+  return h < 4 ? 0 : h < 7 ? 1 : 2
+}
+
 export function draw(ctx, s, tilePx, dpr) {
   const { level } = s
   const scale = tilePx * dpr
@@ -63,12 +69,17 @@ export function draw(ctx, s, tilePx, dpr) {
   const mood = MOODS[s.mood]
   const floorImg = mood ? tinted(tileSprite(s.tileset, 'floor'), ...mood.floor) : tileSprite(s.tileset, 'floor')
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
+  // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
+  // ~30% vermelho, sorteados pela posição (o mesmo lugar sempre tem a mesma cor). A borda fica azul.
+  const wallColors = s.wallMix && wallImg ? [wallImg, hueShifted(wallImg, 188, 0.04), hueShifted(wallImg, 135)] : null
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
       if (t === WALL) {
-        if (wallImg) blit(ctx, wallImg, x, y, 1 + seam, 1 + seam)
+        const inner = x > 0 && y > 0 && x < level.cols - 1 && y < level.rows - 1
+        const wallHere = wallColors && inner ? wallColors[wallColorOf(x, y)] : wallImg
+        if (wallHere) blit(ctx, wallHere, x, y, 1 + seam, 1 + seam)
         else drawWall(ctx, x, y)
         // a borda da arena fica só um tiquinho mais escura, pra fechar a arena
         if (x === 0 || y === 0 || x === level.cols - 1 || y === level.rows - 1) {

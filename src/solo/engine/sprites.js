@@ -174,6 +174,48 @@ export function tileSprite(set, kind, variant = 0) {
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
 
+// Cópia do desenho com o AZUL trocado por outra cor (delta = quantos graus girar a cor: +135 vira vermelho,
+// +188 vira amarelo). Só mexe no que é azul de verdade: a estrela branca, as listras amarelas e os contornos
+// escuros ficam como estão. light clareia (+) ou escurece (-) o resultado. Fica guardada pra não refazer.
+const hueCache = new WeakMap()
+export function hueShifted(img, delta, light = 0) {
+  if (!img || typeof document === 'undefined') return img
+  const key = `${delta}|${light}`
+  let byKey = hueCache.get(img)
+  if (!byKey) hueCache.set(img, byKey = new Map())
+  if (byKey.has(key)) return byKey.get(key)
+  const w = img.naturalWidth, h = img.naturalHeight
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d', { willReadFrequently: true })
+  g.drawImage(img, 0, 0)
+  const data = g.getImageData(0, 0, w, h)
+  const px = data.data
+  for (let i = 0; i < px.length; i += 4) {
+    if (!px[i + 3]) continue
+    const r = px[i] / 255, gr = px[i + 1] / 255, b = px[i + 2] / 255
+    const max = Math.max(r, gr, b), min = Math.min(r, gr, b), d = max - min
+    const l = (max + min) / 2
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1))
+    let hue = 0
+    if (d) hue = 60 * (max === r ? ((gr - b) / d + 6) % 6 : max === gr ? (b - r) / d + 2 : (r - gr) / d + 4)
+    if (s < 0.25 || hue < 180 || hue > 270) continue // só o azul
+    const nh = (hue + delta) % 360, nl = Math.max(0, Math.min(1, l + light))
+    const ch = (1 - Math.abs(2 * nl - 1)) * s, x = ch * (1 - Math.abs(((nh / 60) % 2) - 1)), m = nl - ch / 2
+    const [r2, g2, b2] = nh < 60 ? [ch, x, 0] : nh < 120 ? [x, ch, 0] : nh < 180 ? [0, ch, x] : nh < 240 ? [0, x, ch] : nh < 300 ? [x, 0, ch] : [ch, 0, x]
+    px[i] = Math.round((r2 + m) * 255)
+    px[i + 1] = Math.round((g2 + m) * 255)
+    px[i + 2] = Math.round((b2 + m) * 255)
+  }
+  g.putImageData(data, 0, 0)
+  c.naturalWidth = w
+  c.naturalHeight = h
+  if (pixelImgs.has(img)) pixelImgs.add(c)
+  byKey.set(key, c)
+  return c
+}
+
 // ---- ANDAR em pixel (sem girar nem esticar a imagem, que é o que fazia parecer papel): o desenho do
 // inimigo é cortado em partes e cada parte pula de pixel em pixel, quadro a quadro, como num sprite de
 // verdade. src = [x, y, largura, altura] em pixels da arte. off[quadro] = [passo, dy]: dy sobe/desce a
