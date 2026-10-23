@@ -434,13 +434,17 @@ function drawEnemySprite(ctx, e, time, img) {
   const [w, h] = sizeByH(img, ENEMY_H[e.type] ?? 1.15)
   const feetY = e.y + 0.92
   const heavy = e.type === 'sarge' // o sargento anda pesado: passo lento, pisa forte e "respira"
-  const phase = e.walkT * (heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
+  // o caranguejo anda de LADO: sempre de frente (nunca espelha nem vira de costas), em passinhos curtos e
+  // rápidos (as perninhas "arrastam": o corpo estica e encolhe) e inclina um pouco pra onde está indo
+  const crab = e.type === 'crab'
+  const phase = e.walkT * (crab ? (e.angry ? 24 : 18) : heavy ? (e.angry ? 9 : 6) : (e.angry ? 13 : 9))
   const k = Math.abs(Math.sin(phase))
-  const hop = e.alive ? k * (heavy ? 0.04 : 0.06) : 0
-  const tilt = e.alive ? Math.sin(phase) * (heavy ? 0.09 : 0.06) : 0
-  const breathe = heavy && e.alive ? 1 + Math.sin(e.walkT * 2.5) * 0.04 : 1
+  const hop = e.alive ? k * (heavy ? 0.04 : crab ? 0.025 : 0.06) : 0
+  const lean = crab ? (e.dir === 'right' ? 0.07 : e.dir === 'left' ? -0.07 : 0) : 0
+  const tilt = e.alive ? (crab ? lean + Math.sin(phase) * 0.025 : Math.sin(phase) * (heavy ? 0.09 : 0.06)) : 0
+  const breathe = e.alive ? (heavy ? 1 + Math.sin(e.walkT * 2.5) * 0.04 : crab ? 1 + Math.sin(phase * 2) * 0.04 : 1) : 1
   const stomp = heavy && e.alive ? 0.92 + k * 0.08 : 1 // amassa ao pisar
-  const flip = e.dir === 'left' ? -1 : 1
+  const flip = !crab && e.dir === 'left' ? -1 : 1
 
   ctx.save()
   ctx.fillStyle = 'rgba(0,0,0,0.3)'
@@ -494,7 +498,7 @@ function drawEnemy(ctx, e, time) {
     ctx.fillRect(-0.15, -0.36, 0.3, 0.1)
     ctx.fillStyle = '#1b2f6b'
     ctx.fillRect(-0.15, -0.29, 0.3, 0.04)
-  } else if (e.type === 'fud') {
+  } else if (e.type === 'fud' || e.type === 'skeleton') { // (estilo pintado: o esqueleto usa o fantasminha provisório)
     ctx.fillStyle = dying ? '#fff' : '#9a93b8'
     ctx.beginPath()
     ctx.arc(0, -0.06, 0.3, Math.PI, 0)
@@ -504,7 +508,7 @@ function drawEnemy(ctx, e, time) {
       ctx.quadraticCurveTo(wx, 0.3 - 0.12 * (i % 2 ? -1 : 1) + Math.sin(time * 8 + i) * 0.03, 0.3 - (i + 1) * 0.15, 0.3)
     }
     ctx.closePath(); ctx.fill()
-  } else if (e.type === 'bear') {
+  } else if (e.type === 'bear' || e.type === 'crab') { // (estilo pintado: o caranguejo usa o urso provisório)
     ctx.fillStyle = dying ? '#fff' : '#8a5a33'
     ctx.beginPath(); ctx.arc(-0.22, -0.24, 0.1, 0, Math.PI * 2); ctx.arc(0.22, -0.24, 0.1, 0, Math.PI * 2); ctx.fill()
     ctx.beginPath(); ctx.roundRect(-0.32, -0.28, 0.64, 0.6, 0.2); ctx.fill()

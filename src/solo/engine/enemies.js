@@ -5,10 +5,16 @@
 // - FUD: lento, vaga sem rumo.
 // - Bear: persegue o jogador quando ele está por perto.
 // - Rug Pull: rápido e imprevisível.
+// - Marinheiro Esqueleto (afogado): lento, vaga sem rumo (o FUD da fase 2).
+// - Caranguejo Pirata: anda de LADO como caranguejo de verdade (prefere andar pra esquerda/direita e
+//   nunca vira de costas) e persegue o jogador quando ele está por perto (o Bear da fase 2).
+// Os FUDs continuam existindo: é o que a Whale solta na arena do chefe.
 import { FLOOR } from './constants.js'
 import { tileAt } from './level.js'
 
 export const ENEMY_TYPES = {
+  skeleton: { name: 'Drowned Sailor', speed: 1.5, turnChance: 0.3, chase: 0 },
+  crab: { name: 'Pirate Crab', speed: 1.9, turnChance: 0.3, chase: 0.75, sideways: 0.9 },
   marine: { name: 'Blue Marine', speed: 1.8, turnChance: 0, chase: 0 },
   sarge: { name: 'Chain Sarge', speed: 1.3, turnChance: 0.3, chase: 0.8, chaseRange: 5, hp: 2 },
   fud: { name: 'FUD', speed: 1.5, turnChance: 0.3, chase: 0 },
@@ -45,9 +51,16 @@ function chooseDir(s, e, random) {
   const range = kind.chaseRange ?? 7
   if (kind.chase && p.alive && Math.abs(p.x - e.tx) + Math.abs(p.y - e.ty) <= range && random() < kind.chase) {
     const dist = (d) => Math.abs(p.x - (e.tx + DIRS[d].dx)) + Math.abs(p.y - (e.ty + DIRS[d].dy))
-    return options.reduce((best, d) => (dist(d) < dist(best) ? d : best))
+    // empate: quem anda de lado prefere esquerda/direita
+    const horizontal = (d) => (kind.sideways && DIRS[d].dy === 0 ? 1 : 0)
+    return options.reduce((best, d) => (dist(d) < dist(best) || (dist(d) === dist(best) && horizontal(d) > horizontal(best)) ? d : best))
   }
-  if (e.dir && pool.includes(e.dir) && random() > kind.turnChance) return e.dir
+  // caranguejo: quando pode, escolhe um caminho de lado (esquerda/direita) na maior parte das vezes;
+  // se estava indo pra cima/baixo, dá só um passo e já volta pro lado
+  const sideOptions = kind.sideways ? pool.filter((d) => DIRS[d].dy === 0) : []
+  const wasVertical = kind.sideways && e.dir && DIRS[e.dir].dy !== 0
+  if (e.dir && pool.includes(e.dir) && random() > kind.turnChance && !(wasVertical && sideOptions.length)) return e.dir
+  if (sideOptions.length && random() < kind.sideways) return sideOptions[Math.floor(random() * sideOptions.length)]
   return pool[Math.floor(random() * pool.length)]
 }
 

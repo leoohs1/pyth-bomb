@@ -116,6 +116,8 @@ const PIXEL_FILES = {
   block_military_0: '/solo/pixel/crate-military.png',
   enemy_marine: '/solo/pixel/marine.png',
   enemy_sarge: '/solo/pixel/sarge.png',
+  enemy_skeleton: '/solo/pixel/skeleton.png',
+  enemy_crab: '/solo/pixel/crab.png',
 }
 // enquanto o Pirb pixel só tem a imagem parada, não usa os passos pintados
 const PIXEL_DROPS = STYLE === 'pixel' && !PIXEL_FILES.walk_down_1

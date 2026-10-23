@@ -87,6 +87,8 @@ const DEATH_LINES = {
   sarge: ['The Sarge says: drop and give me 20.', 'Chain of command: you lost.'],
   fud: ['Caught by the FUD.', 'You let the FUD get to you.'],
   bear: ['The bears got you.', 'Bear market claims another one.'],
+  skeleton: ['Dead sailors tell no tales.', 'The drowned sailor says hi.'],
+  crab: ['Pinched by a pirate crab.', 'Crabs walk sideways. You walked into it.'],
   rug: ['Rug pulled. Classic.', 'Never trust a rug.'],
   boss: ['The Whale ate your bags.', 'Whale-sized loss.', 'Market manipulated.'],
   any: ['Rekt.', 'Liquidated.', 'Should have done your own research.', 'Not financial advice.', 'GG. Go again.'],
