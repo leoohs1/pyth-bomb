@@ -124,6 +124,7 @@ const PIXEL_FILES = {
   floor_deck_3: '/solo/pixel/floor-deck-3.png', // 3 e 5: mais formatos de rachadura; 4: outro chão liso
   floor_deck_4: '/solo/pixel/floor-deck-4.png',
   floor_deck_5: '/solo/pixel/floor-deck-5.png',
+  floor_tavern_0: '/solo/pixel/floor-tavern-0.png', // piso da taverna (fase 1): tábuas largas na VERTICAL, 3 por quadrado (mais desenhos virão)
   // casco de navio antigo (fase 2): 4 blocos de parede (0 a 2 = caixotes de ferro e madeira; 3 = moldura lisa) e a decoração da borda
   wall_hull_0: '/solo/pixel/wall-hull-0.png',
   wall_hull_1: '/solo/pixel/wall-hull-1.png',
@@ -260,6 +261,13 @@ const FLOOR_SETS = {
     cracked: [1, 2, 3, 5], // desenhos com rachadura
     shifts: [0, 12, 24, 36],
   },
+  // taverna: tábuas na VERTICAL (3 faixas de 16 colunas); o deslocamento e o espelhamento são de cima pra baixo
+  tavern: {
+    vertical: true,
+    strips: [[0], [0], [0]],
+    cracked: [],
+    shifts: [0, 12, 24, 36],
+  },
 }
 const floorCache = new Map()
 const floorByPos = new Map()
@@ -277,7 +285,7 @@ export function floorTile(name, x, y, crackedShare) {
   for (const i of all) if (!img(i)) return null
   const h0 = mixBits(x, y, 1)
   let parts // [desenho, espelhar, deslocar] de cada uma das 3 tábuas
-  if (h0 % 1000 < crackedShare * 1000) {
+  if (def.cracked.length && h0 % 1000 < crackedShare * 1000) {
     const i = def.cracked[(h0 >>> 10) % def.cracked.length]
     const flip = (h0 >>> 20) & 1
     parts = [[i, flip, 0], [i, flip, 0], [i, flip, 0]]
@@ -299,11 +307,18 @@ export function floorTile(name, x, y, crackedShare) {
     const src = img(i)
     g.save()
     g.beginPath()
-    g.rect(0, s * 16, PX_TILE, 16) // só a faixa desta tábua
+    if (def.vertical) g.rect(s * 16, 0, 16, PX_TILE) // só a faixa desta tábua (em pé)
+    else g.rect(0, s * 16, PX_TILE, 16) // só a faixa desta tábua
     g.clip()
-    if (flip) { g.translate(PX_TILE, 0); g.scale(-1, 1) }
-    g.drawImage(src, -shift, 0)
-    if (shift) g.drawImage(src, PX_TILE - shift, 0) // o que sai de um lado volta pelo outro
+    if (def.vertical) {
+      if (flip) { g.translate(0, PX_TILE); g.scale(1, -1) }
+      g.drawImage(src, 0, -shift)
+      if (shift) g.drawImage(src, 0, PX_TILE - shift) // o que sai por cima volta por baixo
+    } else {
+      if (flip) { g.translate(PX_TILE, 0); g.scale(-1, 1) }
+      g.drawImage(src, -shift, 0)
+      if (shift) g.drawImage(src, PX_TILE - shift, 0) // o que sai de um lado volta pelo outro
+    }
     g.restore()
   })
   c.naturalWidth = PX_TILE
