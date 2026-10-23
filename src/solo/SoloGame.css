@@ -431,8 +431,7 @@
       #0d0b14;
   }
 }
-/* Fase 2 (porão do navio antigo) em pixel: fundo próprio (418x235). Tela larga: por enquanto o mesmo, coberto
-   (quando vier a versão ultrawide, é só trocar o arquivo aqui embaixo) */
+/* Fase 2 (porão do navio antigo) em pixel: fundo próprio (418x235) e, em tela larga, a versão ultrawide (480x206) */
 .solo-page.is-military.is-pixel.is-mood-bear {
   background:
     linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
@@ -444,7 +443,7 @@
   .solo-page.is-military.is-pixel.is-mood-bear {
     background:
       linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
-      url('/solo/pixel/bg-hold.png') center 50% / cover no-repeat,
+      url('/solo/pixel/bg-hold-wide.png') center 50% / cover no-repeat,
       #0d0b14;
     background-blend-mode: normal;
   }
