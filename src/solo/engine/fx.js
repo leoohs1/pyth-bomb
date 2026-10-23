@@ -108,6 +108,15 @@ export function consumeEvents(s) {
         const a = rand(0, Math.PI * 2), sp = rand(1.5, 3.5)
         add({ kind: 'spark', x: cx, y: cy, life: rand(0.4, 0.8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0.5, 1.5), color: '190, 235, 255' })
       }
+    } else if (ev.type === 'jetWarn') {
+      add({ kind: 'ring', x: cx, y: cy, life: 0.5, color: '150, 220, 255', big: true }) // a água começa a borbulhar
+    } else if (ev.type === 'jetBurst') {
+      // o jato estoura: anel e gotas voando pra cima
+      add({ kind: 'ring', x: cx, y: cy, life: 0.45, color: '200, 240, 255', big: true })
+      for (let i = 0; i < 14; i++) {
+        const a = rand(-Math.PI * 0.9, -Math.PI * 0.1), sp = rand(2, 4.2)
+        add({ kind: 'spark', x: cx + rand(-0.3, 0.3), y: cy, life: rand(0.4, 0.8), vx: Math.cos(a) * sp * 0.6, vy: Math.sin(a) * sp, color: Math.random() < 0.6 ? '170, 225, 255' : '255, 255, 255' })
+      }
     } else if (ev.type === 'frenzy') {
       // o CHOP vai disparar: anel vermelho e o aviso por cima dele
       add({ kind: 'ring', x: cx, y: cy, life: 0.6, color: '255, 90, 90', big: true })

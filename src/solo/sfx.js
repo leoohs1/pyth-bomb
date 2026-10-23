@@ -45,6 +45,7 @@ export function createSoloSfx() {
       else if (ev.type === 'bossIntro') say('solo_roar', now)
       else if (ev.type === 'bossDive') say('solo_boom', now)
       else if (ev.type === 'frenzy') say('solo_roar', now)
+      else if (ev.type === 'jetBurst') say('solo_boom', now)
       else if (ev.type === 'bossCrash') say('solo_boom', now)
       else if (ev.type === 'collectors') say('solo_door', now)
       else if (ev.type === 'itemDrop') say('solo_door', now)

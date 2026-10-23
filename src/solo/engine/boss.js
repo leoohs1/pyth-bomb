@@ -11,6 +11,8 @@
 // uns segundos (inofensivo e parado: a hora de acertar ele com bombas). Se bater numa caixa, ela quebra.
 // CAIXAS: ele é largo e as caixas o travam; quando não consegue andar, contorna pelo caminho mais curto até o jogador
 // (planPath) e, se não existe caminho (preso entre caixas), dá o frenesi pra quebrar a caixa.
+// JATOS D'ÁGUA (só depois do mergulho): a cada tantos segundos o chão borbulha em 3 pontos (um deles debaixo do jogador),
+// 1 s depois estoura um jato em cruz (a casa e as 4 vizinhas) que mata quem estiver ali (só o jogador: não machuca o chefe).
 // A cada dano que ele leva cai um item útil na arena.
 import { FLOOR, BLOCK, HOLE, MAX_BOMBS, MAX_RANGE, MAX_SPEED, BURN_TIME } from './constants.js'
 import { tileAt } from './level.js'
@@ -42,6 +44,11 @@ export const BOSS = {
   stunTime: 2.2,       // tontura depois de bater
   stunTimeAngry: 1.6,
   detourTime: 1.5,     // quando uma caixa barra o caminho, contorna seguindo o caminho mais curto por tanto tempo
+  jetFirst: 3.5,       // 1º jato: tantos segundos depois que ele volta do mergulho
+  jetEvery: 8,         // depois, de tantos em tantos segundos
+  jetCount: 3,         // quantos jatos por vez
+  jetWarn: 1.1,        // aviso (poça borbulhando) antes de estourar
+  jetTime: 0.7,        // quanto tempo o jato fica de pé
   jamFrenzy: 2.2,      // se não consegue andar nem contornando (preso entre caixas), dá o frenesi e quebra a caixa
 }
 
@@ -51,7 +58,7 @@ export function makeBoss(x, y) {
     hurtT: 0, pauseT: 0, walkT: 0, enrageT: 0,
     mode: 'intro', introT: 0, sinkT: 0, riseT: 0, underT: 0, holeT: 0, dived: false,
     frenzyT: BOSS.frenzyFirst, windT: 0, stunT: 0, dash: null, lane: null,
-    stuckT: 0, jamT: 0, pathT: 0, replanT: 0, path: null,
+    stuckT: 0, jamT: 0, pathT: 0, replanT: 0, path: null, jetT: null,
   }
 }
 
@@ -122,15 +129,32 @@ function nearestFloor(s, x, y) {
   return best ?? [1, 1]
 }
 
+// até onde ele vai em linha reta nessa direção (onde a investida bate)
+function laneEnd(s, b, d) {
+  let x = b.x, y = b.y
+  for (let i = 0; i < 400 && fits(s, x + d.dx * 0.1, y + d.dy * 0.1); i++) { x += d.dx * 0.1; y += d.dy * 0.1 }
+  return { x, y }
+}
+
 // FRENESI: escolhe a direção (a do jogador, no eixo em que ele está mais longe), acha até onde dá pra ir em linha
-// reta (a faixa vermelha do aviso) e para pra tremer antes de disparar
-function startFrenzy(s, b) {
+// reta (a faixa vermelha do aviso) e para pra tremer antes de disparar.
+// forced = sem caminho até o jogador (o chefe é largo e as caixas o prendem): escolhe a direção que bate numa CAIXA
+// (a mais perto da direção do jogador), porque caixa quebra e parede não.
+function startFrenzy(s, b, forced = false) {
   const p = s.player
   const dx = p.x - b.x, dy = p.y - b.y
   const horiz = Math.abs(dx) >= Math.abs(dy)
   b.dash = horiz ? { dx: Math.sign(dx) || 1, dy: 0 } : { dx: 0, dy: Math.sign(dy) || 1 }
-  let x = b.x, y = b.y
-  for (let i = 0; i < 400 && fits(s, x + b.dash.dx * 0.1, y + b.dash.dy * 0.1); i++) { x += b.dash.dx * 0.1; y += b.dash.dy * 0.1 }
+  if (forced) {
+    let best = -Infinity
+    for (const d of [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }]) {
+      const e = laneEnd(s, b, d)
+      const hitsCrate = tilesUnder(e.x + d.dx * 0.7, e.y + d.dy * 0.7).some(([tx, ty]) => tileAt(s.level, tx, ty) === BLOCK)
+      const score = (hitsCrate ? 10 : 0) + (d.dx * dx + d.dy * dy) / (Math.hypot(dx, dy) || 1)
+      if (score > best) { best = score; b.dash = d }
+    }
+  }
+  const end = laneEnd(s, b, b.dash), x = end.x, y = end.y
   b.lane = { x0: b.x, y0: b.y, x1: x, y1: y }
   if (b.dash.dx) b.face = b.dash.dx
   b.mode = 'frenzyWind'
@@ -164,6 +188,41 @@ function dashStep(s, b, dt) {
   s.shake = Math.min(0.6, s.shake + 0.5)
   s.events.push({ type: 'bossCrash', x: b.x + b.dash.dx * 0.9, y: b.y + b.dash.dy * 0.9 })
 }
+
+// JATOS: onde cada um estoura (a casa do meio e as vizinhas que são chão), o jogador só morre quando já estourou
+const JET_CROSS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]
+function spawnJets(s, random) {
+  const p = s.player, spots = []
+  for (let y = 1; y < s.level.rows - 1; y++) for (let x = 1; x < s.level.cols - 1; x++) if (tileAt(s.level, x, y) === FLOOR) spots.push([x, y])
+  const centers = []
+  const px = Math.round(p.x), py = Math.round(p.y)
+  if (tileAt(s.level, px, py) === FLOOR) centers.push([px, py]) // um jato debaixo do jogador: obriga a se mexer
+  for (let guard = 0; centers.length < BOSS.jetCount && guard < 80; guard++) {
+    const c = spots[Math.floor(random() * spots.length)]
+    if (centers.every(([x, y]) => Math.abs(x - c[0]) + Math.abs(y - c[1]) >= 3)) centers.push(c)
+  }
+  for (const [x, y] of centers) {
+    const tiles = JET_CROSS.map(([dx, dy]) => [x + dx, y + dy]).filter(([tx, ty]) => tileAt(s.level, tx, ty) === FLOOR)
+    s.jets.push({ x, y, tiles, state: 'warn', t: 0 })
+    s.events.push({ type: 'jetWarn', x, y })
+  }
+}
+
+// aviso -> estoura -> some
+function updateJets(s, dt) {
+  for (const j of s.jets) {
+    j.t += dt
+    if (j.state === 'warn' && j.t >= BOSS.jetWarn) {
+      j.state = 'erupt'; j.t = 0
+      s.shake = Math.min(0.3, s.shake + 0.12)
+      s.events.push({ type: 'jetBurst', x: j.x, y: j.y })
+    }
+  }
+  s.jets = s.jets.filter((j) => j.state === 'warn' || j.t < BOSS.jetTime)
+}
+
+// tem um jato de pé nessa casa? (mata o jogador)
+export const jetAt = (s, x, y) => s.jets.some((j) => j.state === 'erupt' && j.tiles.some(([tx, ty]) => tx === x && ty === y))
 
 // os COBRADORES (1 caranguejo e 1 esqueleto) saem em volta do buraco, longe do jogador
 function spawnCollectors(s, random) {
@@ -224,7 +283,8 @@ function followPath(b, step) {
 
 export function updateBoss(s, dt, random = Math.random) {
   const b = s.boss
-  if (!b.alive) { b.deathT += dt; return }
+  if (!b.alive) { b.deathT += dt; s.jets.length = 0; return }
+  updateJets(s, dt)
   b.hurtT = Math.max(0, b.hurtT - dt)
   b.walkT += dt
   const hole = s.level.hole
@@ -294,8 +354,14 @@ export function updateBoss(s, dt, random = Math.random) {
   // ...e volta furioso
   if (b.mode === 'rising') {
     b.riseT += dt
-    if (b.riseT >= BOSS.riseTime) { b.mode = 'surface'; b.hurtT = 0.6; b.frenzyT = 3 }
+    if (b.riseT >= BOSS.riseTime) { b.mode = 'surface'; b.hurtT = 0.6; b.frenzyT = 3; b.jetT = BOSS.jetFirst }
     return
+  }
+
+  // jatos d'água (só depois do mergulho): o relógio corre na superfície e no frenesi
+  if (b.jetT != null) {
+    b.jetT -= dt
+    if (b.jetT <= 0 && s.player.alive) { spawnJets(s, random); b.jetT = BOSS.jetEvery }
   }
 
   // levou explosão? (a pontinha de fogo desenhada dentro das caixas não conta)
@@ -340,7 +406,7 @@ export function updateBoss(s, dt, random = Math.random) {
   const len = Math.hypot(dx, dy)
   b.frenzyT -= dt
   if (b.frenzyT <= 0 && p.alive && len > 2.5) { startFrenzy(s, b); return }
-  if (b.jamT > BOSS.jamFrenzy && p.alive) { startFrenzy(s, b); return } // sem caminho (preso entre caixas): parte pra cima e quebra
+  if (b.jamT > BOSS.jamFrenzy && p.alive) { startFrenzy(s, b, true); return } // sem caminho (preso entre caixas): parte pra cima e quebra
   if (len < 0.05) return
   const speed = angry(b) ? BOSS.angrySpeed : BOSS.speed
   const step = speed * dt

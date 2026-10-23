@@ -3,7 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, holeFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
+import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, holeFrames, warnFrames, jetFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
 let pxScale = 1 // pixels de tela por casa (pra brilhos que são medidos em pixels)
@@ -334,6 +334,7 @@ export function draw(ctx, s, tilePx, dpr) {
   drawAmbient(ctx, s.time, s.mood)
 
   if (s.boss) drawFrenzyLane(ctx, s.boss, s.time)
+  drawJetWarnings(ctx, s)
   if (s.door.revealed) drawDoor(ctx, s.door, doorOpen(s), s.time, s.doorSet ?? s.tileset)
   for (const pu of s.powerups) if (pu.revealed && !pu.taken) drawPowerup(ctx, pu, s.time)
   if (s.chest) drawChest(ctx, s.chest, s.time, chestNear(s))
@@ -345,6 +346,7 @@ export function draw(ctx, s, tilePx, dpr) {
   if (s.boss) drawWhale(ctx, s.boss, s.time)
   for (const f of s.flames) drawFlame(ctx, f)
   drawPlayer(ctx, s.player, s.time)
+  drawJets(ctx, s)
   drawParticles(ctx, level.cols, level.rows)
 }
 
@@ -491,6 +493,70 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
       ctx.fillRect(sx - 4 * u, sy - u, 8 * u, 2 * u); ctx.fillRect(sx - u, sy - 4 * u, 2 * u, 8 * u)
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(sx - u, sy - u, 2 * u, 2 * u)
+    }
+  }
+}
+
+// JATOS D'ÁGUA do chefe. Aviso: a poça borbulhando estourando as tábuas em cada casa da cruz (pisca mais rápido perto de estourar).
+function drawJetWarnings(ctx, s) {
+  if (!s.jets?.length) return
+  const frames = warnFrames()
+  for (const j of s.jets) {
+    if (j.state !== 'warn') continue
+    const k = j.t / BOSS.jetWarn
+    const blink = k > 0.7 ? 0.75 + 0.25 * Math.sin(s.time * 40) : 1
+    for (const [tx, ty] of j.tiles) {
+      const a = Math.min(1, 0.35 + k * 1.2) * blink
+      ctx.save()
+      ctx.globalAlpha = a
+      if (frames) {
+        const img = frames[Math.floor(s.time * 8 + tx + ty) % 3], w = img.naturalWidth / PX_TILE, h = img.naturalHeight / PX_TILE
+        blit(ctx, img, tx + 0.5 - w / 2, ty + 0.5 - h / 2, w, h)
+      } else {
+        ctx.fillStyle = 'rgba(80, 170, 255, 0.7)'
+        ctx.beginPath(); ctx.ellipse(tx + 0.5, ty + 0.5, 0.45, 0.38, 0, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.restore()
+    }
+  }
+}
+// O jato de pé: a coluna d'água subindo em cada casa da cruz (arte em 3 quadros; sem ela, um jato provisório em código)
+function drawJets(ctx, s) {
+  if (!s.jets?.length) return
+  const frames = jetFrames(), warn = warnFrames()
+  const u = 1 / PX_TILE
+  for (const j of s.jets) {
+    if (j.state !== 'erupt') continue
+    const k = j.t / BOSS.jetTime
+    const rise = Math.min(1, j.t / 0.12), fade = k > 0.8 ? (1 - k) / 0.2 : 1
+    for (const [tx, ty] of j.tiles) {
+      const base = ty + 0.5 + 0.42 // o pé do jato (parte de baixo da casa)
+      ctx.save()
+      ctx.globalAlpha = fade
+      if (warn && !frames) { // sem a arte do jato: splash no chão (o aviso, mais fraco)
+        const img = warn[Math.floor(s.time * 12 + tx) % 3], w = img.naturalWidth / PX_TILE, h = img.naturalHeight / PX_TILE
+        ctx.globalAlpha = fade * 0.8
+        blit(ctx, img, tx + 0.5 - w / 2, ty + 0.5 - h / 2, w, h)
+        ctx.globalAlpha = fade
+      }
+      if (frames) {
+        const img = frames[Math.floor(s.time * 10 + tx + ty) % 3], w = img.naturalWidth / PX_TILE, h = img.naturalHeight / PX_TILE
+        ctx.beginPath(); ctx.rect(tx - 1, base - h * rise, 3, h * rise + 0.1); ctx.clip() // sobe do chão
+        blit(ctx, img, tx + 0.5 - w / 2, base - h, w, h)
+      } else {
+        const cw = 0.56, ch = 1.45 * rise
+        const x0 = Math.round((tx + 0.5 - cw / 2) / u) * u, top = Math.round((base - ch) / u) * u
+        ctx.fillStyle = '#0b2a5c'; ctx.fillRect(x0 - 2 * u, top, cw + 4 * u, base - top) // contorno
+        ctx.fillStyle = '#4fb4ff'; ctx.fillRect(x0, top, cw, base - top)
+        ctx.fillStyle = '#bfe6ff'
+        for (let i = 0; i < 4; i++) { // brilhos subindo pela coluna
+          const ph = (s.time * 5 + i * 0.27 + tx * 0.13) % 1
+          ctx.fillRect(x0 + (i % 2 ? 0.34 : 0.1), Math.round((base - ph * ch) / u) * u, 0.1, 0.22)
+        }
+        ctx.fillStyle = '#ffffff' // espuma no topo
+        for (let i = 0; i < 6; i++) ctx.fillRect(Math.round((x0 - 0.1 + i * 0.13) / u) * u, top - ((i * 5) % 3) * 2 * u - 2 * u, 0.14, 0.12)
+      }
+      ctx.restore()
     }
   }
 }

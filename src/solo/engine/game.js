@@ -14,7 +14,7 @@ import {
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
 import { makeEnemy, updateEnemy, ENEMY_TYPES, BOMBHEAD } from './enemies.js'
-import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous } from './boss.js'
+import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous, jetAt } from './boss.js'
 
 const DIRS = {
   up: { dx: 0, dy: -1 },
@@ -177,6 +177,7 @@ function loadLevel(run, random) {
     bombs: [],    // { x, y, timer, range, passable }
     flames: [],   // { x, y, t, kind: 'center' | 'h' | 'v' }
     burning: [],  // blocos queimando: { x, y, t }
+    jets: [],     // jatos d'água do chefe: { x, y, tiles, state: 'warn' | 'erupt', t }
     status: 'playing', // 'playing' | 'dead' | 'gameover' | 'cleared' | 'won'
     tileset: cfg.tileset ?? 'temple', // cenário da fase (sprites.js TILESETS)
     mood: cfg.mood ?? null, // clima por cima do cenário (levels.js)
@@ -242,6 +243,7 @@ function loadBossLevel(run, random = Math.random) {
     bombs: [],
     flames: [],
     burning: [],
+    jets: [],     // jatos d'água do chefe: { x, y, tiles, state: 'warn' | 'erupt', t }
     status: 'playing',
     time: 0,
     shake: 0,
@@ -663,6 +665,7 @@ export function update(s, controls, dt) {
     // fogo ou encostar num inimigo = morte
     const touching = s.enemies.find((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)
     if (flameAt(s, px, py)) killPlayer(s, 'fire')
+    else if (jetAt(s, px, py)) killPlayer(s, 'water')
     else if (touching) { if (touching.bombT != null) touching.bombT = 0; else killPlayer(s, touching.type) } // cabeça-bomba encostou: explode
     else if (s.boss?.alive && bossDangerous(s.boss) && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
 

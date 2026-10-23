@@ -148,6 +148,14 @@ const PIXEL_FILES = {
   hole_1: '/solo/pixel/hole-1.png',
   hole_2: '/solo/pixel/hole-2.png',
   hole_3: '/solo/pixel/hole-3.png',
+  // aviso dos jatos d'água (poça borbulhando que estoura as tábuas): 3 quadros de 52x44
+  warn_1: '/solo/pixel/warn-1.png',
+  warn_2: '/solo/pixel/warn-2.png',
+  warn_3: '/solo/pixel/warn-3.png',
+  // o jato d'água subindo (coluna com respingo e tábuas quebradas): 3 quadros de 48x95
+  jet_1: '/solo/pixel/jet-1.png',
+  jet_2: '/solo/pixel/jet-2.png',
+  jet_3: '/solo/pixel/jet-3.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -205,6 +213,17 @@ export function tileSprite(set, kind, variant = 0) {
 }
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
+
+// os 3 quadros do aviso do jato d'água (ou null se ainda não carregou / estilo pintado)
+export const warnFrames = () => {
+  const list = [1, 2, 3].map((i) => sprite(`warn_${i}`))
+  return list.every(Boolean) ? list : null
+}
+// os 3 quadros do jato d'água subindo (ou null se ainda não carregou / estilo pintado: aí o render desenha um jato provisório em código)
+export const jetFrames = () => {
+  const list = [1, 2, 3].map((i) => sprite(`jet_${i}`))
+  return list.every(Boolean) ? list : null
+}
 
 // os 3 quadros do buraco do chefe (ou null se ainda não carregou / estilo pintado)
 export const holeFrames = () => {

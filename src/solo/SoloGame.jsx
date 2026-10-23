@@ -90,6 +90,7 @@ const DEATH_LINES = {
   skeleton: ['Dead sailors tell no tales.', 'The drowned sailor says hi.'],
   crab: ['Pinched by a pirate crab.', 'Crabs walk sideways. You walked into it.'],
   rug: ['Rug pulled. Classic.', 'Never trust a rug.'],
+  water: ['Swept away by the tide.', 'Wet floor. Very wet.', 'CHOP sends the tide to collect.', 'The sea wants its money back.'],
   boss: ['CHOP collected.', 'Margin called by a shark.', 'You owed CHOP. The interest was brutal.', 'CHOP says: pay up.'],
   any: ['Rekt.', 'Liquidated.', 'Should have done your own research.', 'Not financial advice.', 'GG. Go again.'],
 }
