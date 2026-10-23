@@ -419,16 +419,19 @@ const ITEM_NOTES = {
 }
 
 // Chute: andando contra uma bomba (com o item), ela sai deslizando até bater em algo
+// Devolve true se chutou. Na direção do chute o jogador precisa estar quase no centro da casa (encostado na
+// bomba); de lado pode estar meio torto: vale a casa mais próxima. (Antes exigia estar centrado nos dois
+// sentidos, e quem chegava um pouco torto, encostado na bomba, ficava parado sem conseguir chutar.)
 function tryKick(s, p, d) {
-  if (!p.kick) return
+  if (!p.kick) return false
   const px = Math.round(p.x), py = Math.round(p.y)
-  // precisa estar quase no centro da casa, encostado na bomba
-  if (Math.abs(p.x - px) > 0.2 || Math.abs(p.y - py) > 0.2) return
+  if ((d.dx ? Math.abs(p.x - px) : Math.abs(p.y - py)) > 0.2) return false
   const b = bombAt(s, px + d.dx, py + d.dy)
-  if (!b || b.passable || b.slide) return
-  if (!slideFree(s, b, d.dx, d.dy)) return
+  if (!b || b.passable || b.slide) return false
+  if (!slideFree(s, b, d.dx, d.dy)) return false
   b.slide = { dx: d.dx, dy: d.dy, p: 0 }
   s.events.push({ type: 'kick', x: b.x, y: b.y })
+  return true
 }
 
 // a próxima casa no caminho da bomba chutada está livre?
@@ -533,14 +536,17 @@ export function update(s, controls, dt) {
     if (dir) {
       const d = DIRS[dir]
       const bx = p.x, by = p.y
-      if (d.dx) moveAxis(s, p, 'x', 'y', d.dx, p.speed * dt)
-      else moveAxis(s, p, 'y', 'x', d.dy, p.speed * dt)
+      // com o item de chute, bomba na frente (e livre pra deslizar) = chuta, em vez de escorregar pra o lado dela
+      const kicked = tryKick(s, p, d)
+      if (!kicked) {
+        if (d.dx) moveAxis(s, p, 'x', 'y', d.dx, p.speed * dt)
+        else moveAxis(s, p, 'y', 'x', d.dy, p.speed * dt)
+      }
       p.facing = dir
       if (dir === 'left') p.flip = true // a arte fica espelhada indo pra esquerda
       else if (dir === 'right') p.flip = false
       p.moving = p.x !== bx || p.y !== by
       if (p.moving) p.walkT += dt
-      else tryKick(s, p, d)
     }
     if (controls.takeBomb()) {
       const x = Math.round(p.x), y = Math.round(p.y)
