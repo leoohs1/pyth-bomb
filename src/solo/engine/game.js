@@ -13,7 +13,7 @@ import {
 } from './constants.js'
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
-import { makeEnemy, updateEnemy } from './enemies.js'
+import { makeEnemy, updateEnemy, ENEMY_TYPES, BOMBHEAD } from './enemies.js'
 import { makeBoss, updateBoss, bossTouchesPlayer } from './boss.js'
 
 const DIRS = {
@@ -579,6 +579,17 @@ export function update(s, controls, dt) {
 
   // --- inimigos
   for (const e of s.enemies) updateEnemy(s, e, dt)
+  // cabeça-bomba do esqueleto que chegou a zero: explode como uma bomba (e o esqueleto some)
+  for (const e of s.enemies) {
+    if (!e.alive || e.bombT == null || e.bombT > 0) continue
+    e.alive = false
+    e.deathT = 0
+    const bx = Math.round(e.x), by = Math.round(e.y)
+    const there = bombAt(s, bx, by)
+    if (there) there.timer = 0
+    else s.bombs.push({ x: bx, y: by, timer: 0, fuse: 0.01, range: BOMBHEAD.range, passable: false, remote: false })
+    s.events.push({ type: 'enemyHit', x: e.x, y: e.y, killed: true })
+  }
 
   // --- bombas (o while pega as que explodiram em cadeia no mesmo instante)
   for (const b of s.bombs) b.timer -= dt
@@ -607,7 +618,17 @@ export function update(s, controls, dt) {
   // --- fogo machuca inimigos (a maioria morre na hora; o Chain Sarge aguenta 2)
   for (const e of s.enemies) {
     if (!e.alive || e.hurtT > 0 || !flameAt(s, Math.round(e.x), Math.round(e.y))) continue
+    if (e.bombT != null) { e.bombT = 0; continue } // fogo na cabeça-bomba: explode na hora
     e.hp--
+    if (e.hp <= 0 && ENEMY_TYPES[e.type].bombhead) {
+      // o esqueleto "morre", mas a cabeça vira uma bomba: ele segue em pé perseguindo o jogador até ela explodir
+      // (fica sem levar dano enquanto o próprio fogo que o derrubou ainda está aceso)
+      e.hp = 1
+      e.bombT = BOMBHEAD.time
+      e.hurtT = FLAME_TIME + 0.15
+      s.events.push({ type: 'enemyHit', x: e.x, y: e.y, killed: false }, { type: 'bombhead', x: e.x, y: e.y })
+      continue
+    }
     s.events.push({ type: 'enemyHit', x: e.x, y: e.y, killed: e.hp <= 0 })
     if (e.hp <= 0) e.alive = false
     else { e.hurtT = 1; e.angry = true } // pisca um segundo sem levar dano e fica bravo
@@ -618,7 +639,7 @@ export function update(s, controls, dt) {
     // fogo ou encostar num inimigo = morte
     const touching = s.enemies.find((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)
     if (flameAt(s, px, py)) killPlayer(s, 'fire')
-    else if (touching) killPlayer(s, touching.type)
+    else if (touching) { if (touching.bombT != null) touching.bombT = 0; else killPlayer(s, touching.type) } // cabeça-bomba encostou: explode
     else if (s.boss?.alive && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
 
     // pega power-up

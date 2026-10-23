@@ -41,6 +41,7 @@ export function createSoloSfx() {
       else if (ev.type === 'shieldBreak') say('solo_shield', now)
       else if (ev.type === 'kick') say('solo_kick', now)
       else if (ev.type === 'bossEnrage') say('solo_roar', now)
+      else if (ev.type === 'bombhead') say('solo_bomb', now)
       else if (ev.type === 'enemyHit') say(ev.killed ? 'solo_enemy_die' : 'solo_hit', now)
     }
     // porta abriu (todos os inimigos derrotados)

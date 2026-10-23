@@ -5,15 +5,21 @@
 // - FUD: lento, vaga sem rumo.
 // - Bear: persegue o jogador quando ele está por perto.
 // - Rug Pull: rápido e imprevisível.
-// - Marinheiro Esqueleto (afogado): lento, vaga sem rumo (o FUD da fase 2).
+// - Marinheiro Esqueleto (afogado): lento, vaga sem rumo (o FUD da fase 2). Ao ser derrotado a CABEÇA VIRA UMA BOMBA:
+//   ele segue em pé (sem cabeça) perseguindo o jogador por BOMBHEAD.time segundos e então explode como uma bomba
+//   (também explode na hora se encostar no jogador ou se levar fogo de novo).
 // - Caranguejo Pirata: anda de LADO como caranguejo de verdade (prefere andar pra esquerda/direita e
 //   nunca vira de costas) e persegue o jogador quando ele está por perto (o Bear da fase 2).
 // Os FUDs continuam existindo: é o que o chefe (o Tubarão) solta na arena.
 import { FLOOR } from './constants.js'
 import { tileAt } from './level.js'
 
+// cabeça-bomba do esqueleto: quanto tempo persegue, o alcance da explosão (em casas) e como anda
+export const BOMBHEAD = { time: 5, range: 2 }
+const BOMBHEAD_KIND = { speed: 2.4, turnChance: 0, chase: 1, chaseRange: 99 }
+
 export const ENEMY_TYPES = {
-  skeleton: { name: 'Drowned Sailor', speed: 1.5, turnChance: 0.3, chase: 0 },
+  skeleton: { name: 'Drowned Sailor', speed: 1.5, turnChance: 0.3, chase: 0, bombhead: true },
   crab: { name: 'Pirate Crab', speed: 1.9, turnChance: 0.3, chase: 0.75, sideways: 0.9 },
   marine: { name: 'Blue Marine', speed: 1.8, turnChance: 0, chase: 0 },
   sarge: { name: 'Chain Sarge', speed: 1.3, turnChance: 0.3, chase: 0.8, chaseRange: 5, hp: 2 },
@@ -32,7 +38,7 @@ const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' }
 
 export function makeEnemy(type, x, y) {
   const hp = ENEMY_TYPES[type].hp ?? 1
-  return { type, x, y, tx: x, ty: y, dir: null, alive: true, deathT: 0, walkT: Math.random() * 10, hp, hurtT: 0, angry: false }
+  return { type, x, y, tx: x, ty: y, dir: null, alive: true, deathT: 0, walkT: Math.random() * 10, hp, hurtT: 0, angry: false, bombT: null } // bombT: segundos que faltam pra cabeça-bomba explodir (null = ainda não virou bomba)
 }
 
 function open(s, x, y) {
@@ -40,7 +46,7 @@ function open(s, x, y) {
 }
 
 function chooseDir(s, e, random) {
-  const kind = ENEMY_TYPES[e.type]
+  const kind = e.bombT != null ? BOMBHEAD_KIND : ENEMY_TYPES[e.type]
   const options = Object.keys(DIRS).filter((d) => open(s, e.tx + DIRS[d].dx, e.ty + DIRS[d].dy))
   if (!options.length) return null
   // evita dar meia-volta, a não ser em beco sem saída
@@ -68,7 +74,8 @@ export function updateEnemy(s, e, dt, random = Math.random) {
   if (!e.alive) { e.deathT += dt; return }
   e.walkT += dt
   e.hurtT = Math.max(0, e.hurtT - dt)
-  let step = ENEMY_TYPES[e.type].speed * (e.angry ? 1.4 : 1) * dt
+  if (e.bombT != null) e.bombT -= dt
+  let step = (e.bombT != null ? BOMBHEAD_KIND : ENEMY_TYPES[e.type]).speed * (e.angry ? 1.4 : 1) * dt
 
   // chegou no centro de uma casa: escolhe pra onde ir
   if (e.x === e.tx && e.y === e.ty) {
