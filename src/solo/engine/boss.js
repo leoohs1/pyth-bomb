@@ -4,7 +4,7 @@
 // - De tempos em tempos para e solta FUDs na arena.
 // - Com metade da vida fica brava: antes, PARA por um instante (treme, pisca roxo, não leva dano)
 //   pra todo mundo perceber a transformação; depois anda e invoca mais rápido.
-import { FLOOR, WALL, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './constants.js'
+import { FLOOR, HOLE, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './constants.js'
 import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
 
@@ -69,8 +69,8 @@ function tilesUnder(cx, cy) {
   return out
 }
 
-// o chefe só é barrado pelas paredes (passa por cima do buraco da arena e das bombas)
-const fits = (s, cx, cy) => tilesUnder(cx, cy).every(([x, y]) => tileAt(s.level, x, y) !== WALL)
+// o chefe é barrado pelas paredes e pelas caixas, mas passa por cima do buraco da arena e das bombas
+const fits = (s, cx, cy) => tilesUnder(cx, cy).every(([x, y]) => { const t = tileAt(s.level, x, y); return t === FLOOR || t === HOLE })
 
 // fogo encostando na baleia
 export function bossTouchesTile(b, x, y) {
@@ -101,7 +101,7 @@ export function updateBoss(s, dt, random = Math.random) {
     }
     if (b.introT >= BOSS.introTime) {
       b.mode = 'surface'
-      if (s.supplies) { s.note = "The old crew left supplies: more bombs, fire and a shield!"; s.noteUntil = s.time + 4 }
+      if (s.supplies) { s.note = 'The old crew left you a shield! Break the crates for bombs and fire'; s.noteUntil = s.time + 4.5 }
     }
     return
   }

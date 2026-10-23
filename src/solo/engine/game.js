@@ -84,7 +84,7 @@ function rollBonus(bonus, random) {
 
 function loadLevel(run, random) {
   const cfg = LEVELS[run.levelIndex]
-  if (cfg.boss) return loadBossLevel(run)
+  if (cfg.boss) return loadBossLevel(run, random)
   const level = makeLevel(random, cfg.blockChance)
   const { start } = level
   const far = (x, y) => Math.abs(x - start.x) + Math.abs(y - start.y)
@@ -193,17 +193,34 @@ function loadLevel(run, random) {
 }
 
 // fase de chefe: arena aberta, sem blocos; a porta aparece quando o chefe morre
-function loadBossLevel(run) {
+function loadBossLevel(run, random = Math.random) {
   const level = makeArena()
-  // REGRA DO PISO: todo mundo chega no chefe com pelo menos 3 bombas, alcance 3 e um escudo (nunca tira nada de
-  // quem já tem mais). Assim a luta é justa, mesmo pra quem pegou poucos itens (ou morreu e perdeu o escudo).
+  const cfg = LEVELS[run.levelIndex]
+  // Chega só com o que já tinha (no começo: 1 bomba, alcance 1) e GANHA UM ESCUDO. As melhorias (bombas, fogo, bota)
+  // ficam escondidas em caixas espalhadas pela arena: quebrando elas dá pra se preparar antes do CHOP sair.
   const st = run.stats
-  const stats = { ...st, maxBombs: Math.max(st.maxBombs, 3), range: Math.max(st.range, 3), shield: true }
-  const supplies = stats.maxBombs > st.maxBombs || stats.range > st.range || !st.shield
+  const stats = { ...st, shield: true }
+  const supplies = !st.shield
+  // caixas da arena (longe do buraco e do canto onde você nasce), com os itens da fase escondidos em algumas
+  const mx = (level.cols - 1) / 2, my = (level.rows - 1) / 2
+  const crates = shuffle([
+    [mx - 2, 2], [mx + 2, 2], [mx - 2, level.rows - 3], [mx + 2, level.rows - 3],
+    [2, my - 2], [2, my + 2], [level.cols - 3, my - 2], [level.cols - 3, my + 2],
+    [mx - 3, my], [mx + 3, my],
+  ], random)
+  for (const [x, y] of crates) setTile(level, x, y, BLOCK)
+  const items = run.items ?? shuffle([...cfg.powerups], random)
+  const toPlace = [...items]
+  for (const k of run.kept) {
+    const i = toPlace.indexOf(k)
+    if (i >= 0) toPlace.splice(i, 1)
+  }
+  const powerups = toPlace.slice(0, crates.length).map((kind, i) => ({ x: crates[i][0], y: crates[i][1], kind, revealed: false, taken: false }))
   return {
     ...run,
     level,
-    supplies, // true = ganhou suprimentos ao chegar (o aviso aparece quando a luta começa)
+    items,
+    supplies, // true = ganhou o escudo ao chegar (o aviso aparece quando a luta começa)
     player: {
       x: level.start.x, y: level.start.y,
       alive: true, deathT: 0,
@@ -212,15 +229,16 @@ function loadBossLevel(run) {
     },
     enemies: [],
     boss: makeBoss((level.cols - 1) / 2, (level.rows - 1) / 2),
-    tileset: LEVELS[run.levelIndex].tileset ?? 'temple',
-    mood: LEVELS[run.levelIndex].mood ?? null,
-    floor: LEVELS[run.levelIndex].floor ?? null, // visual próprio da arena do chefe (levels.js)
-    wall: LEVELS[run.levelIndex].wall ?? null,
-    decor: LEVELS[run.levelIndex].decor ?? null,
-    doorSet: LEVELS[run.levelIndex].door ?? null,
+    tileset: cfg.tileset ?? 'temple',
+    mood: cfg.mood ?? null,
+    floor: cfg.floor ?? null, // visual próprio da arena do chefe (levels.js)
+    wall: cfg.wall ?? null,
+    decor: cfg.decor ?? null,
+    doorSet: cfg.door ?? null,
+    crateTone: cfg.crateTone ?? null,
     chest: null,
     door: { x: -1, y: -1, revealed: false },
-    powerups: [],
+    powerups,
     bombs: [],
     flames: [],
     burning: [],

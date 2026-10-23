@@ -448,6 +448,21 @@
     background-blend-mode: normal;
   }
 }
+/* Fase 3 (chefe, o navio afundando) em pixel: fundo próprio (418x235) e, em tela larga, o ultrawide (480x206) */
+.solo-page.is-military.is-pixel.is-mood-flood {
+  background:
+    linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
+    url('/solo/pixel/bg-flood.png') center 50% / cover no-repeat,
+    #0d0b14;
+}
+@media (min-aspect-ratio: 19/10) {
+  .solo-page.is-military.is-pixel.is-mood-flood {
+    background:
+      linear-gradient(rgba(10, 8, 18, 0.06), rgba(10, 8, 18, 0.06)),
+      url('/solo/pixel/bg-flood-wide.png') center 50% / cover no-repeat,
+      #0d0b14;
+  }
+}
 /* estilo pixel: fundo quase sem escurecer; a sombra forte em volta da moldura separa a arena */
 .is-pixel .solo-frame {
   box-shadow:
