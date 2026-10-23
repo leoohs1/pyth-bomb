@@ -82,6 +82,25 @@ function rollBonus(bonus, random) {
   return Array.from({ length: bonus.count }, () => bonus.pool[Math.floor(random() * bonus.pool.length)])
 }
 
+// distância ANDANDO (só por chão livre) desde o início até cada casa. Casa que as caixas isolam do início não aparece aqui.
+function walkDistances(level, start) {
+  const dist = new Map([[start.x + ',' + start.y, 0]])
+  const queue = [[start.x, start.y]]
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i]
+    const d = dist.get(x + ',' + y)
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, k = nx + ',' + ny
+      if (dist.has(k) || tileAt(level, nx, ny) !== FLOOR) continue
+      dist.set(k, d + 1)
+      queue.push([nx, ny])
+    }
+  }
+  return dist
+}
+const SPAWN_SAFE_FAR = 8   // inimigo nasce a pelo menos tantas casas (em linha reta) do início...
+const SPAWN_SAFE_WALK = 12 // ...e a pelo menos tantas casas ANDANDO (se tiver caminho até o jogador)
+
 function loadLevel(run, random) {
   const cfg = LEVELS[run.levelIndex]
   if (cfg.boss) return loadBossLevel(run, random)
@@ -100,25 +119,29 @@ function loadLevel(run, random) {
   // porta e power-ups ficam escondidos debaixo de blocos (a porta, longe do início)
   const blocks = shuffle(cellsOf(level, BLOCK), random)
   const doorCell = blocks.find(([x, y]) => far(x, y) >= 8) ?? blocks[0]
-  const hidden = blocks.filter((c) => c !== doorCell)
-  // pelo menos 1 item fica entre as 8 caixas mais perto do início (quem começa quebrando caixa já ganha algo)
-  if (toPlace.length && hidden.length > 8) {
-    const nearest = hidden.map((c, i) => [far(c[0], c[1]), i]).sort((p, q) => p[0] - q[0]).slice(0, 8)
-    const pick = nearest[Math.floor(random() * nearest.length)][1]
-    ;[hidden[0], hidden[pick]] = [hidden[pick], hidden[0]] // o 1º item da lista vai pra ela
+  let hidden = blocks.filter((c) => c !== doorCell)
+  // pelo menos 2 itens ficam entre as 10 caixas mais perto do início (quem começa quebrando caixa já ganha algo)
+  if (toPlace.length && hidden.length > 10) {
+    const near = hidden.map((c, i) => [far(c[0], c[1]), i]).sort((p, q) => p[0] - q[0]).slice(0, 10).map(([, i]) => i)
+    const chosen = []
+    while (chosen.length < Math.min(2, toPlace.length)) chosen.push(hidden[near.splice(Math.floor(random() * near.length), 1)[0]])
+    hidden = [...chosen, ...hidden.filter((c) => !chosen.includes(c))] // os 2 primeiros itens da lista vão pra elas
   }
   const powerups = toPlace.slice(0, hidden.length).map((kind, i) => ({
     x: hidden[i][0], y: hidden[i][1], kind, revealed: false, taken: false,
   }))
 
   // inimigos nascem em chão livre, longe do jogador e ESPALHADOS (cada um numa região diferente do mapa)
+  // (de preferência bem longe e sem caminho curto até o jogador: ninguém nasce "na cara" e te pega antes de você agir)
+  const walk = walkDistances(level, start)
   const spots = cellsOf(level, FLOOR).filter(([x, y]) => far(x, y) >= 6)
+  const calm = spots.filter(([x, y]) => far(x, y) >= SPAWN_SAFE_FAR && !(walk.get(x + ',' + y) < SPAWN_SAFE_WALK))
   const taken = [[start.x, start.y]] // casas já "ocupadas": o início, e depois cada bicho e poça colocados
   const enemies = []
   for (const [type, n] of Object.entries(cfg.enemies)) {
     for (let i = 0; i < n; i++) {
-      let spot = spreadPick(spots, taken, random, [5, 4, 3, 0])
-      if (spot) spots.splice(spots.indexOf(spot), 1)
+      let spot = spreadPick(calm, taken, random, [5, 4, 3, 0]) ?? spreadPick(spots, taken, random, [5, 4, 3, 0])
+      if (spot) for (const list of [calm, spots]) { const k = list.indexOf(spot); if (k >= 0) list.splice(k, 1) }
       if (!spot) {
         // mapa muito cheio: abre espaço num bloco qualquer longe do início
         const b = hidden.find(([x, y]) => far(x, y) >= 6 && tileAt(level, x, y) === BLOCK &&

@@ -245,7 +245,8 @@ function spawnCollectors(s, random) {
       if (tileAt(s.level, x, y) === FLOOR && !s.bombs.some((q) => q.x === x && q.y === y)) ring.push([x, y])
     }
   }
-  let spots = ring.filter(([x, y]) => Math.abs(x - p.x) + Math.abs(y - p.y) >= 3)
+  let spots = ring.filter(([x, y]) => Math.abs(x - p.x) + Math.abs(y - p.y) >= 5) // longe do jogador: não nascem "na cara"
+  if (spots.length < 2) spots = ring.filter(([x, y]) => Math.abs(x - p.x) + Math.abs(y - p.y) >= 3)
   if (spots.length < 2) spots = ring
   for (const type of ['crab', 'skeleton']) {
     if (!spots.length) break
