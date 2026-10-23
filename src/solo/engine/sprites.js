@@ -130,6 +130,11 @@ const PIXEL_FILES = {
   wall_hull_1: '/solo/pixel/wall-hull-1.png',
   wall_hull_2: '/solo/pixel/wall-hull-2.png',
   wall_hull_3: '/solo/pixel/wall-hull-3.png',
+  // blocos de parede da taverna (fase 1): pilha de barris, barril com torneira, adega de vinhos, pilar de pedra
+  wall_tavern_0: '/solo/pixel/wall-tavern-0.png',
+  wall_tavern_1: '/solo/pixel/wall-tavern-1.png',
+  wall_tavern_2: '/solo/pixel/wall-tavern-2.png',
+  wall_tavern_3: '/solo/pixel/wall-tavern-3.png',
   deco_hull_porthole: '/solo/pixel/deco-hull-porthole.png',
   deco_hull_cannon: '/solo/pixel/deco-hull-cannon.png',
   deco_hull_lantern: '/solo/pixel/deco-hull-lantern.png',
