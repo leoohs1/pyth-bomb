@@ -38,6 +38,12 @@ const C = {
   player: '#47c2ff', playerDark: '#1d6f99', eye: '#0d0b14',
 }
 
+// cor dos caixotes quebráveis (levels.js `crateTone`): lista de passos pra tinted() em sprites.js, um depois do outro
+// 'wood' = madeira escura e quente: 1) troca o verde-oliva por marrom, 2) escurece
+const CRATE_TONES = {
+  wood: [['rgb(150, 80, 35)', 0.9], ['rgb(185, 145, 125)', 1, 'multiply']],
+}
+
 // climas (levels.js `mood`): [cor, força] das paredes e dos caixotes, pra tinted() em sprites.js
 const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3], block: ['rgb(150, 88, 42)', 0.85], floor: ['rgb(36, 36, 44)', 1, 'screen'] },
@@ -67,6 +73,7 @@ export function draw(ctx, s, tilePx, dpr) {
   // chão e paredes
   // clima Bear Market: paredes puxadas pro vinho, caixotes marrons e o chão um tom mais claro; troca só a cor
   const mood = MOODS[s.mood]
+  const crateSteps = mood ? [mood.block] : CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
   const floorImg = mood ? tinted(tileSprite(s.tileset, 'floor'), ...mood.floor) : tileSprite(s.tileset, 'floor')
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
@@ -117,7 +124,7 @@ export function draw(ctx, s, tilePx, dpr) {
           // variação do caixote sorteada pela posição (a comum aparece mais)
           const variant = [0, 0, 0, 1, 2, 3][(x * 7 + y * 11) % 6]
           const blockImg = tileSprite(s.tileset, 'block', variant)
-          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, mood ? tinted(blockImg, ...mood.block) : blockImg)
+          drawBlock(ctx, x, y, burn ? 1 - burn.t / BURN_TIME : 0, crateSteps ? crateSteps.reduce((img, step) => tinted(img, ...step), blockImg) : blockImg)
         }
       }
     }
