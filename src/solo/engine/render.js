@@ -72,7 +72,8 @@ const wput = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x <
 // sequência (6 por segundo, cada vazamento começando num ponto diferente do ciclo), com a madeira escura e
 // molhada em volta. Se a arte ainda não carregou (ou no estilo pintado), usa o vazamento desenhado pelo código.
 function drawPuddle(ctx, p, time, scale) {
-  const frames = leakFrames(p.variant === 1 ? 'b' : 'a')
+  const v = p.variant === 1 ? 'b' : 'a'
+  const frames = p.set ? (leakFrames(`${p.set}_${v}`) ?? leakFrames(`${p.set}_a`)) : leakFrames(v) // p.set: conjunto próprio da fase (ex.: 'ale' = cerveja da taverna)
   if (!frames) return drawPuddleProcedural(ctx, p, time, scale)
   const u = 1 / PX_TILE
   const q = WQ * u + 1 / scale

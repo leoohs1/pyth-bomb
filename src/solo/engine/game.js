@@ -152,7 +152,7 @@ function loadLevel(run, random) {
       if (!spot) break
       free.splice(free.indexOf(spot), 1)
       taken.push([spot[0], spot[1]])
-      puddles.push({ x: spot[0], y: spot[1], seed: random() * 100, variant: i % 2, flip: i === 2 }) // desenhos a/b da arte; o 3º espelhado
+      puddles.push({ x: spot[0], y: spot[1], seed: random() * 100, variant: i % 2, flip: i === 2, set: cfg.puddleSet ?? null }) // desenhos a/b da arte; o 3º espelhado
       if (cfg.puddleCracks) cracks.push(makeCrack(spot[0], spot[1], random))
     }
   }
