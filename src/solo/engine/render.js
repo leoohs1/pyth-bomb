@@ -49,6 +49,50 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3] },
 }
 
+// Poça d'água em pixel (fase 2: o convés está vazando): mancha de água azul-escura com a borda "respirando",
+// ondinhas que se abrem a partir de uma gota que cai num ponto diferente a cada vez, e brilhos que piscam.
+// Desenhada pixel a pixel (1 pixel = 1/PX_TILE de casa). Só enfeite: não muda nada no jogo.
+const WATER = { rim: 'rgb(24, 58, 92)', deep: 'rgb(34, 84, 128)', mid: 'rgb(48, 112, 160)', ring: 'rgb(124, 196, 226)', glint: 'rgb(214, 240, 252)' }
+const noise2 = (x, y, s) => { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v) }
+
+function drawPuddle(ctx, p, time, scale) {
+  const u = 1 / PX_TILE
+  const size = u + 1 / scale // um tiquinho maior, pra não aparecer risco entre os pixels
+  const cx = 24, cy = 28 // centro da poça dentro da casa, em pixels
+  const rx = 15 + Math.sin(time * 1.3 + p.seed) * 0.8
+  const ry = 7 + Math.sin(time * 1.7 + p.seed * 2) * 0.5
+  // gota atual: a cada 2,4 s cai uma e abre uma ondinha (lugar diferente a cada vez)
+  const T = 2.4
+  const t = time + p.seed * 0.37
+  const cycle = Math.floor(t / T)
+  const age = (t - cycle * T) / T // 0 → 1
+  const dx = (noise2(cycle, 1, p.seed) - 0.5) * 12, dy = (noise2(cycle, 2, p.seed) - 0.5) * 5
+  ctx.save()
+  ctx.globalAlpha = 0.93
+  for (let iy = -9; iy <= 9; iy++) {
+    for (let ix = -17; ix <= 17; ix++) {
+      const d = (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry)
+      const edge = d + (noise2(ix, iy, p.seed) - 0.5) * 0.2 // contorno irregular (suave)
+      if (edge > 1) continue
+      let color = edge > 0.78 ? WATER.rim : edge > 0.35 ? WATER.deep : WATER.mid
+      // ondinha: anel que cresce a partir da gota e some
+      const ring = Math.hypot((ix - dx) / 1.9, iy - dy) // meio achatada, como a poça
+      if (age < 0.9 && Math.abs(ring - age * 9) < 0.7) color = WATER.ring
+      ctx.fillStyle = color
+      ctx.fillRect(p.x + (cx + ix) * u, p.y + (cy + iy) * u, size, size)
+    }
+  }
+  // brilhos que piscam (pontinhos claros em lugares fixos da poça)
+  ctx.fillStyle = WATER.glint
+  for (let k = 0; k < 5; k++) {
+    if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
+    const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * rx * 1.3), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * ry * 1.1)
+    if ((gx * gx) / (rx * rx) + (gy * gy) / (ry * ry) > 0.6) continue
+    ctx.fillRect(p.x + (cx + gx) * u, p.y + (cy + gy) * u, size * 2, size)
+  }
+  ctx.restore()
+}
+
 // chão de convés na casa (x, y): ~90% liso (6 variações) e ~10% com rachadura (4 formatos), sorteados pela posição
 function deckTile(deck, x, y) {
   const h = ((x * 19349663) ^ (y * 83492791)) >>> 0
@@ -141,6 +185,8 @@ export function draw(ctx, s, tilePx, dpr) {
       }
     }
   }
+
+  for (const p of s.puddles ?? []) drawPuddle(ctx, p, s.time, scale)
 
   // vinheta: escurece de leve os cantos, puxando o olho pro meio da arena
   const vg = ctx.createRadialGradient(level.cols / 2, level.rows / 2, level.rows * 0.32,

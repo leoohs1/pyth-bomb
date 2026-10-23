@@ -119,6 +119,9 @@ const PIXEL_FILES = {
   floor_deck_0: '/solo/pixel/floor-deck-0.png', // convés de navio pirata (fase 2): sem rachadura, rachadura pequena, rachadura grande
   floor_deck_1: '/solo/pixel/floor-deck-1.png',
   floor_deck_2: '/solo/pixel/floor-deck-2.png',
+  floor_deck_3: '/solo/pixel/floor-deck-3.png', // 3 e 5: mais formatos de rachadura; 4: outro chão liso
+  floor_deck_4: '/solo/pixel/floor-deck-4.png',
+  floor_deck_5: '/solo/pixel/floor-deck-5.png',
   enemy_skeleton: '/solo/pixel/skeleton.png',
   enemy_crab: '/solo/pixel/crab.png',
 }
@@ -178,14 +181,17 @@ export function tileSprite(set, kind, variant = 0) {
 export const decoSprite = (name) => sprite(`deco_${name}`)
 
 // chão alternativo da fase (levels.js `floor`, ex.: 'deck'). Devolve { plain, cracked } (listas de imagens) ou null
-// se ainda não carregou (ou no estilo pintado). Das 3 imagens (0 = sem rachadura, 1 e 2 = rachaduras diferentes)
-// saem mais variações: o chão liso ganha 6 (espelhado e "dado a volta" de lado, as tábuas seguem alinhadas) e
-// cada rachadura ganha a versão espelhada.
+// se ainda não carregou (ou no estilo pintado). Imagens do convés: 0 e 4 = lisas, 1, 2, 3 e 5 = rachaduras diferentes.
+// Delas saem mais variações: cada chão liso ganha 6 (espelhado e "dado a volta" de lado, as tábuas seguem
+// alinhadas) e cada rachadura ganha a versão espelhada.
+const FLOOR_SETS = { deck: { plain: [0, 4], cracked: [1, 2, 3, 5] } }
 const floorSets = new Map()
 export function floorVariants(name) {
-  const base = [0, 1, 2].map((i) => sprite(`floor_${name}_${i}`))
-  if (!base.every(Boolean) || typeof document === 'undefined') return null
-  if (floorSets.has(base[0])) return floorSets.get(base[0])
+  const def = FLOOR_SETS[name]
+  const img = (i) => sprite(`floor_${name}_${i}`)
+  if (!def || ![...def.plain, ...def.cracked].every(img) || typeof document === 'undefined') return null
+  const key = img(def.plain[0])
+  if (floorSets.has(key)) return floorSets.get(key)
   const make = (img, flip, shift) => {
     const w = img.naturalWidth, h = img.naturalHeight
     const c = document.createElement('canvas')
@@ -202,10 +208,10 @@ export function floorVariants(name) {
     return c
   }
   const set = {
-    plain: [[0, 0], [1, 0], [0, 16], [1, 16], [0, 32], [1, 32]].map(([f, s]) => make(base[0], f, s)),
-    cracked: [1, 2].flatMap((i) => [0, 1].map((f) => make(base[i], f, 0))),
+    plain: def.plain.flatMap((i) => [[0, 0], [1, 0], [0, 16], [1, 16], [0, 32], [1, 32]].map(([f, s]) => make(img(i), f, s))),
+    cracked: def.cracked.flatMap((i) => [0, 1].map((f) => make(img(i), f, 0))),
   }
-  floorSets.set(base[0], set)
+  floorSets.set(key, set)
   return set
 }
 

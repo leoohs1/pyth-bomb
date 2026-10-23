@@ -10,12 +10,13 @@
 // - tagline: frase curta que aparece embaixo do nome da fase
 // - tileset: cenário ('temple' = templo grego, o padrão; 'military' = quartel)
 // - wallMix: os blocos fixos (contêineres azuis) misturam cores: uns azuis, uns amarelos, uns vermelhos
+// - puddles: [mínimo, máximo] de poças d'água animadas no chão (só enfeite)
 // - floor: chão próprio da fase ('deck' = convés de navio pirata, em sprites.js); sem isso, o chão do cenário
 // - crateTone: cor dos caixotes quebráveis ('wood' = madeira num tom padrão; sem isso, a cor do cenário)
 // - mood: clima por cima do cenário ('bear' = tom vermelho do Bear Market: chão/paredes avermelhados, fundo e luzes vermelhos)
 export const LEVELS = [
   { name: 'Blue Barracks', tagline: 'The Blue Marines are on patrol', tileset: 'military', wallMix: true, crateTone: 'wood', enemies: { marine: 3, sarge: 2 }, powerups: ['bomb', 'fire', 'bomb', 'fire', 'speed'], bonus: { count: 2, pool: ['bomb', 'fire', 'speed', 'shield'] }, blockChance: 0.5 },
-  { name: 'Bear Market', tagline: 'Bears everywhere', tileset: 'military', mood: 'bear', floor: 'deck', crateTone: 'wood', enemies: { skeleton: 3, crab: 3 }, powerups: ['bomb', 'fire', 'kick'], bonus: { count: 3, pool: ['bomb', 'fire', 'speed', 'speed', 'shield'] }, blockChance: 0.55 },
+  { name: 'Bear Market', tagline: 'Bears everywhere', tileset: 'military', mood: 'bear', floor: 'deck', puddles: [1, 3], crateTone: 'wood', enemies: { skeleton: 3, crab: 3 }, powerups: ['bomb', 'fire', 'kick'], bonus: { count: 3, pool: ['bomb', 'fire', 'speed', 'speed', 'shield'] }, blockChance: 0.55 },
   { name: 'Rug Row', tagline: 'Watch your step', enemies: { skeleton: 2, crab: 3, rug: 3 }, powerups: ['bomb', 'fire', 'detonator'], bonus: { count: 3, pool: ['bomb', 'fire', 'speed', 'shield', 'shield'] }, blockChance: 0.6 },
   { name: "The Whale's Lair", tagline: 'The Whale awaits', boss: 'whale', enemies: {}, powerups: [] },
 ]

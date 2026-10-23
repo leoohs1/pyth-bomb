@@ -129,6 +129,18 @@ function loadLevel(run, random) {
     }
   }
 
+  // poças d'água (só enfeite, levels.js `puddles: [mínimo, máximo]`): em casas livres desde o começo, longe do
+  // início e longe uma da outra, pra nunca ficarem escondidas debaixo de caixa
+  const puddles = []
+  if (cfg.puddles) {
+    const [lo, hi] = cfg.puddles
+    const want = lo + Math.floor(random() * (hi - lo + 1))
+    for (const [x, y] of shuffle(cellsOf(level, FLOOR).filter(([cx, cy]) => far(cx, cy) >= 4), random)) {
+      if (puddles.length >= want) break
+      if (puddles.every((p) => Math.abs(p.x - x) + Math.abs(p.y - y) >= 5)) puddles.push({ x, y, seed: random() * 100 })
+    }
+  }
+
   return {
     ...run,
     items,
@@ -140,6 +152,7 @@ function loadLevel(run, random) {
       facing: 'down', moving: false, walkT: 0,
     },
     enemies,
+    puddles,
     boss: null,
     chest: null, // aparece quando a porta abre: { x, y, state: 'closed'|'opening'|'opened', result, dismissed }
     door: { x: doorCell[0], y: doorCell[1], revealed: false },
