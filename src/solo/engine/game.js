@@ -14,7 +14,7 @@ import {
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
 import { makeEnemy, updateEnemy, ENEMY_TYPES, BOMBHEAD } from './enemies.js'
-import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous, jetAt } from './boss.js'
+import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous, jetAt, nearHole } from './boss.js'
 
 const DIRS = {
   up: { dx: 0, dy: -1 },
@@ -545,6 +545,7 @@ function spawnChest(s) {
       const k = nx + ',' + ny
       if (seen.has(k) || tileAt(level, nx, ny) !== FLOOR) continue
       seen.add(k)
+      if (nearHole(level, nx, ny)) continue // arena do chefe: o baú não fica colado no buraco
       if (!bombAt(s, nx, ny)) return { x: nx, y: ny, ...fresh }
       queue.push([nx, ny])
     }

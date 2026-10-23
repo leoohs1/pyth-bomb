@@ -433,7 +433,7 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   const rise = bossRise(b) // 0 = no fundo, 1 = fora
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0
-  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
+  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.dived
   const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
   const frenzy = b.alive && (b.mode === 'frenzyWind' || b.mode === 'frenzyDash') // frenesi: rosnando, boca aberta
   const stunned = b.alive && b.mode === 'frenzyStun'
@@ -598,7 +598,7 @@ function drawWhale(ctx, b, time) {
   if (!b.alive && b.deathT > 1.2) return
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0 // 0 -> 1 durante a transformação
-  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
+  const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.dived
   const flash = b.hurtT > 0 && !b.enrageT && Math.sin(time * 40) > 0
   const bob = Math.sin(b.walkT * 4) * 0.05
   const tremble = b.enrageT > 0 ? Math.sin(time * 70) * 0.07 : 0
