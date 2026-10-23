@@ -11,6 +11,7 @@ export const ROWS = 13
 export const FLOOR = 0
 export const WALL = 1   // parede fixa: não quebra
 export const BLOCK = 2  // bloco quebrável
+export const HOLE = 3   // buraco com água no meio da arena do chefe (de onde o CHOP sai): ninguém anda nele
 
 // Chance de cada casa livre começar com um bloco quebrável (0 a 1)
 export const BLOCK_CHANCE = 0.62

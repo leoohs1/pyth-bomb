@@ -92,6 +92,22 @@ export function consumeEvents(s) {
         add({ kind: 'chunk', x: cx, y: cy, life: rand(0.5, 0.8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.6, vz: rand(2, 4), rot: rand(0, 6), vr: rand(-14, 14), size: rand(0.1, 0.16), color: '#e8dcc0' })
       }
       for (let i = 0; i < 5; i++) add({ kind: 'dust', x: cx + rand(-0.25, 0.25), y: cy + rand(-0.1, 0.3), life: rand(0.4, 0.6), size: rand(0.15, 0.25) })
+    } else if (ev.type === 'bossIntro') {
+      // o CHOP salta do buraco: splash grande, jatinhos d'água e o nome dele
+      add({ kind: 'ring', x: cx, y: cy, life: 0.8, color: '170, 225, 255', big: true })
+      add({ kind: 'ring', x: cx, y: cy, life: 1.2, color: '255, 255, 255', big: true })
+      for (let i = 0; i < 28; i++) {
+        const a = rand(0, Math.PI * 2), sp = rand(2, 4.5)
+        add({ kind: 'spark', x: cx, y: cy, life: rand(0.5, 0.9), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0.5, 2), color: Math.random() < 0.6 ? '170, 225, 255' : '255, 255, 255' })
+      }
+      add({ kind: 'text', text: 'CHOP', x: cx, y: cy - 1.8, vy: -0.2, life: 2.4, color: '#ffd24a', big: true })
+    } else if (ev.type === 'itemDrop') {
+      // um item caiu na arena: anel dourado e faíscas
+      add({ kind: 'ring', x: cx, y: cy, life: 0.5, color: '255, 230, 150', big: true })
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2
+        add({ kind: 'spark', x: cx, y: cy, life: rand(0.3, 0.5), vx: Math.cos(a) * 2, vy: Math.sin(a) * 2, color: '255, 240, 180' })
+      }
     } else if (ev.type === 'shieldBreak') {
       // escudo quebrando: anel azul + cacos de vidro voando
       add({ kind: 'ring', x: cx, y: cy - 0.1, life: 0.45, color: '150, 230, 255', big: true })

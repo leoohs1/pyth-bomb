@@ -319,6 +319,7 @@ export function draw(ctx, s, tilePx, dpr) {
     }
   }
 
+  if (level.hole) drawHole(ctx, level.hole, s)
   for (const c of s.cracks ?? []) drawCrack(ctx, c, level, scale)
   for (const p of s.puddles ?? []) drawPuddle(ctx, p, s.time, scale)
 
@@ -346,6 +347,39 @@ export function draw(ctx, s, tilePx, dpr) {
   drawParticles(ctx, level.cols, level.rows)
 }
 
+// O BURACO no meio da arena do chefe (provisório, em código até chegar a arte em pixel): água escura girando num
+// redemoinho, com espuma na borda; antes do CHOP sair ele borbulha.
+function drawHole(ctx, h, s) {
+  const cx = h.x + h.w / 2, cy = h.y + h.h / 2, t = s.time
+  const intro = s.boss && s.boss.mode === 'intro' ? s.boss.introT : 99
+  ctx.save()
+  ctx.fillStyle = '#150c06'
+  ctx.beginPath(); ctx.ellipse(cx, cy, 1.55, 1.5, 0, 0, Math.PI * 2); ctx.fill() // aro escuro (tábuas quebradas)
+  const g = ctx.createRadialGradient(cx, cy, 0.1, cx, cy, 1.45)
+  g.addColorStop(0, '#06162b'); g.addColorStop(0.55, '#0d3a63'); g.addColorStop(1, '#1b6a8f')
+  ctx.fillStyle = g
+  ctx.beginPath(); ctx.ellipse(cx, cy, 1.45, 1.4, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.lineWidth = 0.06
+  ctx.strokeStyle = 'rgba(160, 220, 240, 0.55)'
+  for (let i = 0; i < 4; i++) { // redemoinho: arcos claros girando
+    const a0 = t * 1.4 + (i * Math.PI) / 2, r = 0.45 + (i % 2) * 0.35
+    ctx.beginPath(); ctx.arc(cx, cy, r, a0, a0 + 1.5); ctx.stroke()
+  }
+  ctx.fillStyle = 'rgba(235, 250, 255, 0.85)'
+  for (let i = 0; i < 22; i++) { // espuma na borda
+    const a = (i / 22) * Math.PI * 2 + Math.sin(t * 0.9 + i) * 0.08, r = 1.38 + Math.sin(t * 2 + i * 1.7) * 0.05
+    ctx.fillRect(cx + Math.cos(a) * r - 0.03, cy + Math.sin(a) * r * 0.97 - 0.03, 0.06, 0.06)
+  }
+  if (intro < BOSS.introSplashAt + 0.4) { // borbulhando: bolhas subindo e estourando
+    ctx.fillStyle = 'rgba(210, 240, 255, 0.9)'
+    for (let i = 0; i < 9; i++) {
+      const ph = (t * 2.2 + i * 0.37) % 1
+      ctx.fillRect(cx + Math.sin(i * 2.3) * 1.0 - 0.04, cy + Math.cos(i * 1.7) * 0.8 - ph * 0.5 - 0.04, 0.08, 0.08)
+    }
+  }
+  ctx.restore()
+}
+
 // CHOP, o chefe, com a ARTE em pixel: 3 poses no tamanho nativo (normal, boca aberta quando solta reforço, furioso
 // quando fica com metade da vida). Olha pro lado em que o jogador está (espelha), pisca branco quando leva dano,
 // treme e cresce na transformação. O nome dele aparece numa plaquinha de ouro pendurada no colar.
@@ -369,6 +403,8 @@ function drawChopTag(ctx, pose, face, w, h) {
 }
 function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   if (!b.alive && b.deathT > 1.2) return
+  if (b.mode === 'intro' && b.introT < BOSS.introSplashAt) return // ainda não saiu: só o buraco borbulha
+  const rise = b.mode === 'intro' ? Math.min(1, (b.introT - BOSS.introSplashAt) / 0.9) : 1 // 0 = no fundo, 1 = fora
   const dying = b.alive ? 0 : b.deathT / 1.2
   const enraging = b.enrageT > 0 ? 1 - b.enrageT / BOSS.enrageTime : 0
   const angry = b.enrageT > 0 ? Math.sin(time * 28) > 0.6 - enraging * 1.6 : b.hp <= BOSS.hp / 2
@@ -384,7 +420,10 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
   const face = (b.face ?? -1) < 0 ? 1 : -1 // as poses olham pra ESQUERDA
 
   ctx.save()
-  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob)
+  if (rise < 1) { // saindo da água: só aparece o que está acima da linha d'água do buraco
+    ctx.beginPath(); ctx.rect(b.x - 3, b.y - 4, 7, 4.65); ctx.clip()
+  }
+  ctx.translate(b.x + 0.5 + tremble, b.y + 0.5 + bob + (1 - rise * (2 - rise)) * 1.9)
   ctx.scale(grow, grow)
   ctx.globalAlpha = 1 - dying
   ctx.rotate(dying * 1.5)
@@ -403,6 +442,7 @@ function drawBossSprite(ctx, b, time, [normal, open, fury]) {
 // virado pro lado em que o jogador está. Pisca branco quando leva dano e fica vermelho-escuro quando brava.
 // Na transformação (enrageT), treme, cresce um pouco e pisca cinza/vermelho antes de ficar vermelho de vez.
 function drawWhale(ctx, b, time) {
+  if (b.mode === 'intro' && b.introT < BOSS.introSplashAt) return
   const art = bossFrames()
   if (art) return drawBossSprite(ctx, b, time, art)
   if (!b.alive && b.deathT > 1.2) return

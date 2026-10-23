@@ -4,7 +4,7 @@
 // - De tempos em tempos para e solta FUDs na arena.
 // - Com metade da vida fica brava: antes, PARA por um instante (treme, pisca roxo, não leva dano)
 //   pra todo mundo perceber a transformação; depois anda e invoca mais rápido.
-import { FLOOR } from './constants.js'
+import { FLOOR, WALL, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './constants.js'
 import { tileAt } from './level.js'
 import { makeEnemy } from './enemies.js'
 
@@ -20,13 +20,41 @@ export const BOSS = {
   summonPause: 0.9,    // fica parada um tiquinho ao invocar
   maxMinions: 4,
   enrageTime: 1.6,     // segundos da transformação (parada, piscando, sem levar dano)
+  introSplashAt: 1.0,  // entrada: o buraco borbulha por 1 s e aí o CHOP salta pra fora
+  introTime: 2.4,      // entrada inteira (depois disso ele começa a lutar)
 }
 
 export function makeBoss(x, y) {
   return {
     x, y, hp: BOSS.hp, alive: true, deathT: 0,
     hurtT: 0, summonT: BOSS.summonEvery * 0.6, pauseT: 0, walkT: 0, enrageT: 0,
+    mode: 'intro', introT: 0, // 'intro' = ainda saindo do buraco (inofensivo e sem levar dano); 'surface' = lutando
   }
+}
+
+// A cada dano que o chefe leva, cai um item na arena (bomba, fogo, bota ou escudo, o que o jogador ainda pode usar)
+// numa casa livre, longe dele e do jogador: dá pra se recuperar sem a luta virar moleza.
+function dropItem(s, random) {
+  const p = s.player, b = s.boss
+  const kinds = []
+  if (p.maxBombs < MAX_BOMBS) kinds.push('bomb')
+  if (p.range < MAX_RANGE) kinds.push('fire')
+  if (p.speed < MAX_SPEED - 1e-6) kinds.push('speed')
+  if (!p.shield) kinds.push('shield')
+  if (!kinds.length) return
+  const spots = []
+  for (let y = 1; y < s.level.rows - 1; y++) {
+    for (let x = 1; x < s.level.cols - 1; x++) {
+      if (tileAt(s.level, x, y) !== FLOOR) continue
+      if (Math.abs(x - b.x) + Math.abs(y - b.y) < 3 || Math.abs(x - p.x) + Math.abs(y - p.y) < 2) continue
+      if (s.bombs.some((q) => q.x === x && q.y === y) || s.powerups.some((q) => !q.taken && q.x === x && q.y === y)) continue
+      spots.push([x, y])
+    }
+  }
+  if (!spots.length) return
+  const [x, y] = spots[Math.floor(random() * spots.length)]
+  s.powerups.push({ x, y, kind: kinds[Math.floor(random() * kinds.length)], revealed: true, taken: false, revealedAt: s.time })
+  s.events.push({ type: 'itemDrop', x, y })
 }
 
 const angry = (b) => b.hp <= BOSS.hp / 2
@@ -41,7 +69,8 @@ function tilesUnder(cx, cy) {
   return out
 }
 
-const fits = (s, cx, cy) => tilesUnder(cx, cy).every(([x, y]) => tileAt(s.level, x, y) === FLOOR)
+// o chefe só é barrado pelas paredes (passa por cima do buraco da arena e das bombas)
+const fits = (s, cx, cy) => tilesUnder(cx, cy).every(([x, y]) => tileAt(s.level, x, y) !== WALL)
 
 // fogo encostando na baleia
 export function bossTouchesTile(b, x, y) {
@@ -60,6 +89,23 @@ export function updateBoss(s, dt, random = Math.random) {
   b.hurtT = Math.max(0, b.hurtT - dt)
   b.walkT += dt
 
+  // entrada: o buraco borbulha, o CHOP salta pra fora (splash + nome na tela) e só então começa a lutar
+  if (b.mode === 'intro') {
+    b.introT += dt
+    if (!b.introSplash && b.introT >= BOSS.introSplashAt) {
+      b.introSplash = true
+      s.shake = Math.min(0.5, s.shake + 0.4)
+      s.events.push({ type: 'bossIntro', x: b.x, y: b.y })
+      s.note = `${BOSS.name} the Loan Shark wants his money back`
+      s.noteUntil = s.time + 3.5
+    }
+    if (b.introT >= BOSS.introTime) {
+      b.mode = 'surface'
+      if (s.supplies) { s.note = "The old crew left supplies: more bombs, fire and a shield!"; s.noteUntil = s.time + 4 }
+    }
+    return
+  }
+
   // levou explosão? (a pontinha de fogo desenhada dentro das caixas não conta)
   if (b.hurtT === 0 && s.flames.some((f) => !f.visual && bossTouchesTile(b, f.x, f.y))) {
     const wasAngry = angry(b)
@@ -74,6 +120,7 @@ export function updateBoss(s, dt, random = Math.random) {
       s.door = { x: Math.round(b.x), y: Math.round(b.y), revealed: true }
       return
     }
+    dropItem(s, random)
     if (!wasAngry && angry(b)) {
       // transformação: para, treme e fica invencível até terminar; depois já invoca reforço
       b.enrageT = BOSS.enrageTime

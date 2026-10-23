@@ -195,13 +195,19 @@ function loadLevel(run, random) {
 // fase de chefe: arena aberta, sem blocos; a porta aparece quando o chefe morre
 function loadBossLevel(run) {
   const level = makeArena()
+  // REGRA DO PISO: todo mundo chega no chefe com pelo menos 3 bombas, alcance 3 e um escudo (nunca tira nada de
+  // quem já tem mais). Assim a luta é justa, mesmo pra quem pegou poucos itens (ou morreu e perdeu o escudo).
+  const st = run.stats
+  const stats = { ...st, maxBombs: Math.max(st.maxBombs, 3), range: Math.max(st.range, 3), shield: true }
+  const supplies = stats.maxBombs > st.maxBombs || stats.range > st.range || !st.shield
   return {
     ...run,
     level,
+    supplies, // true = ganhou suprimentos ao chegar (o aviso aparece quando a luta começa)
     player: {
       x: level.start.x, y: level.start.y,
       alive: true, deathT: 0,
-      ...run.stats,
+      ...stats,
       facing: 'down', moving: false, walkT: 0,
     },
     enemies: [],
@@ -640,7 +646,7 @@ export function update(s, controls, dt) {
     const touching = s.enemies.find((e) => e.alive && Math.abs(e.x - p.x) < 0.6 && Math.abs(e.y - p.y) < 0.6)
     if (flameAt(s, px, py)) killPlayer(s, 'fire')
     else if (touching) { if (touching.bombT != null) touching.bombT = 0; else killPlayer(s, touching.type) } // cabeça-bomba encostou: explode
-    else if (s.boss?.alive && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
+    else if (s.boss?.alive && s.boss.mode === 'surface' && bossTouchesPlayer(s.boss, p)) killPlayer(s, 'boss')
 
     // pega power-up
     for (const pu of s.powerups) {
