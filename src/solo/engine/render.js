@@ -49,86 +49,153 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3] },
 }
 
-// Poça com BALEIA (fase 2: tem uma baleia embaixo do convés): mancha d'água azul-escura com um buraco no meio
-// (o respiradouro). De tempos em tempos a baleia SOLTA UM JATO: a coluna d'água sobe, abre num leque de gotas lá
-// em cima, as gotas caem de volta na poça e abrem ondinhas; depois fica calma de novo, com brilhos piscando.
-// Desenhada pixel a pixel (1 pixel = 1/PX_TILE de casa). Só enfeite: não muda nada no jogo.
-const WATER = { rim: 'rgb(24, 58, 92)', hole: 'rgb(14, 36, 64)', deep: 'rgb(34, 84, 128)', mid: 'rgb(48, 112, 160)', ring: 'rgb(124, 196, 226)', glint: 'rgb(214, 240, 252)' }
+// Poça com BALEIA (fase 2: tem uma baleia embaixo do convés). Mancha d'água com um buraco no meio (o
+// respiradouro). De tempos em tempos a baleia SOLTA UM JATO e a água VOLTA:
+//   1) SAI: uma coluna fina d'água sobe do buraco;
+//   2) lá em cima abre num leque e solta gotas, que caem em arco;
+//   3) VOLTA: o jato se solta e cai como um risco d'água de volta na poça;
+//   4) ao bater, a água espirra em COROA (dedos pontudos pra cima e pros lados, gotas voando) e abre ondinhas
+//      em arco pros dois lados; depois fica calma de novo, com brilhos piscando.
+// Tudo em pixel: a água é montada numa grade 48x48 (1 pixel = 1/PX_TILE de casa), ganha contorno azul e uns
+// pontos de brilho (estilo pixel art de respingo). Só enfeite: não muda nada no jogo.
+const WATER = {
+  rim: 'rgb(30, 92, 158)', fill: 'rgb(46, 132, 200)', deep: 'rgb(36, 108, 178)', hole: 'rgb(20, 62, 120)',
+  edge: 'rgb(52, 158, 224)', cyan: 'rgb(112, 238, 255)', white: 'rgb(226, 255, 255)',
+}
 const noise2 = (x, y, s) => { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v) }
-const SPOUT = { cycle: 4.2, riseAt: 0.7, topAt: 1.1, fallAt: 1.8, landAt: 2.4, height: 27, gravity: 70 }
+const SPOUT = { cycle: 4.2, outAt: 0.6, topAt: 1.2, fallAt: 1.5, landAt: 2.2, height: 27, gravity: 67 }
+const PUD_CX = 24, PUD_CY = 33 // centro da poça dentro da casa, em pixels (mais embaixo: sobra lugar pro jato)
+const PW = 48
+const wbuf = new Uint8Array(PW * PW) // 0 vazio, 1 água, 2 brilho, 3 contorno
+const wput = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < PW && y >= 0 && y < PW) wbuf[y * PW + x] = 1 }
+function wdisc(x, y, r) {
+  const R = Math.ceil(r)
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) if (dx * dx + dy * dy <= r * r + 0.3) wput(x + dx, y + dy)
+}
+// dedo pontudo do respingo: sai de (x0, y0) na direção angle (0 = pra cima, + = pra direita), afinando até a ponta
+function wfinger(x0, y0, angle, len, bend) {
+  const sx = Math.sin(angle), sy = -Math.cos(angle)
+  for (let j = 0; j <= len; j += 0.5) wdisc(x0 + sx * j, y0 + sy * j + bend * j * j * 0.03, (1 - j / len) * 0.95 + 0.2)
+}
+const wdrop = (x, y) => { wput(x, y); wput(x + 1, y); wput(x, y + 1); wput(x + 1, y + 1) } // gotinha 2x2
+const poolCache = new WeakMap()
+
+// a poça parada (mancha com borda irregular e o buraco no meio), desenhada uma vez só por poça
+function poolImage(p) {
+  let c = poolCache.get(p)
+  if (c) return c
+  c = document.createElement('canvas')
+  c.width = PW
+  c.height = PW
+  const g = c.getContext('2d')
+  const rx = 15, ry = 6.5
+  for (let iy = -9; iy <= 9; iy++) {
+    for (let ix = -17; ix <= 17; ix++) {
+      const edge = (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry) + (noise2(ix, iy, p.seed) - 0.5) * 0.2 // contorno irregular
+      if (edge > 1) continue
+      g.fillStyle = (ix * ix) / 14 + (iy * iy) / 3.2 < 1 ? WATER.hole : edge > 0.78 ? WATER.rim : edge > 0.35 ? WATER.deep : WATER.fill
+      g.fillRect(PUD_CX + ix, PUD_CY + iy, 1, 1)
+    }
+  }
+  poolCache.set(p, c)
+  return c
+}
 
 function drawPuddle(ctx, p, time, scale) {
   const u = 1 / PX_TILE
   const size = u + 1 / scale // um tiquinho maior, pra não aparecer risco entre os pixels
-  const cx = 24, cy = 31 // centro da poça dentro da casa, em pixels (mais embaixo: sobra lugar pro jato)
-  const rx = 15 + Math.sin(time * 1.3 + p.seed) * 0.8
-  const ry = 6.5 + Math.sin(time * 1.7 + p.seed * 2) * 0.5
-  const t = (time + p.seed * 0.37) % SPOUT.cycle // onde estamos no ciclo do jato
-  // ondinhas: duas, saindo do meio quando a água volta pra poça
-  const age1 = (t - SPOUT.landAt) / 1.2, age2 = (t - SPOUT.landAt - 0.35) / 1.2
-  const rings = [age1, age2].filter((a) => a >= 0 && a < 1)
-  const rect = (ix, iy, color, w = 1) => {
-    ctx.fillStyle = color
-    ctx.fillRect(p.x + (cx + ix) * u, p.y + (cy + iy) * u, size * w, size)
-  }
+  const cx = PUD_CX, cy = PUD_CY, top = cy - 2 - SPOUT.height // topo do jato, em pixels
+  const t = (time + p.seed * 0.37) % SPOUT.cycle // onde estamos no ciclo
+  const rect = (ix, iy, color, w = 1) => { ctx.fillStyle = color; ctx.fillRect(p.x + ix * u, p.y + iy * u, size * w, size) }
+
+  // 1) a poça parada (e os brilhos piscando enquanto está calma)
   ctx.save()
-  ctx.globalAlpha = 0.93
-  for (let iy = -9; iy <= 9; iy++) {
-    for (let ix = -17; ix <= 17; ix++) {
-      const d = (ix * ix) / (rx * rx) + (iy * iy) / (ry * ry)
-      const edge = d + (noise2(ix, iy, p.seed) - 0.5) * 0.2 // contorno irregular (suave)
-      if (edge > 1) continue
-      let color = edge > 0.78 ? WATER.rim : edge > 0.35 ? WATER.deep : WATER.mid
-      if ((ix * ix) / 14 + (iy * iy) / 3.2 < 1) color = WATER.hole // o respiradouro da baleia
-      const ring = Math.hypot(ix / 1.9, iy) // meio achatada, como a poça
-      if (rings.some((a) => Math.abs(ring - 1.5 - a * 8.5) < 0.7)) color = WATER.ring
-      rect(ix, iy, color)
-    }
-  }
-  // brilhos que piscam enquanto está calma
-  if (t < SPOUT.riseAt || t > SPOUT.landAt + 1.2) {
+  ctx.imageSmoothingEnabled = false
+  ctx.globalAlpha = 0.95
+  ctx.drawImage(poolImage(p), p.x, p.y, 1 + 1 / scale, 1 + 1 / scale)
+  ctx.globalAlpha = 1
+  if (t < SPOUT.outAt || t >= SPOUT.landAt + 1.4) {
     for (let k = 0; k < 5; k++) {
       if (Math.sin(time * 2.2 + p.seed * 3 + k * 1.9) < 0.86) continue
-      const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * rx * 1.3), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * ry * 1.1)
-      if ((gx * gx) / (rx * rx) + (gy * gy) / (ry * ry) > 0.6) continue
-      rect(gx, gy, WATER.glint, 2)
+      const gx = Math.round((noise2(k, 5, p.seed) - 0.5) * 20), gy = Math.round((noise2(k, 6, p.seed) - 0.5) * 7)
+      if ((gx * gx) / 150 + (gy * gy) / 28 > 0.6) continue
+      rect(cx + gx, cy + gy, WATER.white, 2)
     }
   }
-  // o jato: sobe rápido, segura um pouco lá em cima (leque de gotas) e desce
+
+  // 2) a água que sai, cai, espirra e abre ondas, montada na grade
+  wbuf.fill(0)
   const ease = (k) => 1 - (1 - k) * (1 - k)
-  let h = 0
-  if (t >= SPOUT.riseAt && t < SPOUT.topAt) h = SPOUT.height * ease((t - SPOUT.riseAt) / (SPOUT.topAt - SPOUT.riseAt))
-  else if (t >= SPOUT.topAt && t < SPOUT.fallAt) h = SPOUT.height + Math.sin(time * 14) * 0.8
-  else if (t >= SPOUT.fallAt && t < SPOUT.landAt) h = SPOUT.height * (1 - ease((t - SPOUT.fallAt) / (SPOUT.landAt - SPOUT.fallAt)))
-  h = Math.round(h)
-  if (h > 1) {
-    ctx.globalAlpha = 1
-    for (let r = 0; r < h; r++) {
-      const w = r < h * 0.45 ? 4 : r < h * 0.8 ? 3 : 2 // mais fino lá em cima
-      const sway = Math.round(Math.sin(time * 9 + r * 0.35) * 0.8)
-      const left = sway - Math.floor(w / 2)
-      for (let k = 0; k < w; k++) rect(left + k, -2 - r, k === 0 || k === w - 1 ? WATER.ring : WATER.glint)
-    }
-    // leque no topo: dois arcos de gotinhas abrindo pros lados e caindo (aparece quando o jato está alto)
-    if (h > SPOUT.height * 0.6) {
-      for (const side of [-1, 1]) {
-        for (let k = 1; k <= 6; k++) rect(side * (1 + k * 1.3) | 0, -2 - h + ((k * k * 0.4) | 0), k < 5 ? WATER.glint : WATER.ring)
-      }
+  const g = SPOUT.gravity
+  // SAI: coluna fina subindo do buraco (e segura no topo um instante)
+  if (t >= SPOUT.outAt && t < SPOUT.fallAt) {
+    const head = t < SPOUT.topAt ? SPOUT.height * ease((t - SPOUT.outAt) / (SPOUT.topAt - SPOUT.outAt)) : SPOUT.height
+    for (let r = 0; r < head; r++) { wput(cx - 1, cy - 2 - r); wput(cx, cy - 2 - r) }
+    if (head > 3) wdisc(cx - 0.5, cy - 2 - head, 1.6) // a ponta, um pouco mais gordinha
+    // leque no topo (quando chega lá em cima)
+    if (t >= SPOUT.topAt - 0.1) for (const a of [-1.0, -0.5, 0.5, 1.0]) wfinger(cx - 0.5, top, a, 6, 1)
+  }
+  // VOLTA: o jato se solta lá de cima e cai como um risco d'água até bater na poça
+  if (t >= SPOUT.fallAt && t < SPOUT.landAt) {
+    const tau = t - SPOUT.fallAt
+    const y0 = top + 0.5 * g * tau * tau // ponta de cima do risco
+    const len = 9
+    for (let y = y0; y < Math.min(y0 + len, cy - 2); y++) { wput(cx - 1, y); wput(cx, y) }
+  }
+  // gotas lançadas do topo: sobem um pouco, abrem pros lados e caem de volta
+  if (t >= SPOUT.topAt && t < SPOUT.landAt + 0.8) {
+    for (let i = 0; i < 6; i++) {
+      const tau = t - SPOUT.topAt - (i % 3) * 0.12
+      if (tau < 0) continue
+      const a = (i / 5) * 2 - 1
+      const x = cx + (a * 21 + (noise2(i, 9, p.seed) - 0.5) * 4) * tau
+      const y = top + (-10 + noise2(i, 8, p.seed) * 8) * tau + 0.5 * g * tau * tau
+      if (y < cy - 1) wdrop(x, y)
     }
   }
-  // gotas lançadas do topo quando o jato chega lá em cima: sobem um pouco, abrem pros lados e caem de volta
-  const tau0 = t - SPOUT.topAt
-  if (tau0 >= 0) {
-    ctx.globalAlpha = 1
-    for (let i = 0; i < 10; i++) {
-      const tau = tau0 - (i % 3) * 0.06
-      if (tau < 0) continue
-      const a = (i / 9) * 2 - 1
-      const vx = a * 15 + (noise2(i, 9, p.seed) - 0.5) * 4
-      const vy = -10 + noise2(i, 8, p.seed) * 8
-      const x = vx * tau, y = -2 - SPOUT.height + vy * tau + 0.5 * SPOUT.gravity * tau * tau
-      if (y >= 0) continue // já caiu na poça
-      rect(Math.round(x), Math.round(y), i % 2 ? WATER.glint : WATER.ring)
+  // BATE: respingo em coroa (dedos pra cima e pros lados) + gotas voando + ondinhas em arco
+  const k = (t - SPOUT.landAt) / 1.0
+  if (k >= 0 && k < 1) {
+    const grow = Math.pow(Math.sin(Math.min(1, k * 1.15) * Math.PI), 0.6)
+    wdisc(cx - 0.5, cy - 2, 2.3 * grow) // o monte d'água no meio
+    const angles = [-1.3, -0.85, -0.4, 0, 0.4, 0.85, 1.3]
+    const lens = [12, 17, 20, 23, 20, 17, 12]
+    angles.forEach((a, i) => wfinger(cx - 0.5 + Math.sin(a) * 2.5, cy - 2, a, lens[i] * grow * (0.85 + noise2(i, 3, p.seed + Math.floor(time / SPOUT.cycle)) * 0.3), Math.abs(a) * 1.8))
+    for (let i = 0; i < 6; i++) { // gotas do respingo, bem separadas
+      const tau = t - SPOUT.landAt
+      const vx = (i - 2.5) * 8, vy = -(26 + noise2(i, 4, p.seed) * 12)
+      const x = cx + vx * tau, y = cy - 6 + vy * tau + 0.5 * 95 * tau * tau
+      if (y < cy - 1) wdrop(x, y)
+    }
+  }
+  for (const age of [(t - SPOUT.landAt) / 1.3, (t - SPOUT.landAt - 0.35) / 1.3]) {
+    if (age < 0 || age >= 1) continue
+    const r = 5 + age * 16, ry = r * 0.34
+    for (let ph = -1.05; ph <= 1.05; ph += 0.06) { // arco da direita e arco da esquerda
+      if (age > 0.7 && Math.round(ph * 50) % 2) continue // no fim, o arco vai ficando tracejado
+      wput(cx + Math.cos(ph) * r, cy + Math.sin(ph) * ry)
+      wput(cx - Math.cos(ph) * r, cy + Math.sin(ph) * ry)
+    }
+  }
+  // brilho nos pontos de cima/esquerda da água e contorno azul em volta
+  for (let y = 0; y < PW; y++) {
+    for (let x = 0; x < PW; x++) {
+      if (wbuf[y * PW + x] !== 1) continue
+      const upEmpty = y === 0 || wbuf[(y - 1) * PW + x] === 0, leftEmpty = x === 0 || wbuf[y * PW + x - 1] === 0
+      if ((upEmpty || leftEmpty) && noise2(x, y, p.seed) > 0.7) wbuf[y * PW + x] = 2
+    }
+  }
+  for (let y = 0; y < PW; y++) {
+    for (let x = 0; x < PW; x++) {
+      if (wbuf[y * PW + x] !== 0) continue
+      const near = (xx, yy) => xx >= 0 && xx < PW && yy >= 0 && yy < PW && (wbuf[yy * PW + xx] === 1 || wbuf[yy * PW + xx] === 2)
+      if (near(x - 1, y) || near(x + 1, y) || near(x, y - 1) || near(x, y + 1)) wbuf[y * PW + x] = 3
+    }
+  }
+  for (let y = 0; y < PW; y++) {
+    for (let x = 0; x < PW; x++) {
+      const v = wbuf[y * PW + x]
+      if (v) rect(x, y, v === 3 ? WATER.edge : v === 2 ? WATER.white : WATER.cyan)
     }
   }
   ctx.restore()
