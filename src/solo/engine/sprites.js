@@ -177,10 +177,36 @@ export function tileSprite(set, kind, variant = 0) {
 
 export const decoSprite = (name) => sprite(`deco_${name}`)
 
-// chão alternativo da fase (levels.js `floor`, ex.: 'deck'), com 3 variações; null se ainda não carregou (ou no estilo pintado)
-export const floorVariants = (name) => {
-  const list = [0, 1, 2].map((i) => sprite(`floor_${name}_${i}`))
-  return list.every(Boolean) ? list : null
+// chão alternativo da fase (levels.js `floor`, ex.: 'deck'). Devolve { plain, cracked } (listas de imagens) ou null
+// se ainda não carregou (ou no estilo pintado). Das 3 imagens (0 = sem rachadura, 1 e 2 = rachaduras diferentes)
+// saem mais variações: o chão liso ganha 6 (espelhado e "dado a volta" de lado, as tábuas seguem alinhadas) e
+// cada rachadura ganha a versão espelhada.
+const floorSets = new Map()
+export function floorVariants(name) {
+  const base = [0, 1, 2].map((i) => sprite(`floor_${name}_${i}`))
+  if (!base.every(Boolean) || typeof document === 'undefined') return null
+  if (floorSets.has(base[0])) return floorSets.get(base[0])
+  const make = (img, flip, shift) => {
+    const w = img.naturalWidth, h = img.naturalHeight
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    const g = c.getContext('2d')
+    g.imageSmoothingEnabled = false
+    if (flip) { g.translate(w, 0); g.scale(-1, 1) }
+    g.drawImage(img, -shift, 0)
+    if (shift) g.drawImage(img, w - shift, 0) // o que sai de um lado volta pelo outro
+    c.naturalWidth = w
+    c.naturalHeight = h
+    pixelImgs.add(c)
+    return c
+  }
+  const set = {
+    plain: [[0, 0], [1, 0], [0, 16], [1, 16], [0, 32], [1, 32]].map(([f, s]) => make(base[0], f, s)),
+    cracked: [1, 2].flatMap((i) => [0, 1].map((f) => make(base[i], f, 0))),
+  }
+  floorSets.set(base[0], set)
+  return set
 }
 
 // Cópia do desenho com o AZUL trocado por outra cor (delta = quantos graus girar a cor: +135 vira vermelho,

@@ -49,10 +49,11 @@ const MOODS = {
   bear: { wall: ['rgb(215, 50, 65)', 0.3] },
 }
 
-// variação do chão de convés na casa (x, y): ~68% sem rachadura, ~20% rachadura pequena, ~12% rachadura grande
-function floorVariantOf(x, y) {
-  const h = (((x * 19349663) ^ (y * 83492791)) >>> 0) % 100
-  return h < 68 ? 0 : h < 88 ? 1 : 2
+// chão de convés na casa (x, y): ~90% liso (6 variações) e ~10% com rachadura (4 formatos), sorteados pela posição
+function deckTile(deck, x, y) {
+  const h = ((x * 19349663) ^ (y * 83492791)) >>> 0
+  const list = h % 100 < 90 ? deck.plain : deck.cracked
+  return list[(h >>> 8) % list.length]
 }
 
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
@@ -81,7 +82,7 @@ export function draw(ctx, s, tilePx, dpr) {
   const mood = MOODS[s.mood]
   const crateSteps = CRATE_TONES[s.crateTone] ?? null // passos de cor dos caixotes quebráveis
   const floorImg = tileSprite(s.tileset, 'floor')
-  const deck = s.floor ? floorVariants(s.floor) : null // chão próprio da fase (convés), 3 variações sorteadas pela posição
+  const deck = s.floor ? floorVariants(s.floor) : null // chão próprio da fase (convés), variações sorteadas pela posição
   const wallImg = mood ? tinted(tileSprite(s.tileset, 'wall'), ...mood.wall) : tileSprite(s.tileset, 'wall')
   // fase 1: os contêineres (blocos fixos de dentro do mapa) em cores misturadas: ~40% azul, ~30% amarelo,
   // ~30% vermelho, sorteados pela posição (o mesmo lugar sempre tem a mesma cor). A borda fica azul.
@@ -105,7 +106,7 @@ export function draw(ctx, s, tilePx, dpr) {
         }
       }
       else {
-        const floorHere = deck ? deck[floorVariantOf(x, y)] : floorImg
+        const floorHere = deck ? deckTile(deck, x, y) : floorImg
         if (floorHere) {
           // um tiquinho maior que a casa, pra não aparecer risquinho entre uma e outra
           blit(ctx, floorHere, x, y, 1 + seam, 1 + seam)
