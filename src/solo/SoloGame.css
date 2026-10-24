@@ -25,7 +25,7 @@
   width: 100%;
 }
 .solo-title { display: flex; align-items: center; gap: 14px; justify-self: start; }
-@media (max-width: 1250px) {
+@media (max-width: 1759px) { /* em laptop (1366, 1440, 1536...) as 3 colunas espremiam a barra de status em 2 linhas */
   .solo-top { grid-template-columns: 1fr; justify-items: center; gap: 6px; }
   .solo-title { justify-self: center; }
 }
@@ -512,3 +512,70 @@
 .is-pixel .solo-line { font: 12px/1.6 'Press Start 2P', monospace; font-style: normal; }
 /* pausa: fundo escuro neutro (não é o vermelho da morte) */
 .solo-over.is-pause { background: rgba(14, 10, 26, 0.72); }
+
+/* BOTÃO DE SOM maior e bem à vista (algumas pessoas não achavam): ícone grande + a palavra SOUND, com um brilho
+   pulsando nos primeiros segundos. Só na tela do Solo, nos dois estilos (pintado e pixel). O painel de volume que
+   abre ao clicar também fica maior e mais fácil de acertar. */
+.solo-page .snd-wrap.sound-fixed { top: 10px; right: 10px; z-index: 70; }
+.solo-page .snd-wrap .ga-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 16px 0 14px;
+  font-size: 28px;
+  line-height: 1;
+  color: #fff4cc;
+  background: rgba(24, 14, 44, 0.94);
+  border: 3px solid #f0c75a;
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px #0b0c10, 0 4px 14px rgba(0, 0, 0, 0.55);
+  animation: solo-snd-pulse 1.3s ease-in-out 6;
+}
+.solo-page .snd-wrap .ga-sound::after {
+  content: 'SOUND';
+  font: 12px/1 'Press Start 2P', monospace;
+  letter-spacing: 0.04em;
+  color: #ffe9a8;
+}
+.solo-page .snd-wrap .ga-sound:hover { filter: brightness(1.25); }
+.solo-page.is-pixel .snd-wrap .ga-sound {
+  border-radius: 0;
+  box-shadow: 0 0 0 3px #0b0c10, 4px 4px 0 3px rgba(0, 0, 0, 0.55);
+}
+@keyframes solo-snd-pulse {
+  0%, 100% { transform: scale(1); filter: none; }
+  50% { transform: scale(1.08); filter: brightness(1.35) drop-shadow(0 0 10px rgba(240, 199, 90, 0.9)); }
+}
+.solo-page .snd-pop {
+  width: 330px;
+  padding: 16px 18px 12px;
+  top: calc(100% + 10px);
+  border-width: 3px;
+}
+.solo-page .snd-label { font-size: 17px; }
+.solo-page .snd-mute { min-width: 64px; padding: 7px 14px; font-size: 14px; }
+.solo-page .snd-slider { font-size: 20px; gap: 10px; margin: 12px 0 6px; }
+.solo-page .snd-slider input[type='range'] { height: 28px; }
+.solo-page .snd-pct { width: 44px; font-size: 14px; }
+.solo-page.is-pixel .snd-pop { border-radius: 0; font-family: 'Press Start 2P', monospace; }
+.solo-page.is-pixel .snd-label { font-size: 11px; line-height: 1.6; font-weight: 400; }
+.solo-page.is-pixel .snd-mute { border-radius: 0; font-family: 'Press Start 2P', monospace; font-size: 10px; }
+/* tela estreita: sem a palavra (só o ícone grande), pra não cobrir o painel de cima */
+@media (max-width: 760px) {
+  .solo-page .snd-wrap .ga-sound { min-height: 44px; padding: 0 11px; font-size: 24px; }
+  .solo-page .snd-wrap .ga-sound::after { content: none; }
+  .solo-page .snd-pop { width: 290px; }
+}
+@media (prefers-reduced-motion: reduce) { .solo-page .snd-wrap .ga-sound { animation: none; } }
+/* o botão de som não pode cobrir a barra de cima (vidas, fase, PYTH). Com a barra em 3 colunas (tela larga, 1760 px ou
+   mais) o botão grande mora na coluna vazia da direita; com a barra empilhada, o botão fica na linha do título, menor. */
+@media (max-width: 1759px) {
+  .solo-page .snd-wrap.sound-fixed { top: 2px; right: 6px; }
+  .solo-page .snd-wrap .ga-sound { min-height: 36px; padding: 0 10px; font-size: 22px; gap: 7px; border-width: 2px; }
+  .solo-page .snd-wrap .ga-sound::after { font-size: 10px; }
+}
+@media (max-width: 760px) {
+  .solo-page .snd-wrap .ga-sound { min-height: 40px; padding: 0 9px; font-size: 22px; }
+  .solo-page .snd-wrap .ga-sound::after { content: none; }
+}
