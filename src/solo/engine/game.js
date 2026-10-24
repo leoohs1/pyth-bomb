@@ -224,6 +224,7 @@ function loadLevel(run, random) {
     crateTone: cfg.crateTone ?? null, // cor dos caixotes quebráveis (levels.js)
     floor: cfg.floor ?? null, // chão próprio da fase (levels.js)
     wall: cfg.wall ?? null, // blocos fixos próprios da fase (levels.js)
+    wallBorder: cfg.wallBorder ?? null, // parede própria só da borda da arena (levels.js)
     decor: cfg.decor ?? null, // decoração da borda própria da fase (levels.js)
     doorSet: cfg.door ?? null, // porta própria da fase (levels.js): 'hull' = escotilha
     time: 0,
@@ -273,6 +274,7 @@ function loadBossLevel(run, random = Math.random) {
     mood: cfg.mood ?? null,
     floor: cfg.floor ?? null, // visual próprio da arena do chefe (levels.js)
     wall: cfg.wall ?? null,
+    wallBorder: cfg.wallBorder ?? null,
     decor: cfg.decor ?? null,
     doorSet: cfg.door ?? null,
     crateTone: cfg.crateTone ?? null,

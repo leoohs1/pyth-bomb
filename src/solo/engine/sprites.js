@@ -138,6 +138,11 @@ const PIXEL_FILES = {
   wall_hull_2: '/solo/pixel/wall-hull-2.png',
   wall_hull_3: '/solo/pixel/wall-hull-3.png',
   // blocos de parede da taverna (fase 1): pilha de barris, barril com torneira, adega de vinhos, pilar de pedra
+  // borda da arena na taverna: parede de tábuas (provisória, feita do piso) lisa ou com viga; a decoração fica presa nela
+  wall_tavern_border_0: '/solo/pixel/wall-tavern-border-0.png',
+  wall_tavern_border_1: '/solo/pixel/wall-tavern-border-1.png',
+  wall_tavern_border_2: '/solo/pixel/wall-tavern-border-2.png',
+  wall_tavern_border_3: '/solo/pixel/wall-tavern-border-3.png',
   wall_tavern_0: '/solo/pixel/wall-tavern-0.png',
   wall_tavern_1: '/solo/pixel/wall-tavern-1.png',
   wall_tavern_2: '/solo/pixel/wall-tavern-2.png',

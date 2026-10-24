@@ -3,7 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
-import { hullWallOf } from './wallmix.js'
+import { hullWallOf, borderWallOf } from './wallmix.js'
 import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, holeFrames, warnFrames, jetFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
@@ -294,13 +294,14 @@ export function draw(ctx, s, tilePx, dpr) {
     ? [hueShifted(wallImg, 0, -0.04, 0.45), hueShifted(wallImg, 188, -0.02, 0.45), hueShifted(wallImg, 135, -0.03, 0.48)]
     : null
   const hullWalls = s.wall ? wallVariants(s.wall) : null // blocos fixos próprios da fase (casco de navio)
+  const borderWalls = s.wallBorder ? wallVariants(s.wallBorder) : null // parede só da borda (taverna), pra decoração ficar presa nela
   const seam = 1 / scale
   for (let y = 0; y < level.rows; y++) {
     for (let x = 0; x < level.cols; x++) {
       const t = level.tiles[y * level.cols + x]
       if (t === WALL) {
         const inner = x > 0 && y > 0 && x < level.cols - 1 && y < level.rows - 1
-        const wallHere = hullWalls ? hullWalls[hullWallOf(x, y)] // fase 2: blocos do casco misturados por posição
+        const wallHere = hullWalls ? (!inner && borderWalls ? borderWalls[borderWallOf(x, y)] : hullWalls[hullWallOf(x, y)]) // fase 2: blocos do casco misturados por posição
           : wallColors ? wallColors[inner ? wallColorOf(x, y) : 0] : wallImg // fase 1: borda no azul gasto
         if (hullWalls && floorImg) blit(ctx, (s.floor && floorTile(s.floor, x, y, 0.12)) || floorImg, x, y, 1 + seam, 1 + seam) // cantos transparentes do bloco: o chão aparece
         if (wallHere) blit(ctx, wallHere, x, y, 1 + seam, 1 + seam)

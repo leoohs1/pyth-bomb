@@ -7,3 +7,10 @@ export function hullWallOf(x, y) {
 }
 export const TAVERN_KEG = 1 // o barril com torneira (a cerveja escorre dali)
 export const TAVERN_BARREL = 0
+
+// Parede da BORDA da arena na taverna (levels.js `wallBorder`): 0 e 1 = tábuas lisas, 2 e 3 = com uma viga em pé (~28%).
+// A decoração (janela, lampião, prateleira...) fica presa nela, por isso a borda é de um tipo só (não barril, adega e pilar).
+export function borderWallOf(x, y) {
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
+  return h % 100 < 28 ? 2 + ((h >>> 8) % 2) : (h >>> 8) % 2
+}
