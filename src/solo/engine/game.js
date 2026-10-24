@@ -13,6 +13,7 @@ import {
 } from './constants.js'
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
+import { hullWallOf, TAVERN_KEG, TAVERN_BARREL } from './wallmix.js'
 import { makeEnemy, updateEnemy, ENEMY_TYPES, BOMBHEAD } from './enemies.js'
 import { makeBoss, updateBoss, bossTouchesPlayer, bossDangerous, jetAt, nearHole } from './boss.js'
 
@@ -169,7 +170,22 @@ function loadLevel(run, random) {
       ([x, y]) => x >= Math.floor(cols * 0.42) && x <= Math.ceil(cols * 0.8) && y >= Math.ceil(rows * 0.55), // meio/baixo
     ]
     const free = cellsOf(level, FLOOR).filter(([cx, cy]) => far(cx, cy) >= 4)
+    // levels.js `puddleFrom: 'keg'`: a poça fica no chão logo abaixo de um bloco de barril da parede (a cerveja escorre
+    // da torneira). Prefere os barris com torneira; se faltar, usa as pilhas de barris. Só blocos de dentro do mapa.
+    const below = (variant) => cellsOf(level, WALL)
+      .filter(([x, y]) => x >= 1 && x <= cols - 2 && y >= 1 && y <= rows - 3 && hullWallOf(x, y) === variant && tileAt(level, x, y + 1) === FLOOR && far(x, y + 1) >= 4)
+      .map(([x, y]) => [x, y + 1])
+    const tapSpots = cfg.puddleFrom === 'keg' ? [below(TAVERN_KEG), below(TAVERN_BARREL)] : null
     for (let i = 0; i < cfg.puddles; i++) {
+      if (tapSpots) {
+        let spot = null
+        for (const list of tapSpots) { spot = spreadPick(list, taken, random, [5, 4, 3, 2]); if (spot) break }
+        if (!spot) continue
+        for (const list of tapSpots) { const k = list.indexOf(spot); if (k >= 0) list.splice(k, 1) }
+        taken.push([spot[0], spot[1]])
+        puddles.push({ x: spot[0], y: spot[1], seed: random() * 100, variant: i % 2, flip: false, set: cfg.puddleSet ?? null, kind: 'tap' })
+        continue
+      }
       const inRegion = free.filter(regions[i % regions.length])
       const spot = spreadPick(inRegion, taken, random, [4, 3, 2, 0]) ?? spreadPick(free, taken, random, [4, 3, 2, 0])
       if (!spot) break

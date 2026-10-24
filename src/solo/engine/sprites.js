@@ -161,6 +161,13 @@ const PIXEL_FILES = {
   leak_ale_b_1: '/solo/pixel/leak-ale-b-1.png', // 2º desenho (tábua inclinada, 33x43)
   leak_ale_b_2: '/solo/pixel/leak-ale-b-2.png',
   leak_ale_b_3: '/solo/pixel/leak-ale-b-3.png',
+  // a mesma cerveja SEM a tábua solta: só o fio (que sai da torneira de um barril da parede) e a poça
+  leak_ale_tap_a_1: '/solo/pixel/leak-ale-tap-a-1.png',
+  leak_ale_tap_a_2: '/solo/pixel/leak-ale-tap-a-2.png',
+  leak_ale_tap_a_3: '/solo/pixel/leak-ale-tap-a-3.png',
+  leak_ale_tap_b_1: '/solo/pixel/leak-ale-tap-b-1.png',
+  leak_ale_tap_b_2: '/solo/pixel/leak-ale-tap-b-2.png',
+  leak_ale_tap_b_3: '/solo/pixel/leak-ale-tap-b-3.png',
   leak_a_1: '/solo/pixel/leak-a-1.png',
   leak_a_2: '/solo/pixel/leak-a-2.png',
   leak_a_3: '/solo/pixel/leak-a-3.png',

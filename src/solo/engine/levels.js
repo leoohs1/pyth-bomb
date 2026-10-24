@@ -12,6 +12,7 @@
 // - tileset: cenário ('temple' = templo grego, o padrão; 'military' = quartel)
 // - wallMix: os blocos fixos (contêineres azuis) misturam cores: uns azuis, uns amarelos, uns vermelhos
 // - puddles: quantas poças d'água animadas no chão (só enfeite), espalhadas pelo mapa; puddleCracks: true = cada poça tem uma rachadura grande ao lado
+// - puddleFrom: 'keg' = a poça fica no chão logo abaixo de um bloco de barril da parede e o fio escorre da torneira dele
 // - puddleSet: arte das poças ('ale' = cerveja vazando de um barril, na taverna; sem isso, água do casco)
 // - wall: blocos fixos próprios da fase ('hull' = casco de navio antigo: 4 desenhos misturados por posição)
 // - decor: decoração da borda ('hull' = escotilhas, portas de canhão, lampiões e rachaduras com energia roxa)
@@ -22,7 +23,7 @@
 // - mood: clima por cima do cenário ('bear' = tom vermelho do Bear Market: chão/paredes avermelhados, fundo e luzes vermelhos;
 //   'flood' = o navio afundando; 'tavern' = a taverna do porto, só troca o fundo no SoloGame.css)
 export const LEVELS = [
-  { name: 'The Rusty Anchor', tagline: 'The Blue Marines are raiding the port tavern', music: '/music/solo-tavern.mp3', tileset: 'military', mood: 'tavern', floor: 'tavern', wall: 'tavern', decor: 'tavern', door: 'tavern', puddles: 3, puddleSet: 'ale', crateTone: 'wood', enemies: { marine: 3, sarge: 2 }, powerups: ['bomb', 'fire', 'bomb', 'fire', 'speed'], bonus: { count: 2, pool: ['bomb', 'fire', 'speed', 'shield'] }, blockChance: 0.5 },
+  { name: 'The Rusty Anchor', tagline: 'The Blue Marines are raiding the port tavern', music: '/music/solo-tavern.mp3', tileset: 'military', mood: 'tavern', floor: 'tavern', wall: 'tavern', decor: 'tavern', door: 'tavern', puddles: 3, puddleSet: 'ale', puddleFrom: 'keg', crateTone: 'wood', enemies: { marine: 3, sarge: 2 }, powerups: ['bomb', 'fire', 'bomb', 'fire', 'speed'], bonus: { count: 2, pool: ['bomb', 'fire', 'speed', 'shield'] }, blockChance: 0.5 },
   { name: 'Bear Market', tagline: 'Below deck, the old hull is leaking', music: '/music/solo-hull.mp3', arrival: 'down the hatch, into the old hull', tileset: 'military', mood: 'bear', floor: 'deck', wall: 'hull', decor: 'hull', door: 'hull', puddles: 3, puddleCracks: true, crateTone: 'wood', enemies: { skeleton: 3, crab: 3 }, powerups: ['bomb', 'fire', 'kick'], bonus: { count: 3, pool: ['bomb', 'fire', 'speed', 'speed', 'shield'] }, blockChance: 0.55 },
   // fase 3 = o CHEFE (arena aberta, sem blocos). Por enquanto reaproveita o visual do porão da fase 2.
   { name: 'Shark Tank', tagline: 'CHOP the Loan Shark wants his money back', music: '/music/solo-boss.mp3', arrival: 'down the lowest hatch, into the flooded hold', tileset: 'military', mood: 'flood', floor: 'deck', wall: 'hull', decor: 'hull', door: 'hull', crateTone: 'wood', boss: 'shark', enemies: {}, powerups: ['bomb', 'bomb', 'fire', 'fire', 'speed'] }, // powerups = as melhorias escondidas nas caixas da arena

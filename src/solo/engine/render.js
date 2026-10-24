@@ -3,6 +3,7 @@
 import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
+import { hullWallOf } from './wallmix.js'
 import { sprite, tileSprite, tinted, hueShifted, floorTile, wallVariants, leakFrames, bossFrames, holeFrames, warnFrames, jetFrames, walkFrames, playerCanFlip, isPixel, PX_TILE, RIGS } from './sprites.js'
 import { drawAmbient, drawParticles } from './fx.js'
 
@@ -72,6 +73,7 @@ const wput = (x, y) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x <
 // sequência (6 por segundo, cada vazamento começando num ponto diferente do ciclo), com a madeira escura e
 // molhada em volta. Se a arte ainda não carregou (ou no estilo pintado), usa o vazamento desenhado pelo código.
 function drawPuddle(ctx, p, time, scale) {
+  if (p.kind === 'tap') return drawTapPuddle(ctx, p, time, scale)
   const v = p.variant === 1 ? 'b' : 'a'
   const frames = p.set ? (leakFrames(`${p.set}_${v}`) ?? leakFrames(`${p.set}_a`)) : leakFrames(v) // p.set: conjunto próprio da fase (ex.: 'ale' = cerveja da taverna)
   if (!frames) return drawPuddleProcedural(ctx, p, time, scale)
@@ -99,6 +101,38 @@ function drawPuddle(ctx, p, time, scale) {
     ctx.scale(-1, 1)
   }
   ctx.drawImage(img, dx, dy, w * u, h * u)
+  ctx.restore()
+}
+
+// Poça de cerveja que ESCORRE DA TORNEIRA de um bloco de barril da parede (a casa de cima de p): o fio sai da torneira
+// (no pé do bloco) e cai na poça, no chão logo abaixo, com a madeira molhada em volta.
+const TAP_X = 24 / PX_TILE, TAP_Y = 40 / PX_TILE // onde a cerveja sai, dentro do bloco de barril (em casas)
+const TAP_ANCHOR = 17.3 // coluna (em pixels) do fio dentro do desenho
+function drawTapPuddle(ctx, p, time, scale) {
+  const v = p.variant === 1 ? 'b' : 'a'
+  const frames = leakFrames(`${p.set}_tap_${v}`) ?? leakFrames(`${p.set}_tap_a`)
+  if (!frames) return
+  const u = 1 / PX_TILE
+  const img = frames[(((Math.floor(time * 6 + p.seed) % 3) + 3) % 3)]
+  const w = img.naturalWidth, h = img.naturalHeight
+  const left = Math.round((p.x + TAP_X - TAP_ANCHOR * u) * PX_TILE) / PX_TILE
+  const top = Math.round((p.y - 1 + TAP_Y) * PX_TILE) / PX_TILE
+  const q = WQ * u + 1 / scale
+  ctx.save()
+  // madeira molhada em volta da poça (o centro dela fica uns 26 pixels abaixo da saída da torneira)
+  const hx = (left - p.x) / u + 18, hy = (top - p.y) / u + 26 // em pixels, relativo à casa
+  for (let iy = -5; iy <= 5; iy++) {
+    for (let ix = -9; ix <= 9; ix++) {
+      const e = (ix * ix) / 81 + (iy * iy) / 20 + (noise2(ix + 40, iy, p.seed) - 0.5) * 0.35
+      if (e > 1) continue
+      ctx.globalAlpha = 0.34 * (1 - e)
+      ctx.fillStyle = WATER.wet
+      ctx.fillRect(p.x + (hx / WQ + ix) * WQ * u, p.y + (hy / WQ + iy) * WQ * u, q, q)
+    }
+  }
+  ctx.globalAlpha = 1
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(img, left, top, w * u, h * u)
   ctx.restore()
 }
 
@@ -224,12 +258,6 @@ function drawCrack(ctx, crack, level, scale) {
     ctx.fillRect(gx * u, (gy + 1) * u, size, size)
   }
   ctx.restore()
-}
-
-// bloco fixo do casco na casa (x, y): 0 a 2 = os caixotes de ferro e madeira (parelhos), 3 = a moldura lisa (~20%)
-function hullWallOf(x, y) {
-  const h = ((x * 83492791) ^ (y * 73856093)) >>> 0
-  return h % 100 < 20 ? 3 : (h >>> 8) % 3
 }
 
 // cor do bloco fixo na casa (x, y): 0 = azul, 1 = amarelo, 2 = vermelho (sorteio fixo pela posição)
