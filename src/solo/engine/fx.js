@@ -215,6 +215,8 @@ function setupHull(level) {
   return deco
 }
 
+const TAVERN_WINDOWS = false // janelas redondas na parede: desligadas por enquanto (não pareciam janela); a arte e o código ficam guardados
+
 // decoração da taverna (levels.js decor: 'tavern'): lampiões, janelas pro mar, prateleiras, cartazes, âncoras e redes nas paredes da borda
 function setupTavern(level) {
   const { cols, rows } = level
@@ -228,7 +230,7 @@ function setupTavern(level) {
     const k = (x * 7 + y * 13) % 9
     const put1 = (type) => deco.push({ type, set: 'tavern', x, y, phase: i * 1.3 })
     if (k === 0 || k === 5) put1('lantern')
-    else if (k === 2) put1('window')
+    else if (k === 2 && TAVERN_WINDOWS) put1('window')
     else if (k === 4) put1('shelf')
     else if (k === 1 && count('anchor') < 2) put1('anchor')
     else if (k === 7) { const t = (x + y) % 2 ? 'poster' : 'net'; if (count(t) < 3) put1(t) }
