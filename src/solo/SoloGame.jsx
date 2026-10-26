@@ -15,6 +15,7 @@ import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
 import SoloMap from './SoloMap.jsx'
+import { TouchPad, TouchButtons } from './TouchControls.jsx'
 import { loadSprites, STYLE, setStyle, PX_TILE } from './engine/sprites.js'
 import * as FX from './engine/fx.js'
 
@@ -64,18 +65,24 @@ const CHEST_ART = STYLE === 'pixel'
   ? { closed: '/solo/pixel/chest-closed.png', open: '/solo/pixel/chest-open.png' }
   : { closed: '/solo/chest-closed-big.webp', open: '/solo/chest-open-big.webp' }
 
-const FRAME_PAD = 12 // espessura da moldura de metal (px), igual ao padding de .solo-frame
+const FRAME_PAD = 12 // espessura da moldura de metal (px) se o CSS não disser (o certo vem do padding de .solo-frame)
 
-const isTouchOnly = () =>
-  typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
+// celular/tablet (toque, sem mouse): ganha os controles na tela (TouchControls.jsx).
+// ?touch=1 força (pra testar no computador), ?touch=0 desliga.
+const TOUCH = (() => {
+  const v = new URLSearchParams(window.location.search).get('touch')
+  if (v === '1') return true
+  if (v === '0') return false
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches
+})()
 
 // aviso curto embaixo do placar, guiando o jogador
 function hintOf(s) {
   if (s.status !== 'playing') return null
   if (s.time < s.noteUntil) return s.note
-  if (s.player.detonator && s.bombs.some((b) => b.remote)) return 'Press E to detonate your bomb'
+  if (s.player.detonator && s.bombs.some((b) => b.remote)) return TOUCH ? 'Tap 🧨 to detonate your bomb' : 'Press E to detonate your bomb'
   const c = s.chest
-  if (c?.state === 'closed') return chestNear(s) ? 'Step onto the chest (or click it) to open it!' : 'A chest appeared! Walk over it to open it'
+  if (c?.state === 'closed') return chestNear(s) ? `Step onto the chest (or ${TOUCH ? 'tap' : 'click'} it) to open it!` : 'A chest appeared! Walk over it to open it'
   if (c && chestDone(s)) return 'The door is open! Step on it to leave'
   if (s.boss?.alive) return null
   if (s.door.revealed && !doorOpen(s)) return 'Defeat all enemies to open the door'
@@ -138,9 +145,10 @@ function hudOf(s, paused) {
 }
 
 export default function SoloGame() {
-  const [touch] = useState(isTouchOnly)
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
+  const controlsRef = useRef(null) // os controles (teclado e toque) ficam aqui pra o direcional da tela alcançar
+  if (!controlsRef.current) controlsRef.current = createControls()
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const mapDepartRef = useRef(null) // o mapa de antes da corrida registra aqui a animação de zarpar
   const [hud, setHud] = useState(null)
@@ -169,11 +177,10 @@ export default function SoloGame() {
   }, [ownMusic])
 
   useEffect(() => {
-    if (touch) return
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d', { willReadFrequently: POSTER }) // o teste de pixel lê a imagem toda a cada quadro
     loadSprites()
-    const controls = createControls()
+    const controls = controlsRef.current
     let game = newRun()
     let tilePx = 40
     let dpr = window.devicePixelRatio || 1
@@ -218,7 +225,7 @@ export default function SoloGame() {
       if (!e.repeat) advance()
     }
     window.addEventListener('keydown', onMapKey, true)
-    actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false), closeMap: () => showMap(false) }
+    actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false), pause: pauseNow, closeMap: () => showMap(false) }
     if (import.meta.env.DEV) window.__soloGame = () => game // só no desenvolvimento: deixa os testes mexerem no jogo (some do site)
 
     // clique no canvas: abre o baú (se clicou nele e está do lado)
@@ -264,11 +271,15 @@ export default function SoloGame() {
     // o tamanho da casa acompanha o tamanho da janela, e o canvas é redesenhado nítido
     const fit = () => {
       const r = wrapRef.current.getBoundingClientRect()
-      // desconta a moldura de metal em volta (FRAME_PAD de cada lado)
-      tilePx = Math.max(16, Math.floor(Math.min((r.width - FRAME_PAD * 2) / COLS, (r.height - FRAME_PAD * 2) / ROWS)))
+      // desconta a moldura de metal em volta (no celular ela é mais fina)
+      const pad = parseFloat(getComputedStyle(canvas.parentElement).paddingLeft) || FRAME_PAD
+      tilePx = Math.max(16, Math.floor(Math.min((r.width - pad * 2) / COLS, (r.height - pad * 2) / ROWS)))
       dpr = window.devicePixelRatio || 1
       canvas.style.width = `${tilePx * COLS}px`
       canvas.style.height = `${tilePx * ROWS}px`
+      // a arte tem PX_TILE pixels por casa; se a casa na tela tem menos pixels que isso (celular pequeno), reduzir "no seco"
+      // come detalhes, então aí suaviza; do contrário (o normal) mantém os pixels bem marcados
+      canvas.style.imageRendering = PIXEL && tilePx * dpr < PIXEL ? 'auto' : ''
       canvas.width = PIXEL ? PIXEL * COLS : Math.round(tilePx * COLS * dpr)
       canvas.height = PIXEL ? PIXEL * ROWS : Math.round(tilePx * ROWS * dpr)
     }
@@ -311,25 +322,13 @@ export default function SoloGame() {
       canvas.removeEventListener('click', onClick)
       canvas.removeEventListener('mousemove', onMove)
     }
-  }, [touch])
-
-  if (touch) {
-    return (
-      <div className="solo-page solo-touch">
-        <div className="solo-card">
-          <h1>Dungeon Run</h1>
-          <p>Play on desktop</p>
-          <p className="solo-sub">This mode needs a keyboard for now.</p>
-          <a className="solo-btn" href="/play">Back</a>
-        </div>
-      </div>
-    )
-  }
+  }, [])
 
   const time = hud ? `${Math.floor(hud.secs / 60)}:${String(hud.secs % 60).padStart(2, '0')}` : '0:00'
 
   return (
-    <div className={`solo-page is-${hud?.tileset ?? 'temple'}${hud?.mood ? ` is-mood-${hud.mood}` : ''}${PIXEL ? ' is-pixel' : ''}`}>
+    <div className={`solo-page is-${hud?.tileset ?? 'temple'}${hud?.mood ? ` is-mood-${hud.mood}` : ''}${PIXEL ? ' is-pixel' : ''}${TOUCH ? ' is-touch' : ''}`}
+      style={TOUCH ? { '--cols': COLS, '--rows': ROWS } : undefined}>
       <SoundToggle className="sound-fixed" />
       <header className="solo-top">
         <div className="solo-title">
@@ -380,6 +379,8 @@ export default function SoloGame() {
         </div>
       )}
 
+      <div className="solo-body">
+      {TOUCH && <TouchPad controls={controlsRef.current} />}
       <div className="solo-stage" ref={wrapRef}>
         <div className="solo-frame">
           <canvas ref={canvasRef} className="solo-canvas" />
@@ -391,14 +392,20 @@ export default function SoloGame() {
             <span>Level {hud.level}</span>
             <strong>{hud.levelName}</strong>
             {hud.tagline && <em>{hud.tagline}</em>}
-            {hud.firstLevel && (
+            {hud.firstLevel && (TOUCH ? (
+              <ul className="solo-controls">
+                <li><kbd>Pad</kbd> Move</li>
+                <li><kbd>💣</kbd> Drop bomb</li>
+                <li><kbd>Walk onto</kbd> / <kbd>Tap</kbd> Open chest</li>
+              </ul>
+            ) : (
               <ul className="solo-controls">
                 <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> Move</li>
                 <li><kbd>Space</kbd> Drop bomb</li>
                 <li><kbd>Walk onto</kbd> / <kbd>Click</kbd> Open chest</li>
                 <li><kbd>P</kbd> Pause</li>
               </ul>
-            )}
+            ))}
           </div>
         )}
         {hud?.hint && <div className="solo-hint">{hud.hint}</div>}
@@ -413,7 +420,7 @@ export default function SoloGame() {
         )}
         {hud?.paused && (
           <Overlay pause title="Paused" button="Continue" text="Take your time. The enemies are frozen too."
-            foot="Press any key to continue" onClick={() => actionsRef.current.resume()} />
+            foot={TOUCH ? null : 'Press any key to continue'} onClick={() => actionsRef.current.resume()} />
         )}
         {hud?.status === 'cleared' && (
           <SoloMap mode="cleared" from={hud.level - 1} to={hud.level} title={`Level ${hud.level} clear!`}
@@ -431,19 +438,21 @@ export default function SoloGame() {
             text={`All ${LEVELS.length} levels in ${time} · Prizes: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
         )}
       </div>
+      {TOUCH && <TouchButtons controls={controlsRef.current} detonator={!!hud?.detonator} onPause={() => actionsRef.current.pause?.()} />}
+      </div>
 
     </div>
   )
 }
 
-function Overlay({ title, line, text, button, onClick, win = false, pause = false, foot = 'or press Enter' }) {
+function Overlay({ title, line, text, button, onClick, win = false, pause = false, foot = TOUCH ? null : 'or press Enter' }) {
   return (
     <div className={`solo-over${win ? ' is-win' : ''}${pause ? ' is-pause' : ''}`}>
       <h2>{title}</h2>
       {line && <p className="solo-line">{line}</p>}
       <p className="solo-sub">{text}</p>
       <button type="button" className="solo-btn" onClick={onClick}>{button}</button>
-      <p className="solo-sub">{foot}</p>
+      {foot && <p className="solo-sub">{foot}</p>}
     </div>
   )
 }
@@ -468,7 +477,7 @@ function ChestModal({ chest, onClose }) {
       <p className="solo-sub">{r.win ? 'Nice loot!' : 'Better luck in the next one'}</p>
       {r.demo && <p className="solo-demo-note">Demo prize: not real PYTH</p>}
       <button type="button" className="solo-btn" onClick={onClose}>Continue</button>
-      <p className="solo-sub">or press Enter</p>
+      {!TOUCH && <p className="solo-sub">or press Enter</p>}
     </div>
   )
 }

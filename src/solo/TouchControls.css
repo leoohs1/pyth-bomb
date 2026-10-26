@@ -1,0 +1,63 @@
+/* Controles na tela do celular (TouchControls.jsx). O tamanho de tudo sai de --pad, definido em SoloGame.css (.is-touch). */
+
+/* direcional em cruz: 3x3 casas, só as 4 setas aparecem; o dedo pode escorregar de uma pra outra */
+.solo-pad {
+  position: relative;
+  flex: none;
+  width: var(--pad);
+  height: var(--pad);
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: 4px;
+  touch-action: none;
+}
+.solo-pad b, .solo-pad i {
+  display: grid;
+  place-items: center;
+  font: calc(var(--pad) * 0.13)/1 'Press Start 2P', monospace;
+  color: #f3e3b0;
+  background: rgba(20, 14, 34, 0.78);
+  border: 3px solid #c9a24a;
+  box-shadow: 0 0 0 2px #0b0c10, 3px 3px 0 3px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.solo-pad b.is-on { color: #2a1d05; background: linear-gradient(180deg, #f3e3b0, #c9a24a); }
+.solo-pad .is-up { grid-area: 1 / 2; }
+.solo-pad .is-left { grid-area: 2 / 1; }
+.solo-pad .is-right { grid-area: 2 / 3; }
+.solo-pad .is-down { grid-area: 3 / 2; }
+.solo-pad i { grid-area: 2 / 2; border-color: rgba(201, 162, 74, 0.45); background: rgba(20, 14, 34, 0.55); }
+
+/* botões da direita: pausa em cima, detonador (só com o item), bomba grande embaixo */
+.solo-tbtns {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.solo-tbtn {
+  display: grid;
+  place-items: center;
+  font: 700 12px/1 'Press Start 2P', monospace;
+  color: #fff4cc;
+  background: rgba(20, 14, 34, 0.82);
+  border: 3px solid #f0c75a;
+  box-shadow: 0 0 0 2px #0b0c10, 3px 3px 0 3px rgba(0, 0, 0, 0.5);
+  touch-action: none;
+  cursor: pointer;
+  padding: 0;
+}
+.solo-tbtn:active { transform: translate(2px, 2px); filter: brightness(1.25); }
+.solo-tbtn.is-pause { width: calc(var(--pad) * 0.3); height: calc(var(--pad) * 0.3); font-size: calc(var(--pad) * 0.1); letter-spacing: -0.15em; }
+.solo-tbtn.is-det { width: calc(var(--pad) * 0.42); height: calc(var(--pad) * 0.42); font-size: calc(var(--pad) * 0.2); }
+.solo-tbtn.is-bomb {
+  width: calc(var(--pad) * 0.72);
+  height: calc(var(--pad) * 0.72);
+  gap: 4px;
+  background: linear-gradient(180deg, #ff7a3a, #b8231a);
+  border-radius: 50%;
+}
+.solo-tbtn.is-bomb b { font-size: calc(var(--pad) * 0.3); line-height: 1; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.5)); }
+.solo-tbtn.is-bomb span { font-size: calc(var(--pad) * 0.07); text-shadow: 0 2px 0 #000; }

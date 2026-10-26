@@ -262,20 +262,6 @@
   border-radius: 5px;
 }
 
-/* celular: aviso pra jogar no computador */
-.solo-touch { justify-content: center; }
-.solo-card {
-  text-align: center;
-  background: rgba(20, 14, 34, 0.85);
-  border: 3px solid #c9a24a;
-  border-radius: 16px;
-  padding: 28px 24px;
-  max-width: 340px;
-}
-.solo-card h1 { margin: 0 0 10px; font: 800 30px/1.1 Cinzel, Georgia, serif; color: #f3e3b0; }
-.solo-card p { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
-.solo-card .solo-sub { margin-bottom: 18px; font-size: 14px; font-weight: 500; }
-
 /* aviso curto no topo da fase ("Find the hidden door", "Click the chest"...) */
 .solo-hint {
   position: absolute;
@@ -578,4 +564,103 @@
 @media (max-width: 760px) {
   .solo-page .snd-wrap .ga-sound { min-height: 40px; padding: 0 9px; font-size: 22px; }
   .solo-page .snd-wrap .ga-sound::after { content: none; }
+}
+
+/* ---- CELULAR / TABLET (tela de toque, classe .is-touch): tudo mais compacto e com os controles na tela ----
+   Em pé: placar em cima, arena logo abaixo (a largura manda) e, embaixo, direcional à esquerda e bombas à direita.
+   Deitado: placar fininho em cima e a arena no meio, com o direcional de um lado e os botões do outro. */
+.solo-page:not(.is-touch) .solo-body { display: contents; } /* no computador a caixa não existe: nada muda */
+.solo-page.is-touch {
+  /* tamanho dos controles: até 40% da tela, mas só o que sobra embaixo da arena (placar ~150px + arena ~ largura x 13/15) */
+  --pad: clamp(96px, min(40vmin, calc(100vh - 150px - (100vw - 20px) * 13 / 15)), 190px);
+  --pad: clamp(96px, min(40vmin, calc(100dvh - 150px - (100vw - 20px) * 13 / 15)), 190px);
+  gap: 4px;
+  padding: 4px 6px 8px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.solo-page.is-touch .solo-body {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: 'stage stage' 'pad btns';
+  align-items: end;
+  gap: 8px 0;
+}
+.solo-page.is-touch .solo-stage {
+  grid-area: stage;
+  align-self: start;
+  flex: none;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: var(--cols) / var(--rows);
+}
+.solo-page.is-touch .solo-pad { grid-area: pad; justify-self: start; margin: 0 0 10px 6px; }
+.solo-page.is-touch .solo-tbtns { grid-area: btns; justify-self: end; align-self: stretch; margin: 0 6px 10px 0; }
+
+/* arena: moldura fina (sem rebites nem lâmpadas) pra sobrar mais tela pro jogo */
+.solo-page.is-touch .solo-frame { padding: 4px; border-radius: 0; }
+.solo-page.is-touch .solo-frame::before, .solo-page.is-touch .solo-lamp { display: none; }
+
+/* barra de cima */
+.solo-page.is-touch .solo-top { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.solo-page.is-touch .solo-title { justify-self: auto; justify-content: flex-start; min-height: 40px; gap: 10px; }
+.solo-page.is-touch .solo-top h1 { flex: 1; text-align: center; font-size: 12px; margin-right: 60px; }
+.solo-page.is-touch .solo-tag, .solo-page.is-touch .solo-style { display: none; }
+.solo-page.is-touch .solo-hud {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  padding: 6px 10px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+.solo-page.is-touch.is-pixel .solo-hud { font-size: 10px; border-radius: 0; gap: 6px 10px; }
+.solo-page.is-touch .solo-hud-sep { display: none; }
+.solo-page.is-touch .solo-boss { font-size: 12px; }
+
+/* avisos, faixa da fase e telas de resultado cabem na arena pequena */
+.solo-page.is-touch .solo-banner { padding: 10px 16px; max-width: 94%; text-align: center; }
+.solo-page.is-touch.is-pixel .solo-banner strong { font-size: 14px; line-height: 1.4; }
+.solo-page.is-touch .solo-banner em { font-size: 12px; }
+.solo-page.is-touch .solo-controls { flex-direction: column; align-items: center; gap: 8px; white-space: normal; }
+.solo-page.is-touch .solo-hint {
+  width: max-content;
+  max-width: 92%;
+  white-space: normal;
+  text-align: center;
+  border-radius: 12px;
+  top: 6px;
+}
+.solo-page.is-touch.is-pixel .solo-hint { font-size: 8px; line-height: 1.6; padding: 6px 10px; }
+.solo-page.is-touch .solo-over { padding: 8px 14px; gap: 8px; text-align: center; }
+.solo-page.is-touch.is-pixel .solo-over h2 { font-size: 15px; }
+.solo-page.is-touch.is-pixel .solo-line { font-size: 9px; }
+.solo-page.is-touch .solo-sub { font-size: 12px; }
+.solo-page.is-touch .solo-chest-img, .solo-page.is-touch.is-pixel .solo-chest-img { width: 110px; }
+.solo-page.is-touch .solo-btn { padding: 12px 22px; }
+.solo-page.is-touch .solo-map-foot { display: none; }
+
+@media (orientation: landscape) {
+  .solo-page.is-touch { --pad: clamp(110px, 38vmin, 170px); }
+  .solo-page.is-touch .solo-top { flex-direction: row; align-items: center; justify-content: center; padding-right: 56px; }
+  .solo-page.is-touch .solo-title { min-height: 0; }
+  .solo-page.is-touch .solo-top h1 { display: none; }
+  .solo-page.is-touch .solo-hud { flex-wrap: nowrap; font-size: 13px; padding: 4px 12px; gap: 14px; }
+  .solo-page.is-touch.is-pixel .solo-hud { font-size: 9px; gap: 10px; }
+  .solo-page.is-touch .solo-body {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: 100%;
+    grid-template-areas: 'pad stage btns';
+    gap: 0 8px;
+  }
+  .solo-page.is-touch .solo-stage { aspect-ratio: auto; align-self: stretch; height: 100%; }
+  .solo-page.is-touch .solo-pad { margin: 0 0 4px 10px; }
+  .solo-page.is-touch .solo-tbtns { margin: 54px 10px 4px 0; } /* o botão de pausa fica abaixo do botão de som */
 }

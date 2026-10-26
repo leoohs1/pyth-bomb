@@ -166,12 +166,14 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
     <div className={`solo-map${leaving ? ' is-leaving' : ''}`} role="dialog" aria-label="Level map">
       <a className="solo-map-back" href="/play">← Back</a>
       <div className="solo-map-stage">
-        <canvas ref={canvasRef} width={W} height={H} className="solo-map-canvas" />
-        {NODES.map((n, i) => (
-          <span key={i} className="solo-map-label" style={pct(LABEL_AT[i] ?? [n[0], n[1] + 8])}>
-            <b>{i + 1}</b> {LEVELS[i].name}
-          </span>
-        ))}
+        <div className="solo-map-art">
+          <canvas ref={canvasRef} width={W} height={H} className="solo-map-canvas" />
+          {NODES.map((n, i) => (
+            <span key={i} className="solo-map-label" style={pct(LABEL_AT[i] ?? [n[0], n[1] + 8])}>
+              <b>{i + 1}</b> {LEVELS[i].name}
+            </span>
+          ))}
+        </div>
         <div className="solo-map-title">
           <h2>{title}</h2>
           {text && <p>{text}</p>}

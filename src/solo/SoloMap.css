@@ -16,6 +16,7 @@
   aspect-ratio: 418 / 235;
   container-type: inline-size;
 }
+.solo-map-art { position: absolute; inset: 0; container-type: inline-size; }
 .solo-map-canvas {
   display: block;
   width: 100%;
@@ -98,3 +99,20 @@
 @keyframes solo-map-out { from { opacity: 1; } to { opacity: 0; } }
 .solo-map .solo-map-go:disabled { cursor: default; animation: none; filter: brightness(0.85); }
 @media (prefers-reduced-motion: reduce) { .solo-map, .solo-map .solo-map-go { animation: none; } }
+
+/* CELULAR EM PÉ: o desenho ocupa a largura toda e fica pequeno, então título e botão saem de cima dele e vão
+   pra cima e pra baixo, em texto maior (o desenho continua com as plaquinhas das fases). */
+@media (orientation: portrait) and (max-width: 700px) {
+  .solo-map { align-content: center; }
+  .solo-map-stage { width: 100vw; aspect-ratio: auto; container-type: normal; display: flex; flex-direction: column; gap: 14px; }
+  .solo-map-art { position: relative; inset: auto; width: 100%; aspect-ratio: 418 / 235; }
+  .solo-map-label { font-size: 6px; padding: 2px 4px; border-width: 1px; }
+  .solo-map-label:nth-of-type(1) { left: 2px !important; transform: none; } /* a plaquinha da taverna não pode sair da tela */
+  .solo-map-title, .solo-map-bottom { position: static; transform: none; width: auto; padding: 0 16px; }
+  .solo-map-title { order: -1; }
+  .solo-map-title h2 { font-size: 20px; }
+  .solo-map-title p { margin-top: 10px; font-size: 10px; }
+  .solo-map-extra { margin-bottom: 12px; font-size: 10px; }
+  .solo-map .solo-map-go { font-size: 14px; padding: 14px 28px; }
+  .solo-map-back { top: 14px; font-size: 11px; }
+}
