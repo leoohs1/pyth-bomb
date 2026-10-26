@@ -22,7 +22,7 @@ const SOUNDS = [
   ['solo_chop_crash', 'CHOP bate na parede ou caixa (madeira estalando e boing)', 'arquivo'],
   ['solo_chop_hurt', 'CHOP leva dano (grunhido)', 'prov'],
   ['solo_splash', 'CHOP mergulha (splash grande)', 'arquivo'],
-  ['solo_jet', "Jato d'água estoura", 'prov'],
+  ['solo_jet', "Jato d'água estoura", 'arquivo'],
   ['solo_chop_die', 'CHOP cai (grunhido de morte)', 'arquivo'],
   ['solo_sail', 'Zarpar (botão Set sail do mapa)', 'prov'],
   ['solo_door', 'A porta abre', 'prov'],
