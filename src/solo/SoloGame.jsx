@@ -177,7 +177,7 @@ export default function SoloGame() {
   // Cada fase pode ter a própria música (levels.js `music`); sem isso, toca a padrão do Solo.
   const [ownMusic, setOwnMusic] = useState(false)
   const levelNo = hud?.level ?? START_LEVEL + 1
-  const track = LEVELS[levelNo - 1]?.music ?? '/music/solo.mp3'
+  const track = hud?.status === 'won' ? '/music/solo-victory.mp3' : LEVELS[levelNo - 1]?.music ?? '/music/solo.mp3' // a tela final da vitória tem música própria
   useEffect(() => {
     setSoundTheme('solo')
     setMusicStartFade(120) // a música entra quase na hora: não engole a abertura (batidas do começo)
