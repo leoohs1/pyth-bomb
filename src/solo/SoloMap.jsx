@@ -7,7 +7,7 @@ import { LEVELS } from './engine/levels.js'
 // rostinho do personagem são desenhados por cima, em pixels do mesmo tamanho. Os textos e o botão são HTML por cima.
 const W = 418, H = 235
 const MAP_SRC = '/solo/pixel/map.png'
-const HERO_SRC = '/solo/pixel/map-hero.png'
+const BOAT_SRC = ['/solo/pixel/map-boat-1.png', '/solo/pixel/map-boat-2.png'] // o barquinho do herói (2 quadros: balança nas ondas), de proa pra direita
 
 // o caminho dourado do desenho (pontos em pixels do mapa) e em qual ponto fica cada fase
 const ROUTE = [[114, 177], [123, 176], [136, 175], [153, 175], [165, 173], [179, 168], [186, 161], [191, 149], [196, 142], [208, 137],
@@ -78,6 +78,9 @@ function drawPulse(ctx, cx, cy, t) {
   }
 }
 
+// onde o barquinho fica em relação ao ponto do caminho (em pixels do mapa): o casco um pouco acima do X
+const BOAT_DX = 12, BOAT_DY = -4
+
 const COLORS = {
   done: ['#ffd24a', '#3a2000'], // fase vencida: dourado
   current: ['#ff4b3a', '#2a0600'], // onde você está: vermelho vivo
@@ -94,7 +97,7 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
     const ctx = canvas.getContext('2d')
     ctx.imageSmoothingEnabled = false
     const map = new Image(); map.src = MAP_SRC
-    const hero = new Image(); hero.src = HERO_SRC
+    const boats = BOAT_SRC.map((src) => { const im = new Image(); im.src = src; return im })
     let raf = 0
     const t0 = performance.now()
     const frame = (now) => {
@@ -116,12 +119,18 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
         if (isHere) drawPulse(ctx, nx, ny, t)
         drawX(ctx, nx, ny, isHere ? 6 : 5, fill, edge)
       })
-      // o rostinho do personagem pula em cima da fase atual (ou anda pelo caminho)
-      if (m !== 'won' && hero.complete && hero.naturalWidth) {
-        const [hx, hy] = m === 'cleared' && !arrived ? along(f, tt, travel * travel * (3 - 2 * travel)) : NODES[here]
-        const bob = Math.floor(t * 3.2) % 2 ? 0 : 2 // sobe e desce em pixels inteiros
+      // o barquinho do herói balança parado na fase atual (ou navega pelo caminho, virando pro lado em que vai)
+      if (m !== 'won' && boats.every((b) => b.complete && b.naturalWidth)) {
         const walking = m === 'cleared' && !arrived
-        ctx.drawImage(hero, Math.round(hx - hero.naturalWidth / 2), Math.round(hy - hero.naturalHeight - 5 - (walking ? Math.floor(t * 8) % 2 * 2 : bob)))
+        const ease = travel * travel * (3 - 2 * travel)
+        const [hx, hy] = walking ? along(f, tt, ease) : NODES[here]
+        const flip = walking && along(f, tt, Math.min(1, ease + 0.03))[0] < hx - 0.05
+        const boat = boats[Math.floor(t * (walking ? 5 : 2.2)) % 2]
+        const w = boat.naturalWidth, h = boat.naturalHeight
+        const x = Math.round(hx + BOAT_DX), y = Math.round(hy - h + BOAT_DY)
+        ctx.save()
+        if (flip) { ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(boat, Math.round(-w * 0.55), y) } else ctx.drawImage(boat, Math.round(x - w * 0.55), y)
+        ctx.restore()
       }
       raf = requestAnimationFrame(frame)
     }
