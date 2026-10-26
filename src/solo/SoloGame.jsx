@@ -14,6 +14,7 @@ import { openChest, CHEST_IS_DEMO } from './chest/index.js'
 import { createControls, bindKeyboard } from './engine/input.js'
 import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
+import SoloMap from './SoloMap.jsx'
 import { loadSprites, STYLE, setStyle, PX_TILE } from './engine/sprites.js'
 import * as FX from './engine/fx.js'
 
@@ -25,6 +26,8 @@ import * as FX from './engine/fx.js'
 const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('level')) || 1) - 1
 // atalho de teste: /solo?chest=1 começa sem inimigos, com o baú ao lado de você (?chest=win ou ?chest=empty força o resultado)
 const TEST_CHEST = new URLSearchParams(window.location.search).get('chest')
+// a corrida abre no MAPA (SoloMap.jsx), com o jogo parado por baixo; os atalhos de teste (?level=N, ?chest=, ?nomap=1) pulam o mapa
+const MAP_ON = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap')
 const newRun = () => {
   const g = createGame(Math.random, START_LEVEL)
   if (TEST_CHEST) placeTestChest(g)
@@ -140,6 +143,7 @@ export default function SoloGame() {
   const canvasRef = useRef(null)
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const [hud, setHud] = useState(null)
+  const [mapOpen, setMapOpen] = useState(MAP_ON) // o mapa de antes da corrida está na tela?
 
   // O Solo tem o próprio som: efeitos 8 bits (src/solo/sfx.js) e música própria (public/music/solo.mp3, baixinha,
   // por baixo dos efeitos). Enquanto a música do Solo não estiver valendo, silêncio: a do Pyth Bomb (Athens)
@@ -179,10 +183,12 @@ export default function SoloGame() {
     const sfx = createSoloSfx() // toca os sons do jogo (só escuta, não muda regra nenhuma)
     let freeze = 0 // micro-pausa ("hit-stop") quando um inimigo é derrotado
     let paused = false // pausa (P/Esc, ou sozinha quando a aba some ou a janela perde o foco)
+    let held = MAP_ON // jogo parado enquanto o mapa de antes da corrida está na tela
     const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0; paused = false }
     const setPaused = (v) => { paused = v; controls.clear() }
     // só pausa no meio da fase (nas telas de morte, fase concluída e baú o jogo já está parado)
-    const pauseNow = () => { if (game.status === 'playing' && !isPaused(game)) setPaused(true) }
+    const pauseNow = () => { if (!held && game.status === 'playing' && !isPaused(game)) setPaused(true) }
+    const showMap = (on) => { held = on && MAP_ON; controls.clear(); setMapOpen(held) }
     const onVisibility = () => { if (document.hidden) pauseNow() }
     // pausado: qualquer tecla volta (e essa tecla não vira ação no jogo, ex.: não solta bomba)
     const onResumeKey = (e) => {
@@ -196,12 +202,22 @@ export default function SoloGame() {
     window.addEventListener('keydown', onResumeKey, true)
     // Enter / botão da mensagem: fecha o resultado do baú, tenta de novo, próxima fase ou corrida nova
     const advance = () => {
-      if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
+      if (held) showMap(false) // sair do mapa e começar a corrida
+      else if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
       else if (game.status === 'dead') start(retryLevel(game))
       else if (game.status === 'cleared') start(nextLevel(game))
-      else if (game.status === 'gameover' || game.status === 'won') start(newRun())
+      else if (game.status === 'gameover' || game.status === 'won') { start(newRun()); showMap(true) }
     }
+    // no mapa, Enter ou Espaço seguem em frente (e a tecla não vira ação no jogo: Espaço não solta bomba)
+    const onMapKey = (e) => {
+      if ((!held && game.status !== 'cleared') || (e.code !== 'Enter' && e.code !== 'Space') || e.altKey || e.ctrlKey || e.metaKey) return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      if (!e.repeat) advance()
+    }
+    window.addEventListener('keydown', onMapKey, true)
     actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false) }
+    if (import.meta.env.DEV) window.__soloGame = () => game // só no desenvolvimento: deixa os testes mexerem no jogo (some do site)
 
     // clique no canvas: abre o baú (se clicou nele e está do lado)
     const tileUnder = (e) => {
@@ -237,7 +253,7 @@ export default function SoloGame() {
 
     const unbind = bindKeyboard(controls, (e) => {
       if (e.code === 'Enter') advance()
-      else if (e.code === 'KeyR') start(newRun()) // recomeça a corrida do zero
+      else if (e.code === 'KeyR') { start(newRun()); showMap(true) } // recomeça a corrida do zero
       else if (e.code === 'KeyP' || e.code === 'Escape') pauseNow()
     })
 
@@ -263,13 +279,13 @@ export default function SoloGame() {
       const dt = Math.min(0.1, (now - last) / 1000) // aba escondida não acumula um "pulo" enorme
       last = now
       const n = Math.ceil(dt / STEP)
-      if (paused) { /* parado: só redesenha */ }
+      if (paused || held) { /* parado (pausa ou mapa na tela): só redesenha */ }
       else if (freeze > 0) freeze -= dt
       else for (let i = 0; i < n; i++) update(game, controls, dt / n)
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
       sfx(game) // antes do FX.consumeEvents, que limpa os avisos
       FX.consumeEvents(game)
-      if (!paused) FX.update(game, dt)
+      if (!paused && !held) FX.update(game, dt)
       if (PIXEL) { draw(ctx, game, PIXEL, 1); if (POSTER) posterize(ctx) } else draw(ctx, game, tilePx, dpr)
       const h = hudOf(game, paused)
       const key = JSON.stringify(h)
@@ -283,6 +299,7 @@ export default function SoloGame() {
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('blur', pauseNow)
       window.removeEventListener('keydown', onResumeKey, true)
+      window.removeEventListener('keydown', onMapKey, true)
       canvas.removeEventListener('click', onClick)
       canvas.removeEventListener('mousemove', onMove)
     }
@@ -361,7 +378,7 @@ export default function SoloGame() {
           <i className="solo-lamp is-tl" /><i className="solo-lamp is-tr" />
           <i className="solo-lamp is-bl" /><i className="solo-lamp is-br" />
         </div>
-        {hud?.intro && (
+        {hud?.intro && !mapOpen && (
           <div className="solo-banner" key={hud.level}>
             <span>Level {hud.level}</span>
             <strong>{hud.levelName}</strong>
@@ -391,8 +408,14 @@ export default function SoloGame() {
             foot="Press any key to continue" onClick={() => actionsRef.current.resume()} />
         )}
         {hud?.status === 'cleared' && (
-          <Overlay win title={`Level ${hud.level} clear!`} button="Next level"
-            text={`Next: ${LEVELS[hud.level].name}${LEVELS[hud.level].arrival ? ` — ${LEVELS[hud.level].arrival}` : ""} · Prizes so far: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
+          <SoloMap mode="cleared" from={hud.level - 1} to={hud.level} title={`Level ${hud.level} clear!`}
+            text={`Next: ${LEVELS[hud.level].name}${LEVELS[hud.level].arrival ? ` — ${LEVELS[hud.level].arrival}` : ''}`}
+            extra={`Prizes so far: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`}
+            button="Next level" onGo={() => actionsRef.current.advance()} />
+        )}
+        {mapOpen && hud?.status === 'playing' && (
+          <SoloMap mode="start" current={0} title="Dungeon Run" text="Sail from the tavern to the shark's lair"
+            button="Set sail" onGo={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'won' && (
           <Overlay win title="You escaped the dungeon!" button="Play again"

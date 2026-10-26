@@ -1,0 +1,96 @@
+/* TELA DO MAPA do Solo (antes da corrida e entre as fases). A tela inteira escurece e o mapa (418x235 pixels) é
+   ampliado sem borrar; os textos usam "cqw" (um % da largura do mapa) pra acompanhar o tamanho dele. */
+.solo-map {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, #1a1224 0%, #07050c 75%);
+  animation: solo-map-in 0.35s ease-out;
+}
+@keyframes solo-map-in { from { opacity: 0; } to { opacity: 1; } }
+.solo-map-stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 418 / 235));
+  aspect-ratio: 418 / 235;
+  container-type: inline-size;
+}
+.solo-map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.solo-map-back {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 3;
+  font: 12px 'Press Start 2P', monospace;
+  color: #f0d79a;
+  text-decoration: none;
+  text-shadow: 0 2px 0 #000;
+}
+.solo-map-back:hover { color: #fff; }
+
+/* nome da fase embaixo de cada X */
+.solo-map-label {
+  position: absolute;
+  transform: translate(-50%, 0);
+  padding: 0.35cqw 0.9cqw;
+  font: clamp(8px, 1.05cqw, 15px) 'Press Start 2P', monospace;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: #fff1c9;
+  background: rgba(20, 10, 4, 0.78);
+  border: 2px solid #c9a24a;
+  pointer-events: none;
+}
+.solo-map-label b { color: #ffd24a; margin-right: 0.4cqw; }
+
+/* título em cima (nuvem de pergaminho escuro do mapa, no meio) */
+.solo-map-title {
+  position: absolute;
+  top: 4.5%;
+  left: 50%;
+  width: 46%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  text-shadow: 0 0.3cqw 0 #000, 0 0 1.2cqw rgba(0, 0, 0, 0.9);
+}
+.solo-map-title h2 {
+  margin: 0;
+  font-size: clamp(14px, 2.6cqw, 40px);
+  letter-spacing: 0.06em;
+  color: #ffd24a;
+}
+.solo-map-title p {
+  margin: 0.8cqw 0 0;
+  font-size: clamp(8px, 1.05cqw, 15px);
+  line-height: 1.7;
+  color: #fff1c9;
+}
+
+/* botão embaixo (areia do mapa, no meio) */
+.solo-map-bottom {
+  position: absolute;
+  bottom: 4%;
+  left: 50%;
+  width: 46%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  text-shadow: 0 0.25cqw 0 #000;
+}
+.solo-map-extra { margin: 0 0 1cqw; font-size: clamp(8px, 1cqw, 14px); line-height: 1.7; color: #fff1c9; }
+.solo-map .solo-map-go {
+  font-size: clamp(12px, 1.8cqw, 26px);
+  padding: 0.9cqw 3cqw;
+  animation: solo-map-pulse 1.3s ease-in-out infinite;
+}
+@keyframes solo-map-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.solo-map-foot { margin: 0.9cqw 0 0; font-size: clamp(7px, 0.85cqw, 12px); color: #e6cf98; opacity: 0.85; }
+@media (prefers-reduced-motion: reduce) { .solo-map, .solo-map .solo-map-go { animation: none; } }

@@ -1,0 +1,157 @@
+import { useEffect, useRef } from 'react'
+import './SoloMap.css'
+import { LEVELS } from './engine/levels.js'
+
+// TELA DO MAPA do Solo (mapa do tesouro, estilo "mapa-múndi" de Mario): aparece antes da corrida e entre as fases.
+// O mapa é uma imagem de 418x235 pixels (public/solo/pixel/map.png) ampliada sem borrar; os X's, o brilho e o
+// rostinho do personagem são desenhados por cima, em pixels do mesmo tamanho. Os textos e o botão são HTML por cima.
+const W = 418, H = 235
+const MAP_SRC = '/solo/pixel/map.png'
+const HERO_SRC = '/solo/pixel/map-hero.png'
+
+// o caminho dourado do desenho (pontos em pixels do mapa) e em qual ponto fica cada fase
+const ROUTE = [[126, 177], [137, 166], [150, 160], [160, 148], [164, 138], [175, 131], [200, 124], [221, 114],
+  [240, 118], [260, 120], [272, 117], [284, 110], [288, 90], [295, 85], [312, 78], [322, 76]]
+const NODE_AT = [0, 7, 15] // fase 1 = o cais da taverna, fase 2 = o convés do naufrágio, fase 3 = a beira do redemoinho
+const NODES = NODE_AT.map((i) => ROUTE[i])
+// onde fica a plaquinha com o nome de cada fase (a da taverna vai pro cantinho de baixo, longe do botão)
+const LABEL_AT = [[70, 214], [221, 128], [322, 90]]
+
+// PONTILHADO bem visível por cima do caminho do desenho: bolinhas com contorno escuro, uma a cada 7 pixels
+// (douradas por onde você já passou, laranja adiante), andando devagar
+const SPACING = 7
+const ROUTE_D = (() => { const d = [0]; for (let i = 1; i < ROUTE.length; i++) d.push(d[i - 1] + Math.hypot(ROUTE[i][0] - ROUTE[i - 1][0], ROUTE[i][1] - ROUTE[i - 1][1])); return d })()
+const NODE_D = NODE_AT.map((i) => ROUTE_D[i])
+function pointAt(d) {
+  for (let i = 1; i < ROUTE.length; i++) {
+    if (d <= ROUTE_D[i] || i === ROUTE.length - 1) {
+      const t = Math.max(0, Math.min(1, (d - ROUTE_D[i - 1]) / (ROUTE_D[i] - ROUTE_D[i - 1] || 1)))
+      return [ROUTE[i - 1][0] + (ROUTE[i][0] - ROUTE[i - 1][0]) * t, ROUTE[i - 1][1] + (ROUTE[i][1] - ROUTE[i - 1][1]) * t]
+    }
+  }
+  return ROUTE[ROUTE.length - 1]
+}
+function drawTrail(ctx, doneUntil, t) {
+  const total = ROUTE_D[ROUTE_D.length - 1]
+  const shift = (t * 5) % SPACING
+  for (let d = shift; d <= total; d += SPACING) {
+    const [x, y] = pointAt(d)
+    const done = d <= doneUntil
+    ctx.fillStyle = '#1f0f04'
+    ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4)
+    ctx.fillStyle = done ? '#ffe27a' : '#f0993d'
+    ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
+  }
+}
+
+// o rostinho anda de uma fase até a outra seguindo o caminho (0 = saiu, 1 = chegou)
+function along(from, to, k) {
+  const pts = ROUTE.slice(NODE_AT[from], NODE_AT[to] + 1)
+  const lens = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]))
+  const total = lens.reduce((a, b) => a + b, 0)
+  let d = k * total
+  for (let i = 0; i < lens.length; i++) {
+    if (d <= lens[i] || i === lens.length - 1) {
+      const t = lens[i] ? Math.min(1, d / lens[i]) : 1
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t]
+    }
+    d -= lens[i]
+  }
+  return pts[pts.length - 1]
+}
+
+// X em pixels: contorno escuro grosso e miolo de cor, raio r
+function drawX(ctx, cx, cy, r, fill, edge) {
+  ctx.fillStyle = edge
+  for (let i = -r; i <= r; i++) { ctx.fillRect(cx + i - 2, cy + i - 2, 4, 4); ctx.fillRect(cx + i - 2, cy - i - 2, 4, 4) }
+  ctx.fillStyle = fill
+  for (let i = -r; i <= r; i++) { ctx.fillRect(cx + i - 1, cy + i - 1, 2, 2); ctx.fillRect(cx + i - 1, cy - i - 1, 2, 2) }
+}
+
+// anel de pixels que cresce e some, em volta do X da fase atual
+function drawPulse(ctx, cx, cy, t) {
+  const k = (t * 0.9) % 1
+  const r = 8 + k * 9
+  ctx.fillStyle = `rgba(255, 120, 90, ${0.75 * (1 - k)})`
+  for (let a = 0; a < 40; a++) {
+    const ang = (a / 40) * Math.PI * 2
+    ctx.fillRect(Math.round(cx + Math.cos(ang) * r), Math.round(cy + Math.sin(ang) * r * 0.8), 1, 1)
+  }
+}
+
+const COLORS = {
+  done: ['#ffd24a', '#3a2000'], // fase vencida: dourado
+  current: ['#ff4b3a', '#2a0600'], // onde você está: vermelho vivo
+  next: ['#a8683a', '#2a1408'], // ainda não chegou: apagado
+}
+
+export default function SoloMap({ mode, current, from, to, title, text, extra, button, onGo }) {
+  const canvasRef = useRef(null)
+  const stateRef = useRef({ mode, current, from, to })
+  useEffect(() => { stateRef.current = { mode, current, from, to } }, [mode, current, from, to])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    ctx.imageSmoothingEnabled = false
+    const map = new Image(); map.src = MAP_SRC
+    const hero = new Image(); hero.src = HERO_SRC
+    let raf = 0
+    const t0 = performance.now()
+    const frame = (now) => {
+      const t = (now - t0) / 1000
+      const { mode: m, current: cur, from: f, to: tt } = stateRef.current
+      ctx.clearRect(0, 0, W, H)
+      if (map.complete && map.naturalWidth) ctx.drawImage(map, 0, 0)
+      // andando de uma fase pra outra (depois de vencer): 0,7 s parado no X antigo, 2,2 s andando
+      const travel = m === 'cleared' ? Math.max(0, Math.min(1, (t - 0.7) / 2.2)) : 0
+      const arrived = m !== 'cleared' || travel >= 1
+      const here = m === 'cleared' ? (arrived ? tt : f) : cur // onde o rostinho está parado
+      // até onde o pontilhado já está dourado: até a fase atual (ou até onde o rostinho chegou, andando)
+      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur]
+      drawTrail(ctx, doneUntil, t)
+      NODES.forEach(([nx, ny], i) => {
+        const done = m === 'won' ? true : m === 'cleared' ? i <= f : i < cur // fases já vencidas: douradas
+        const isHere = m === 'cleared' ? arrived && i === tt : m !== 'won' && i === cur // a fase de agora: vermelha e pulsando
+        const [fill, edge] = isHere ? COLORS.current : done ? COLORS.done : COLORS.next
+        if (isHere) drawPulse(ctx, nx, ny, t)
+        drawX(ctx, nx, ny, isHere ? 6 : 5, fill, edge)
+      })
+      // o rostinho do personagem pula em cima da fase atual (ou anda pelo caminho)
+      if (m !== 'won' && hero.complete && hero.naturalWidth) {
+        const [hx, hy] = m === 'cleared' && !arrived ? along(f, tt, travel * travel * (3 - 2 * travel)) : NODES[here]
+        const bob = Math.floor(t * 3.2) % 2 ? 0 : 2 // sobe e desce em pixels inteiros
+        const walking = m === 'cleared' && !arrived
+        ctx.drawImage(hero, Math.round(hx - hero.naturalWidth / 2), Math.round(hy - hero.naturalHeight - 5 - (walking ? Math.floor(t * 8) % 2 * 2 : bob)))
+      }
+      raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  const pct = ([x, y]) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` })
+
+  return (
+    <div className="solo-map" role="dialog" aria-label="Level map">
+      <a className="solo-map-back" href="/play">← Back</a>
+      <div className="solo-map-stage">
+        <canvas ref={canvasRef} width={W} height={H} className="solo-map-canvas" />
+        {NODES.map((n, i) => (
+          <span key={i} className="solo-map-label" style={pct(LABEL_AT[i] ?? [n[0], n[1] + 8])}>
+            <b>{i + 1}</b> {LEVELS[i].name}
+          </span>
+        ))}
+        <div className="solo-map-title">
+          <h2>{title}</h2>
+          {text && <p>{text}</p>}
+        </div>
+        <div className="solo-map-bottom">
+          {extra && <p className="solo-map-extra">{extra}</p>}
+          <button type="button" className="solo-btn solo-map-go" onClick={onGo} autoFocus>{button}</button>
+          <p className="solo-map-foot">or press Enter / Space</p>
+        </div>
+      </div>
+    </div>
+  )
+}
