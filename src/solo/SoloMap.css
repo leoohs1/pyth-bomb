@@ -13,6 +13,7 @@
 .solo-map-stage {
   position: relative;
   width: min(100vw, calc(100vh * 418 / 235));
+  width: min(100vw, calc(100dvh * 418 / 235)); /* dvh = só a parte da tela que está à mostra (iPhone: sem as barras do Safari) */
   aspect-ratio: 418 / 235;
   container-type: inline-size;
 }

@@ -648,7 +648,7 @@
 .solo-page.is-touch .solo-map-foot { display: none; }
 
 @media (orientation: landscape) {
-  .solo-page.is-touch { --pad: clamp(110px, 38vmin, 170px); }
+  .solo-page.is-touch { --pad: clamp(110px, 38vmin, 170px); --pad: clamp(96px, 38dvmin, 170px); }
   .solo-page.is-touch .solo-top { flex-direction: row; align-items: center; justify-content: center; padding-right: 56px; }
   .solo-page.is-touch .solo-title { min-height: 0; }
   .solo-page.is-touch .solo-top h1 { display: none; }
