@@ -349,7 +349,7 @@ export function updateBoss(s, dt, random = Math.random) {
     }
     if (b.introT >= BOSS.introTime) {
       b.mode = 'surface'
-      if (s.supplies) { s.note = 'The old crew left you a shield! Break the crates for bombs and fire'; s.noteUntil = s.time + 4.5 }
+      if (s.supplies) { s.note = 'The old crew left you a shield, a bomb and more fire! Break the crates for more'; s.noteUntil = s.time + 4.5 }
     }
     return
   }

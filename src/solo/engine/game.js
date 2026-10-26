@@ -247,11 +247,12 @@ function loadLevel(run, random) {
 function loadBossLevel(run, random = Math.random) {
   const level = makeArena()
   const cfg = LEVELS[run.levelIndex]
-  // Chega só com o que já tinha (no começo: 1 bomba, alcance 1) e GANHA UM ESCUDO. As melhorias (bombas, fogo, bota)
-  // ficam escondidas em caixas espalhadas pela arena: quebrando elas dá pra se preparar antes do CHOP sair.
+  // Chega com o que já tinha E GANHA de presente: 1 bomba a mais, 1 de alcance a mais e um ESCUDO (assim a luta não fica
+  // impossível, principalmente depois de morrer e perder tudo). As melhorias (bombas, fogo, bota) ficam escondidas
+  // em caixas espalhadas pela arena: quebrando elas dá pra se preparar antes do CHOP sair.
   const st = run.stats
-  const stats = { ...st, shield: true }
-  const supplies = !st.shield
+  const stats = { ...st, shield: true, maxBombs: Math.min(MAX_BOMBS, st.maxBombs + 1), range: Math.min(MAX_RANGE, st.range + 1) }
+  const supplies = true
   // caixas da arena (longe do buraco e do canto onde você nasce), com os itens da fase escondidos em algumas
   const mx = (level.cols - 1) / 2, my = (level.rows - 1) / 2
   const crates = shuffle([
@@ -271,7 +272,7 @@ function loadBossLevel(run, random = Math.random) {
     ...run,
     level,
     items,
-    supplies, // true = ganhou o escudo ao chegar (o aviso aparece quando a luta começa)
+    supplies, // true = ganhou os presentes ao chegar: escudo, +1 bomba e +1 alcance (o aviso aparece quando a luta começa)
     player: {
       x: level.start.x, y: level.start.y,
       alive: true, deathT: 0,
