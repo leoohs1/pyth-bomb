@@ -29,10 +29,13 @@ const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('lev
 // atalho de teste: /solo?chest=1 começa sem inimigos, com o baú ao lado de você (?chest=win ou ?chest=empty força o resultado)
 const TEST_CHEST = new URLSearchParams(window.location.search).get('chest')
 // a corrida abre no MAPA (SoloMap.jsx), com o jogo parado por baixo; os atalhos de teste (?level=N, ?chest=, ?nomap=1) pulam o mapa
-const MAP_ON = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap')
+// atalho de teste: /solo?win=1 abre direto a tela de vitória (como se o chefe já tivesse morrido); "Play again" segue normal
+let testWinPending = new URLSearchParams(window.location.search).has('win')
+const MAP_ON = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap') && !testWinPending
 const newRun = () => {
-  const g = createGame(Math.random, START_LEVEL)
+  const g = createGame(Math.random, testWinPending ? LEVELS.length - 1 : START_LEVEL)
   if (TEST_CHEST) placeTestChest(g)
+  if (testWinPending) { g.status = 'won'; g.loot = 3; g.runTime = 187 }
   return g
 }
 
@@ -227,7 +230,7 @@ export default function SoloGame() {
       else if (game.status === 'dead') start(retryLevel(game))
       else if (game.status === 'cleared') start(nextLevel(game))
       else if (game.status === 'gameover') { start(restartLevel(game)); showMap(true) } // acabaram as vidas: a mesma fase de novo (passou, passou)
-      else if (game.status === 'won') { start(newRun()); showMap(true) }
+      else if (game.status === 'won') { testWinPending = false; start(newRun()); showMap(true) }
     }
     // no mapa, Enter ou Espaço seguem em frente (e a tecla não vira ação no jogo: Espaço não solta bomba)
     const onMapKey = (e) => {
@@ -276,7 +279,7 @@ export default function SoloGame() {
 
     const unbind = bindKeyboard(controls, (e) => {
       if (e.code === 'Enter') advance()
-      else if (e.code === 'KeyR') { start(newRun()); showMap(true) } // recomeça a corrida do zero
+      else if (e.code === 'KeyR') { testWinPending = false; start(newRun()); showMap(true) } // recomeça a corrida do zero
       else if (e.code === 'KeyP' || e.code === 'Escape') pauseNow()
     })
 
