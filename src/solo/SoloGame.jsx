@@ -347,7 +347,7 @@ export default function SoloGame() {
         </div>
         <div className="solo-hud">
           <span title="Lives">❤️ <Bump v={hud?.lives ?? 3} /></span>
-          <span title="Level">Level {hud?.level ?? 1}/{LEVELS.length}</span>
+          <span title="Level" className="solo-hud-wide">Level {hud?.level ?? 1}/{LEVELS.length}</span>
           <span title="Enemies left" className={hud?.enemies === 0 ? 'solo-hud-done' : ''}>👾 <Bump v={hud?.enemies ?? '–'} /></span>
           {hud?.door && <span title="Exit door">🚪 {hud.door === 'open' ? 'Open!' : 'Locked'}</span>}
           <span className="solo-hud-sep" />
@@ -363,7 +363,7 @@ export default function SoloGame() {
           )}
           <span title="Time">⏱ {time}</span>
           <span className="solo-hud-sep" />
-          <span title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
+          <span className="solo-hud-wide" title={CHEST_IS_DEMO ? 'Chest prizes (demo, not real)' : 'Chest prizes'}>
             🎁 <Bump v={hud?.loot ?? 0} /> PYTH{CHEST_IS_DEMO && <small className="solo-demo">demo</small>}
           </span>
         </div>

@@ -648,19 +648,36 @@
 .solo-page.is-touch .solo-map-foot { display: none; }
 
 @media (orientation: landscape) {
-  .solo-page.is-touch { --pad: clamp(110px, 38vmin, 170px); --pad: clamp(96px, 38dvmin, 170px); }
-  .solo-page.is-touch .solo-top { flex-direction: row; align-items: center; justify-content: center; padding-right: 56px; }
-  .solo-page.is-touch .solo-title { min-height: 0; }
+  .solo-page.is-touch {
+    --pad: clamp(110px, 38vmin, 170px);
+    --pad: clamp(96px, 38dvmin, 170px);
+    --side: clamp(146px, calc(var(--pad) + 40px), 220px); /* largura de cada coluna ao lado da arena */
+  }
+  /* deitado a tela é baixinha (ainda mais no Safari): o placar sai do topo e vai pra coluna da esquerda, em cima do
+     direcional, e a arena fica com a altura toda */
+  .solo-page.is-touch .solo-top { position: absolute; z-index: 3; left: 6px; top: 4px; width: calc(var(--side) - 8px); display: block; }
+  .solo-page.is-touch .solo-title { min-height: 0; margin-bottom: 4px; }
   .solo-page.is-touch .solo-top h1 { display: none; }
-  .solo-page.is-touch .solo-hud { flex-wrap: nowrap; font-size: 13px; padding: 4px 12px; gap: 14px; }
-  .solo-page.is-touch.is-pixel .solo-hud { font-size: 9px; gap: 10px; }
+  .solo-page.is-touch .solo-hud {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 3px 12px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  .solo-page.is-touch.is-pixel .solo-hud { font-size: 9px; gap: 4px 10px; }
+  .solo-page.is-touch .solo-hud .solo-hud-wide { grid-column: 1 / -1; white-space: nowrap; }
+  .solo-page.is-touch .solo-hud .solo-demo { font-size: 7px; margin-left: 3px; padding: 1px 3px; }
+  .solo-page.is-touch .solo-boss { position: absolute; z-index: 3; top: 6px; left: 50%; translate: -50% 0; padding: 3px 8px; font-size: 9px; background: rgba(14, 10, 26, 0.82); }
+  .solo-page.is-touch .solo-boss-bar { width: 180px; height: 10px; }
   .solo-page.is-touch .solo-body {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: var(--side) 1fr var(--side);
     grid-template-rows: 100%;
     grid-template-areas: 'pad stage btns';
-    gap: 0 8px;
+    gap: 0;
   }
   .solo-page.is-touch .solo-stage { aspect-ratio: auto; align-self: stretch; height: 100%; }
-  .solo-page.is-touch .solo-pad { margin: 0 0 4px 10px; }
+  .solo-page.is-touch .solo-pad { justify-self: start; margin: 0 0 4px 10px; }
   .solo-page.is-touch .solo-tbtns { margin: 54px 10px 4px 0; } /* o botão de pausa fica abaixo do botão de som */
 }
