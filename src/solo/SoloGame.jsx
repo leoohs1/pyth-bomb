@@ -31,7 +31,8 @@ const TEST_CHEST = new URLSearchParams(window.location.search).get('chest')
 // a corrida abre no MAPA (SoloMap.jsx), com o jogo parado por baixo; os atalhos de teste (?level=N, ?chest=, ?nomap=1) pulam o mapa
 // atalho de teste: /solo?win=1 abre direto a tela de vitória (como se o chefe já tivesse morrido); "Play again" segue normal
 let testWinPending = new URLSearchParams(window.location.search).has('win')
-const MAP_ON = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap') && !testWinPending
+const MAP_BASE = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap')
+const mapOn = () => MAP_BASE && !testWinPending // no atalho ?win=1 a tela da vitória abre sem mapa antes; depois do "Play again" o mapa volta
 const newRun = () => {
   const g = createGame(Math.random, testWinPending ? LEVELS.length - 1 : START_LEVEL)
   if (TEST_CHEST) placeTestChest(g)
@@ -156,7 +157,7 @@ export default function SoloGame() {
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
   const mapDepartRef = useRef(null) // o mapa de antes da corrida registra aqui a animação de zarpar
   const [hud, setHud] = useState(null)
-  const [mapOpen, setMapOpen] = useState(MAP_ON) // o mapa de antes da corrida está na tela?
+  const [mapOpen, setMapOpen] = useState(mapOn) // o mapa de antes da corrida está na tela?
 
   // Enquanto o jogo está fechado pro público, a chave do beta fica no endereço. Motivo: no iPhone, "Adicionar à Tela de
   // Início" guarda o endereço de agora, e o ícone tem armazenamento próprio (não herda a chave do Safari): sem a chave no
@@ -206,12 +207,12 @@ export default function SoloGame() {
     const sfx = createSoloSfx() // toca os sons do jogo (só escuta, não muda regra nenhuma)
     let freeze = 0 // micro-pausa ("hit-stop") quando um inimigo é derrotado
     let paused = false // pausa (P/Esc, ou sozinha quando a aba some ou a janela perde o foco)
-    let held = MAP_ON // jogo parado enquanto o mapa de antes da corrida está na tela
+    let held = mapOn() // jogo parado enquanto o mapa de antes da corrida está na tela
     const start = (g) => { game = g; controls.clear(); FX.reset(); freeze = 0; paused = false }
     const setPaused = (v) => { paused = v; controls.clear() }
     // só pausa no meio da fase (nas telas de morte, fase concluída e baú o jogo já está parado)
     const pauseNow = () => { if (!held && game.status === 'playing' && !isPaused(game)) setPaused(true) }
-    const showMap = (on) => { held = on && MAP_ON; controls.clear(); setMapOpen(held) }
+    const showMap = (on) => { held = on && mapOn(); controls.clear(); setMapOpen(held) }
     const onVisibility = () => { if (document.hidden) pauseNow() }
     // pausado: qualquer tecla volta (e essa tecla não vira ação no jogo, ex.: não solta bomba)
     const onResumeKey = (e) => {
