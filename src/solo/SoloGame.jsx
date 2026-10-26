@@ -75,7 +75,7 @@ function hintOf(s) {
   if (s.time < s.noteUntil) return s.note
   if (s.player.detonator && s.bombs.some((b) => b.remote)) return 'Press E to detonate your bomb'
   const c = s.chest
-  if (c?.state === 'closed') return chestNear(s) ? 'Click the chest to open it!' : 'A chest appeared! Walk up to it and click it'
+  if (c?.state === 'closed') return chestNear(s) ? 'Step onto the chest (or click it) to open it!' : 'A chest appeared! Walk over it to open it'
   if (c && chestDone(s)) return 'The door is open! Step on it to leave'
   if (s.boss?.alive) return null
   if (s.door.revealed && !doorOpen(s)) return 'Defeat all enemies to open the door'
@@ -234,17 +234,19 @@ export default function SoloGame() {
       const t = tileUnder(e)
       return t.x === c.x && t.y === c.y
     }
-    const onClick = (e) => {
-      if (!onChest(e) || game.chest.state !== 'closed') return
-      const g = game
+    // abre o baú (clicando nele de perto, ou só passando por cima: ver o laço do jogo)
+    const openChestNow = (g, byWalking) => {
       if (!beginChest(g)) {
-        g.note = 'Get closer to the chest first!'
-        g.noteUntil = g.time + 1.6
+        if (!byWalking) { g.note = 'Get closer to the chest first!'; g.noteUntil = g.time + 1.6 }
         return
       }
       openChest({ level: g.levelIndex + 1, boss: !!g.boss, force: TEST_CHEST })
         .then((result) => finishChest(g, result))
         .catch(() => finishChest(g, { win: false, amount: 0, token: 'PYTH', demo: true, error: true }))
+    }
+    const onClick = (e) => {
+      if (!onChest(e) || game.chest.state !== 'closed') return
+      openChestNow(game, false)
     }
     const onMove = (e) => {
       canvas.style.cursor = onChest(e) && game.chest.state === 'closed' ? 'pointer' : ''
@@ -283,6 +285,10 @@ export default function SoloGame() {
       if (paused || held) { /* parado (pausa ou mapa na tela): só redesenha */ }
       else if (freeze > 0) freeze -= dt
       else for (let i = 0; i < n; i++) update(game, controls, dt / n)
+      // pisou em cima do baú: abre sozinho (não precisa clicar)
+      const ch = game.chest
+      if (!paused && !held && ch?.state === 'closed' && game.status === 'playing' && game.player.alive &&
+        Math.abs(game.player.x - ch.x) < 0.55 && Math.abs(game.player.y - ch.y) < 0.55) openChestNow(game, true)
       if (game.events.some((ev) => ev.type === 'enemyHit' && ev.killed)) freeze = 0.06
       sfx(game) // antes do FX.consumeEvents, que limpa os avisos
       FX.consumeEvents(game)
@@ -388,7 +394,7 @@ export default function SoloGame() {
               <ul className="solo-controls">
                 <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> Move</li>
                 <li><kbd>Space</kbd> Drop bomb</li>
-                <li><kbd>Click</kbd> Open chest</li>
+                <li><kbd>Walk onto</kbd> / <kbd>Click</kbd> Open chest</li>
                 <li><kbd>P</kbd> Pause</li>
               </ul>
             )}
