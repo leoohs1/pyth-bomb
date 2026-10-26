@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './SoloMap.css'
 import { LEVELS } from './engine/levels.js'
+import { play } from '../sound'
 
 // TELA DO MAPA do Solo (mapa do tesouro, estilo "mapa-múndi" de Mario): aparece antes da corrida e entre as fases.
 // O mapa é uma imagem de 418x235 pixels (public/solo/pixel/map.png) ampliada sem borrar; os X's, o brilho e o
@@ -87,8 +88,24 @@ const COLORS = {
   next: ['#a8683a', '#2a1408'], // ainda não chegou: apagado
 }
 
-export default function SoloMap({ mode, current, from, to, title, text, extra, button, onGo }) {
+const LEAVE_MS = 1200 // zarpar: o barquinho sai navegando e o mapa some devagar (depois disso a fase abre)
+
+export default function SoloMap({ mode, current, from, to, title, text, extra, button, onGo, departRef }) {
   const canvasRef = useRef(null)
+  const departAt = useRef(null) // quando apertou "Set sail"
+  const timer = useRef(0)
+  const [leaving, setLeaving] = useState(false)
+  // apertar o botão (ou Enter/Espaço, que o jogo manda pra cá): no mapa de ANTES da corrida o barquinho zarpa; nos outros, segue direto
+  const depart = () => {
+    if (mode !== 'start') { onGo(); return }
+    if (departAt.current != null) return
+    departAt.current = performance.now()
+    setLeaving(true)
+    play('solo_sail')
+    timer.current = setTimeout(onGo, LEAVE_MS)
+  }
+  useEffect(() => { if (departRef) departRef.current = depart })
+  useEffect(() => () => { clearTimeout(timer.current); if (departRef) departRef.current = null }, [departRef])
   const stateRef = useRef({ mode, current, from, to })
   useEffect(() => { stateRef.current = { mode, current, from, to } }, [mode, current, from, to])
 
@@ -107,10 +124,13 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
       if (map.complete && map.naturalWidth) ctx.drawImage(map, 0, 0)
       // andando de uma fase pra outra (depois de vencer): 0,7 s parado no X antigo, 2,2 s andando
       const travel = m === 'cleared' ? Math.max(0, Math.min(1, (t - 0.7) / 2.2)) : 0
+      // zarpando (só no mapa de antes da corrida): sai do cais e vai ganhando velocidade pelo caminho
+      const sail = departAt.current == null ? 0 : Math.min(1, (now - departAt.current) / LEAVE_MS)
+      const sailK = 0.32 * sail * sail
       const arrived = m !== 'cleared' || travel >= 1
       const here = m === 'cleared' ? (arrived ? tt : f) : cur // onde o rostinho está parado
       // até onde o pontilhado já está dourado: até a fase atual (ou até onde o rostinho chegou, andando)
-      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur]
+      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur] + (sail > 0 ? (NODE_D[1] - NODE_D[0]) * sailK : 0)
       drawTrail(ctx, doneUntil, t)
       NODES.forEach(([nx, ny], i) => {
         const done = m === 'won' ? true : m === 'cleared' ? i <= f : i < cur // fases já vencidas: douradas
@@ -121,10 +141,10 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
       })
       // o barquinho do herói balança parado na fase atual (ou navega pelo caminho, virando pro lado em que vai)
       if (m !== 'won' && boats.every((b) => b.complete && b.naturalWidth)) {
-        const walking = m === 'cleared' && !arrived
+        const walking = (m === 'cleared' && !arrived) || sail > 0
         const ease = travel * travel * (3 - 2 * travel)
-        const [hx, hy] = walking ? along(f, tt, ease) : NODES[here]
-        const flip = walking && along(f, tt, Math.min(1, ease + 0.03))[0] < hx - 0.05
+        const [hx, hy] = sail > 0 ? along(0, 1, sailK) : walking ? along(f, tt, ease) : NODES[here]
+        const flip = sail === 0 && walking && along(f, tt, Math.min(1, ease + 0.03))[0] < hx - 0.05
         const boat = boats[Math.floor(t * (walking ? 5 : 2.2)) % 2]
         const w = boat.naturalWidth, h = boat.naturalHeight
         const x = Math.round(hx + BOAT_DX), y = Math.round(hy - h + BOAT_DY)
@@ -141,7 +161,7 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
   const pct = ([x, y]) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` })
 
   return (
-    <div className="solo-map" role="dialog" aria-label="Level map">
+    <div className={`solo-map${leaving ? ' is-leaving' : ''}`} role="dialog" aria-label="Level map">
       <a className="solo-map-back" href="/play">← Back</a>
       <div className="solo-map-stage">
         <canvas ref={canvasRef} width={W} height={H} className="solo-map-canvas" />
@@ -156,7 +176,7 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
         </div>
         <div className="solo-map-bottom">
           {extra && <p className="solo-map-extra">{extra}</p>}
-          <button type="button" className="solo-btn solo-map-go" onClick={onGo} autoFocus>{button}</button>
+          <button type="button" className="solo-btn solo-map-go" onClick={depart} disabled={leaving} autoFocus>{leaving ? 'Sailing…' : button}</button>
           <p className="solo-map-foot">or press Enter / Space</p>
         </div>
       </div>

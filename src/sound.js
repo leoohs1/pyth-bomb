@@ -50,6 +50,7 @@ export const SOLO_SOUNDS = [
   'solo_chop_die',    // o CHOP cai (gemido longo e splash)
   'solo_splash',      // o CHOP mergulha no buraco (splash grande)
   'solo_jet',         // um jato d'água estoura no chão
+  'solo_sail',        // "Set sail" no mapa: sino de navio, vela enchendo e água
   'solo_door',        // a porta abriu
   'solo_chest_open',  // clicou no baú: tensão enquanto abre (espera o resultado)
   'solo_chest_win',   // abriu o baú e ganhou
@@ -294,6 +295,14 @@ Object.assign(SYNTH, {
     swish({ type: 'bandpass', f0: 500, f1: 2800, q: 1.1, dur: 0.38, gain: 0.35 })
     swish({ type: 'highpass', f0: 5200, f1: 3000, dur: 0.5, gain: 0.12, at: 0.08 })
     tone({ type: 'sine', f0: 170, f1: 80, dur: 0.28, gain: 0.22 })
+  },
+  // ZARPAR (provisório): dois toques de sino de navio, a vela enchendo de vento e a água cortando
+  solo_sail: () => {
+    tone({ type: 'sine', f0: 1175, dur: 0.9, gain: 0.16 }); tone({ type: 'sine', f0: 2350, dur: 0.55, gain: 0.06 })
+    tone({ type: 'sine', f0: 880, dur: 1.0, gain: 0.14, at: 0.32 }); tone({ type: 'sine', f0: 1760, dur: 0.6, gain: 0.05, at: 0.32 })
+    tone({ type: 'triangle', f0: 95, f1: 55, dur: 0.35, gain: 0.22, at: 0.04 }) // o casco rangendo
+    swish({ type: 'bandpass', f0: 300, f1: 1900, q: 0.8, dur: 0.95, gain: 0.2, at: 0.15 }) // vento enchendo a vela
+    swish({ type: 'lowpass', f0: 1100, f1: 220, q: 0.7, dur: 0.85, gain: 0.2, at: 0.3 }) // a água cortada
   },
   solo_door: () => chip([392, 523, 659, 784, 1047], { step: 0.08, dur: 0.12, gain: 0.12 }),
   solo_chest_open: () => {

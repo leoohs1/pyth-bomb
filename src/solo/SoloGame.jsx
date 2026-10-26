@@ -142,6 +142,7 @@ export default function SoloGame() {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const actionsRef = useRef({ advance() {}, dismissChest() {} })
+  const mapDepartRef = useRef(null) // o mapa de antes da corrida registra aqui a animação de zarpar
   const [hud, setHud] = useState(null)
   const [mapOpen, setMapOpen] = useState(MAP_ON) // o mapa de antes da corrida está na tela?
 
@@ -202,7 +203,7 @@ export default function SoloGame() {
     window.addEventListener('keydown', onResumeKey, true)
     // Enter / botão da mensagem: fecha o resultado do baú, tenta de novo, próxima fase ou corrida nova
     const advance = () => {
-      if (held) showMap(false) // sair do mapa e começar a corrida
+      if (held) { if (mapDepartRef.current) mapDepartRef.current(); else showMap(false) } // no mapa: zarpa (e a corrida começa quando a animação acaba)
       else if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
       else if (game.status === 'dead') start(retryLevel(game))
       else if (game.status === 'cleared') start(nextLevel(game))
@@ -216,7 +217,7 @@ export default function SoloGame() {
       if (!e.repeat) advance()
     }
     window.addEventListener('keydown', onMapKey, true)
-    actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false) }
+    actionsRef.current = { advance, dismissChest: () => dismissChest(game), resume: () => setPaused(false), closeMap: () => showMap(false) }
     if (import.meta.env.DEV) window.__soloGame = () => game // só no desenvolvimento: deixa os testes mexerem no jogo (some do site)
 
     // clique no canvas: abre o baú (se clicou nele e está do lado)
@@ -415,7 +416,7 @@ export default function SoloGame() {
         )}
         {mapOpen && hud?.status === 'playing' && (
           <SoloMap mode="start" current={0} title="Dungeon Run" text="Sail from the tavern to the shark's lair"
-            button="Set sail" onGo={() => actionsRef.current.advance()} />
+            button="Set sail" departRef={mapDepartRef} onGo={() => actionsRef.current.closeMap()} />
         )}
         {hud?.status === 'won' && (
           <Overlay win title="You escaped the dungeon!" button="Play again"

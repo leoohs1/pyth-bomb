@@ -24,6 +24,7 @@ const SOUNDS = [
   ['solo_splash', 'CHOP mergulha (splash grande)', 'arquivo'],
   ['solo_jet', "Jato d'água estoura", 'prov'],
   ['solo_chop_die', 'CHOP cai (grunhido de morte)', 'arquivo'],
+  ['solo_sail', 'Zarpar (botão Set sail do mapa)', 'prov'],
   ['solo_door', 'A porta abre', 'prov'],
   ['solo_chest_open', 'Clicar no baú (tensão)', 'ok'],
   ['solo_chest_win', 'Baú com prêmio (fanfarra gloriosa)', 'prov'],
