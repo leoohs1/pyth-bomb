@@ -16,6 +16,7 @@ import { BOSS } from './engine/boss.js'
 import { draw } from './engine/render.js'
 import SoloMap from './SoloMap.jsx'
 import { TouchPad, TouchButtons } from './TouchControls.jsx'
+import { LAUNCHED, BETA_KEY } from '../PlayGate.jsx'
 import { loadSprites, STYLE, setStyle, PX_TILE } from './engine/sprites.js'
 import * as FX from './engine/fx.js'
 
@@ -153,6 +154,17 @@ export default function SoloGame() {
   const mapDepartRef = useRef(null) // o mapa de antes da corrida registra aqui a animação de zarpar
   const [hud, setHud] = useState(null)
   const [mapOpen, setMapOpen] = useState(MAP_ON) // o mapa de antes da corrida está na tela?
+
+  // Enquanto o jogo está fechado pro público, a chave do beta fica no endereço. Motivo: no iPhone, "Adicionar à Tela de
+  // Início" guarda o endereço de agora, e o ícone tem armazenamento próprio (não herda a chave do Safari): sem a chave no
+  // endereço o ícone abria só o "Coming soon".
+  useEffect(() => {
+    if (LAUNCHED) return
+    try {
+      const u = new URL(window.location.href)
+      if (!u.searchParams.has('beta')) { u.searchParams.set('beta', BETA_KEY); window.history.replaceState(null, '', u) }
+    } catch { /* sem isso o jogo funciona igual */ }
+  }, [])
 
   // O Solo tem o próprio som: efeitos 8 bits (src/solo/sfx.js) e música própria (public/music/solo.mp3, baixinha,
   // por baixo dos efeitos). Enquanto a música do Solo não estiver valendo, silêncio: a do Pyth Bomb (Athens)
