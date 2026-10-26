@@ -10,15 +10,15 @@ const MAP_SRC = '/solo/pixel/map.png'
 const HERO_SRC = '/solo/pixel/map-hero.png'
 
 // o caminho dourado do desenho (pontos em pixels do mapa) e em qual ponto fica cada fase
-const ROUTE = [[126, 177], [137, 166], [150, 160], [160, 148], [164, 138], [175, 131], [200, 124], [221, 114],
-  [240, 118], [260, 120], [272, 117], [284, 110], [288, 90], [295, 85], [312, 78], [322, 76]]
-const NODE_AT = [0, 7, 15] // fase 1 = o cais da taverna, fase 2 = o convés do naufrágio, fase 3 = a beira do redemoinho
+const ROUTE = [[114, 177], [123, 176], [136, 175], [153, 175], [165, 173], [179, 168], [186, 161], [191, 149], [196, 142], [208, 137],
+  [215, 136], [235, 134], [270, 131], [288, 129], [297, 127], [308, 122], [311, 111], [307, 106], [298, 99], [297, 92],
+  [300, 87], [311, 84], [325, 82], [335, 77], [337, 74]]
+const NODE_AT = [0, 11, 24] // fase 1 = o barco no cais da taverna, fase 2 = o naufrágio no recife, fase 3 = a beira do redemoinho
 const NODES = NODE_AT.map((i) => ROUTE[i])
 // onde fica a plaquinha com o nome de cada fase (a da taverna vai pro cantinho de baixo, longe do botão)
-const LABEL_AT = [[70, 214], [221, 128], [322, 90]]
+const LABEL_AT = [[66, 214], [243, 150], [337, 90]]
 
-// PONTILHADO bem visível por cima do caminho do desenho: bolinhas com contorno escuro, uma a cada 7 pixels
-// (douradas por onde você já passou, laranja adiante), andando devagar
+// PROGRESSO no pontilhado do desenho: bolinhas douradas com contorno escuro, uma a cada 7 pixels, só por onde você já andou
 const SPACING = 7
 const ROUTE_D = (() => { const d = [0]; for (let i = 1; i < ROUTE.length; i++) d.push(d[i - 1] + Math.hypot(ROUTE[i][0] - ROUTE[i - 1][0], ROUTE[i][1] - ROUTE[i - 1][1])); return d })()
 const NODE_D = NODE_AT.map((i) => ROUTE_D[i])
@@ -32,14 +32,13 @@ function pointAt(d) {
   return ROUTE[ROUTE.length - 1]
 }
 function drawTrail(ctx, doneUntil, t) {
-  const total = ROUTE_D[ROUTE_D.length - 1]
+  // o desenho já tem o pontilhado dourado; por cima eu só acendo (em dourado vivo) o pedaço que você já andou
   const shift = (t * 5) % SPACING
-  for (let d = shift; d <= total; d += SPACING) {
+  for (let d = shift; d <= doneUntil; d += SPACING) {
     const [x, y] = pointAt(d)
-    const done = d <= doneUntil
     ctx.fillStyle = '#1f0f04'
     ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4)
-    ctx.fillStyle = done ? '#ffe27a' : '#f0993d'
+    ctx.fillStyle = '#ffe27a'
     ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
   }
 }
