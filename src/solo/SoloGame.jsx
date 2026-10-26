@@ -29,8 +29,9 @@ const START_LEVEL = (Number(new URLSearchParams(window.location.search).get('lev
 // atalho de teste: /solo?chest=1 começa sem inimigos, com o baú ao lado de você (?chest=win ou ?chest=empty força o resultado)
 const TEST_CHEST = new URLSearchParams(window.location.search).get('chest')
 // a corrida abre no MAPA (SoloMap.jsx), com o jogo parado por baixo; os atalhos de teste (?level=N, ?chest=, ?nomap=1) pulam o mapa
-// atalho de teste: /solo?win=1 abre direto a tela de vitória (como se o chefe já tivesse morrido); "Play again" segue normal
-let testWinPending = new URLSearchParams(window.location.search).has('win')
+// atalho de teste: /solo?win=1 (ou só /solo-win, sem nada depois) abre direto a tela de vitória (como se o chefe já tivesse
+// morrido); "Play again" segue normal
+let testWinPending = new URLSearchParams(window.location.search).has('win') || window.location.pathname.startsWith('/solo-win')
 const MAP_BASE = !new URLSearchParams(window.location.search).has('level') && !TEST_CHEST && !new URLSearchParams(window.location.search).has('nomap')
 const mapOn = () => MAP_BASE && !testWinPending // no atalho ?win=1 a tela da vitória abre sem mapa antes; depois do "Play again" o mapa volta
 const newRun = () => {
