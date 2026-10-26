@@ -231,7 +231,7 @@ export default function SoloGame() {
     }
     // no mapa, Enter ou Espaço seguem em frente (e a tecla não vira ação no jogo: Espaço não solta bomba)
     const onMapKey = (e) => {
-      if ((!held && game.status !== 'cleared') || (e.code !== 'Enter' && e.code !== 'Space') || e.altKey || e.ctrlKey || e.metaKey) return
+      if ((!held && game.status !== 'cleared' && game.status !== 'won') || (e.code !== 'Enter' && e.code !== 'Space') || e.altKey || e.ctrlKey || e.metaKey) return
       e.preventDefault()
       e.stopImmediatePropagation()
       if (!e.repeat) advance()
@@ -446,8 +446,10 @@ export default function SoloGame() {
             button="Set sail" departRef={mapDepartRef} onGo={() => actionsRef.current.closeMap()} />
         )}
         {hud?.status === 'won' && (
-          <Overlay win title="You escaped the dungeon!" button="Play again"
-            text={`All ${LEVELS.length} levels in ${time} · Prizes: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`} onClick={() => actionsRef.current.advance()} />
+          <SoloMap mode="won" current={hud.level - 1} title="You escaped the dungeon!"
+            text={`CHOP is beaten! All ${LEVELS.length} levels in ${time}`}
+            extra={`Prizes: ${hud.loot} PYTH${CHEST_IS_DEMO ? ' (demo)' : ''}`}
+            button="Play again" onGo={() => actionsRef.current.advance()} />
         )}
       </div>
       {TOUCH && <TouchButtons controls={controlsRef.current} detonator={!!hud?.detonator} onPause={() => actionsRef.current.pause?.()} />}

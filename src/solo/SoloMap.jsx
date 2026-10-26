@@ -80,6 +80,22 @@ function drawPulse(ctx, cx, cy, t) {
   }
 }
 
+// brilhinhos dourados em volta do barquinho na tela da vitória (cada um acende, cresce e apaga em tempos diferentes)
+function drawSparkles(ctx, cx, cy, t) {
+  for (let i = 0; i < 10; i++) {
+    const a = i * 2.4 + 0.7
+    const r = 14 + (i % 3) * 7
+    const k = (t * 0.8 + i * 0.37) % 1
+    if (k > 0.55) continue // fica apagado parte do tempo
+    const s = k < 0.275 ? 1 : 0
+    const x = Math.round(cx + Math.cos(a) * r * 1.3)
+    const y = Math.round(cy + Math.sin(a) * r * 0.8) - 6
+    ctx.fillStyle = '#fff1a8'
+    ctx.fillRect(x, y - 1 - s, 1, 3 + 2 * s)
+    ctx.fillRect(x - 1 - s, y, 3 + 2 * s, 1)
+  }
+}
+
 // onde o barquinho fica em relação ao ponto do caminho (em pixels do mapa): o casco um pouco acima do X
 const BOAT_DX = 12, BOAT_DY = -4
 
@@ -132,7 +148,7 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
       const arrived = m !== 'cleared' || travel >= 1
       const here = m === 'cleared' ? (arrived ? tt : f) : cur // onde o rostinho está parado
       // até onde o pontilhado já está dourado: até a fase atual (ou até onde o rostinho chegou, andando)
-      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur] + (sail > 0 ? (NODE_D[nextIdx] - NODE_D[cur]) * sailK : 0)
+      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? NODE_D[NODE_D.length - 1] : NODE_D[cur] + (sail > 0 ? (NODE_D[nextIdx] - NODE_D[cur]) * sailK : 0)
       drawTrail(ctx, doneUntil, t)
       NODES.forEach(([nx, ny], i) => {
         const done = m === 'won' ? true : m === 'cleared' ? i <= f : i < cur // fases já vencidas: douradas
@@ -142,7 +158,8 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
         drawX(ctx, nx, ny, isHere ? 6 : 5, fill, edge)
       })
       // o barquinho do herói balança parado na fase atual (ou navega pelo caminho, virando pro lado em que vai)
-      if (m !== 'won' && boats.every((b) => b.complete && b.naturalWidth)) {
+      if (m === 'won') drawSparkles(ctx, NODES[cur][0] + BOAT_DX, NODES[cur][1], t) // vitória: o barquinho fica no redemoinho, com brilhos
+      if (boats.every((b) => b.complete && b.naturalWidth)) {
         const walking = (m === 'cleared' && !arrived) || sail > 0
         const ease = travel * travel * (3 - 2 * travel)
         const [hx, hy] = sail > 0 ? along(cur, nextIdx, sailK) : walking ? along(f, tt, ease) : NODES[here]
