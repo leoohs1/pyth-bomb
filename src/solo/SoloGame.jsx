@@ -4,10 +4,10 @@ import SoundToggle from '../SoundToggle.jsx'
 import { setMusicSilenced, setMusicStartFade, setMusicTrack } from '../music'
 import { setSoundTheme } from '../sound'
 import { createSoloSfx } from './sfx.js'
-import { COLS, ROWS, STEP, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
+import { COLS, ROWS, STEP, START_LIVES, PLAYER_SPEED, SPEED_STEP, MAX_BOMBS, MAX_RANGE, MAX_SPEED } from './engine/constants.js'
 import { LEVELS } from './engine/levels.js'
 import {
-  createGame, nextLevel, retryLevel, update, enemiesLeft, doorOpen, levelInfo, placeTestChest,
+  createGame, nextLevel, retryLevel, restartLevel, update, enemiesLeft, doorOpen, levelInfo, placeTestChest,
   chestNear, chestDone, beginChest, finishChest, dismissChest, isPaused,
 } from './engine/game.js'
 import { openChest, CHEST_IS_DEMO } from './chest/index.js'
@@ -207,7 +207,8 @@ export default function SoloGame() {
       else if (game.chest?.state === 'opened' && !game.chest.dismissed) dismissChest(game)
       else if (game.status === 'dead') start(retryLevel(game))
       else if (game.status === 'cleared') start(nextLevel(game))
-      else if (game.status === 'gameover' || game.status === 'won') { start(newRun()); showMap(true) }
+      else if (game.status === 'gameover') { start(restartLevel(game)); showMap(true) } // acabaram as vidas: a mesma fase de novo (passou, passou)
+      else if (game.status === 'won') { start(newRun()); showMap(true) }
     }
     // no mapa, Enter ou Espaço seguem em frente (e a tecla não vira ação no jogo: Espaço não solta bomba)
     const onMapKey = (e) => {
@@ -404,11 +405,11 @@ export default function SoloGame() {
         {hud?.chest && <ChestModal chest={hud.chest} onClose={() => actionsRef.current.dismissChest()} />}
         {hud?.status === 'dead' && (
           <Overlay title="You got rugged!" line={hud.deathLine} button="Try again"
-            text={`${hud.lives} ${hud.lives === 1 ? 'life' : 'lives'} left`} onClick={() => actionsRef.current.advance()} />
+            text={`${hud.lives} ${hud.lives === 1 ? 'life' : 'lives'} left · You lose your power-ups`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.status === 'gameover' && (
-          <Overlay title="Game over" line={hud.deathLine} button="Play again"
-            text={`You reached level ${hud.level}`} onClick={() => actionsRef.current.advance()} />
+          <Overlay title="Game over" line={hud.deathLine} button="Retry level"
+            text={`Level ${hud.level} again with ${START_LIVES} lives. You keep the levels you cleared`} onClick={() => actionsRef.current.advance()} />
         )}
         {hud?.paused && (
           <Overlay pause title="Paused" button="Continue" text="Take your time. The enemies are frozen too."
@@ -421,7 +422,8 @@ export default function SoloGame() {
             button="Next level" onGo={() => actionsRef.current.advance()} />
         )}
         {mapOpen && hud?.status === 'playing' && (
-          <SoloMap mode="start" current={0} title="Dungeon Run" text="Sail from the tavern to the shark's lair"
+          <SoloMap mode="start" current={hud.level - 1} title={hud.level === 1 ? 'Dungeon Run' : `Level ${hud.level}`}
+            text={hud.level === 1 ? "Sail from the tavern to the shark's lair" : `${LEVELS[hud.level - 1].name}${LEVELS[hud.level - 1].tagline ? ` — ${LEVELS[hud.level - 1].tagline}` : ''}`}
             button="Set sail" departRef={mapDepartRef} onGo={() => actionsRef.current.closeMap()} />
         )}
         {hud?.status === 'won' && (

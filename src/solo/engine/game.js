@@ -26,11 +26,14 @@ const DIRS = {
 
 // Começa uma corrida nova (fase 1, vidas cheias, sem power-ups).
 // startLevel serve só pra testar uma fase direto (ex.: /solo?level=4).
+// como o jogador começa a corrida (e como volta depois de morrer)
+const BASE_STATS = { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE, shield: false, kick: false, detonator: false }
+
 export function createGame(random = Math.random, startLevel = 0) {
   return loadLevel({
     levelIndex: Math.max(0, Math.min(LEVELS.length - 1, startLevel)),
     lives: START_LIVES,
-    stats: { speed: PLAYER_SPEED, maxBombs: START_BOMBS, range: START_RANGE, shield: false, kick: false, detonator: false },
+    stats: { ...BASE_STATS },
     runTime: 0,
     loot: 0, // prêmios (de mentira, por enquanto) somados na corrida
     ...freshLevel(),
@@ -48,16 +51,23 @@ export function nextLevel(s, random = Math.random) {
   return loadLevel({ ...carry(s), levelIndex: s.levelIndex + 1, ...freshLevel() }, random)
 }
 
-// Morreu mas ainda tem vida: tenta a mesma fase de novo (mapa novo). Mantém bombas, fogo e
-// velocidade; perde chute e detonador. Os itens que você manteve não aparecem de novo no mapa.
+// Morreu mas ainda tem vida: tenta a mesma fase de novo (mapa novo) PERDENDO TUDO: volta ao básico (1 bomba,
+// alcance 1, velocidade normal, sem escudo/chute/detonador), em qualquer fase. Os itens da fase voltam a ficar
+// escondidos nas caixas do mapa novo (os das fases anteriores já eram: se perderam, perderam).
 export function retryLevel(s, random = Math.random) {
   return loadLevel(carry(s, true), random)
+}
+
+// Acabaram as vidas: recomeça A MESMA FASE (passou, passou: não volta pras fases que você já venceu) com vidas novas,
+// mas perde tudo, como ao morrer. O baú da fase, se já foi aberto, continua aberto; os prêmios e o tempo ficam.
+export function restartLevel(s, random = Math.random) {
+  return loadLevel({ ...carry(s, true), lives: START_LIVES }, random)
 }
 
 export const isLastLevel = (s) => s.levelIndex >= LEVELS.length - 1
 export const levelInfo = (s) => LEVELS[s.levelIndex]
 
-// itens que você mantém quando morre (o resto é perdido e pode voltar a aparecer na fase)
+// (antigo) itens que você mantinha ao morrer; hoje morrer perde tudo, então isto só mantém a lista da fase em dia
 const KEPT_ON_DEATH = ['bomb', 'fire', 'speed']
 
 function carry(s, died = false) {
@@ -65,14 +75,14 @@ function carry(s, died = false) {
   return {
     levelIndex: s.levelIndex,
     lives: s.lives,
-    stats: {
+    stats: died ? { ...BASE_STATS } : {
       speed: p.speed, maxBombs: p.maxBombs, range: p.range,
-      shield: died ? false : p.shield, kick: died ? false : p.kick, detonator: died ? false : p.detonator,
+      shield: p.shield, kick: p.kick, detonator: p.detonator,
     },
     runTime: s.runTime,
     loot: s.loot,
     items: s.items,
-    kept: s.kept,
+    kept: died ? [] : s.kept, // (morrendo, nada fica: os itens da fase voltam a aparecer)
     chestOpened: s.chestOpened || s.chest?.state === 'opened',
   }
 }

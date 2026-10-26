@@ -46,6 +46,7 @@ function drawTrail(ctx, doneUntil, t) {
 
 // o rostinho anda de uma fase até a outra seguindo o caminho (0 = saiu, 1 = chegou)
 function along(from, to, k) {
+  if (from === to) return ROUTE[NODE_AT[from]]
   const pts = ROUTE.slice(NODE_AT[from], NODE_AT[to] + 1)
   const lens = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]))
   const total = lens.reduce((a, b) => a + b, 0)
@@ -126,11 +127,12 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
       const travel = m === 'cleared' ? Math.max(0, Math.min(1, (t - 0.7) / 2.2)) : 0
       // zarpando (só no mapa de antes da corrida): sai do cais e vai ganhando velocidade pelo caminho
       const sail = departAt.current == null ? 0 : Math.min(1, (now - departAt.current) / LEAVE_MS)
-      const sailK = 0.32 * sail * sail
+      const nextIdx = Math.min(cur + 1, NODES.length - 1) // zarpando da fase atual pra seguinte (na última, só fica balançando)
+      const sailK = nextIdx === cur ? 0 : 0.32 * sail * sail
       const arrived = m !== 'cleared' || travel >= 1
       const here = m === 'cleared' ? (arrived ? tt : f) : cur // onde o rostinho está parado
       // até onde o pontilhado já está dourado: até a fase atual (ou até onde o rostinho chegou, andando)
-      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur] + (sail > 0 ? (NODE_D[1] - NODE_D[0]) * sailK : 0)
+      const doneUntil = m === 'cleared' ? NODE_D[f] + (NODE_D[tt] - NODE_D[f]) * travel * travel * (3 - 2 * travel) : m === 'won' ? 1e9 : NODE_D[cur] + (sail > 0 ? (NODE_D[nextIdx] - NODE_D[cur]) * sailK : 0)
       drawTrail(ctx, doneUntil, t)
       NODES.forEach(([nx, ny], i) => {
         const done = m === 'won' ? true : m === 'cleared' ? i <= f : i < cur // fases já vencidas: douradas
@@ -143,7 +145,7 @@ export default function SoloMap({ mode, current, from, to, title, text, extra, b
       if (m !== 'won' && boats.every((b) => b.complete && b.naturalWidth)) {
         const walking = (m === 'cleared' && !arrived) || sail > 0
         const ease = travel * travel * (3 - 2 * travel)
-        const [hx, hy] = sail > 0 ? along(0, 1, sailK) : walking ? along(f, tt, ease) : NODES[here]
+        const [hx, hy] = sail > 0 ? along(cur, nextIdx, sailK) : walking ? along(f, tt, ease) : NODES[here]
         const flip = sail === 0 && walking && along(f, tt, Math.min(1, ease + 0.03))[0] < hx - 0.05
         const boat = boats[Math.floor(t * (walking ? 5 : 2.2)) % 2]
         const w = boat.naturalWidth, h = boat.naturalHeight
