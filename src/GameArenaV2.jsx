@@ -348,6 +348,7 @@ export default function GameArenaV2({
   const compact = useCompact()
   const choiceMode = room?.quiz_mode === 'choice'
   const questionTotal = choiceMode ? CHOICE_MS : QUESTION_MS
+  const livesMax = choiceMode ? 3 : 2   // Recap Month começa com 3 vidas (supabase/040_recap_three_lives.sql); o Classic, 2
   const pct = Math.max(0, Math.min(100, (questionMs / questionTotal) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
@@ -567,7 +568,7 @@ export default function GameArenaV2({
                   '--ga-seat-scale': s.scale * geo.sizeMultiplier,
                 }}>
                 <div className="ga-seat-shadow" aria-hidden="true" />
-                {!isOut && p.lives != null && inGame && <Hearts lives={p.lives} />}
+                {!isOut && p.lives != null && inGame && <Hearts lives={p.lives} max={livesMax} />}
                 {SHOW_GROUND_DEBUG && (
                   <>
                     <span className="ga-ground-line" aria-hidden="true" />
@@ -694,7 +695,7 @@ export default function GameArenaV2({
                 </div>
               </>
             )}
-            {!iAmEliminated && inGame && me.lives != null && <Hearts lives={me.lives} className="ga-hearts ga-hearts-me" />}
+            {!iAmEliminated && inGame && me.lives != null && <Hearts lives={me.lives} max={livesMax} className="ga-hearts ga-hearts-me" />}
             {standSrc ? (
               <div className="ga-stand">
                 <span className="ga-stand-shadow" aria-hidden="true" />

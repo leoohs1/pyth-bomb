@@ -34,6 +34,7 @@ export default function GameCompact({
 }) {
   const inGame = phase === 'playing'
   const choiceMode = room?.quiz_mode === 'choice'   // Pyth Recap Month: alternativas A/B/C/D em vez de digitar
+  const livesMax = choiceMode ? 3 : 2                // Recap Month começa com 3 vidas; o Classic, 2
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
   const meNow = players.find((p) => p.id === myPlayerId)
   const hero = inGame ? holder : phase === 'finished' ? players.find((p) => p.id === centerId) : meNow
@@ -127,7 +128,7 @@ export default function GameCompact({
             {phase === 'finished' && <span className="mb-hero-crown" role="img" aria-label="Winner">👑</span>}
           </div>
           <span className="mb-hero-name">{heroIsMe ? `${hero.nickname} (you)` : hero.nickname}</span>
-          {inGame && hero.lives != null && <Hearts lives={hero.lives} className="mb-hearts mb-hearts-hero" />}
+          {inGame && hero.lives != null && <Hearts lives={hero.lives} max={livesMax} className="mb-hearts mb-hearts-hero" />}
         </div>
       )}
 
@@ -150,7 +151,7 @@ export default function GameCompact({
                 {isWinner && <span className="mb-crown" role="img" aria-label="Winner">👑</span>}
               </div>
               <span className="mb-name">{p.nickname}</span>
-              {inGame && !isOut && p.lives != null && <Hearts lives={p.lives} className="mb-hearts" />}
+              {inGame && !isOut && p.lives != null && <Hearts lives={p.lives} max={livesMax} className="mb-hearts" />}
               {isMe && <span className="mb-you">you</span>}
             </div>
           )
