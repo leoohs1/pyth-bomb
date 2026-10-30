@@ -24,7 +24,7 @@ const MODES = [
     icon: '🗓️',
     img: '/bomb-laurel.webp',
     title: 'Pyth Recap Month',
-    sub: 'The Classic bomb, but tap A, B, C or D. The month in Pyth, one question at a time.',
+    sub: null, // sem descrição (pedido da Halls): o cartão mostra só o nome
     locked: false,
     hidden: !(RECAP_OPEN || recapUrl),
   },
@@ -118,7 +118,7 @@ export default function Modes({ onSelectClassic, onSelectRecap }) {
                     {m.title}
                     {m.locked && <span className="md-mode-badge">Coming soon</span>}
                   </span>
-                  <span className="md-mode-sub">{m.sub}</span>
+                  {m.sub && <span className="md-mode-sub">{m.sub}</span>}
                 </span>
               </button>
             ))}
