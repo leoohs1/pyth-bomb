@@ -67,6 +67,10 @@
 .mb-card .ga-mistakes .ga-mistake-dot { width: 12px; height: 12px; }
 .mb-card .ga-error { font-size: 14px; }
 .mb-card.is-mine { outline: 3px solid rgba(255, 110, 110, 0.7); outline-offset: 2px; }
+/* Recap Month: no celular em pé as alternativas ficam uma embaixo da outra (botões grandes, fáceis de acertar com o dedo) */
+.mb-card .rc-grid { grid-template-columns: 1fr; gap: 8px; }
+.mb-card .rc-opt { min-height: 52px; font-size: 16px; }
+.mb-card .rc-letter { width: 30px; height: 30px; font-size: 14px; }
 
 /* "você ficou com a bomba": some sozinho */
 .mb-bombtoast {

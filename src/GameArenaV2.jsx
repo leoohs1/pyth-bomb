@@ -12,8 +12,10 @@ import ChatBox from './ChatBox.jsx'
 import Hearts from './Hearts.jsx'
 import LifeToast from './LifeToast.jsx'
 import GameCompact from './GameCompact.jsx'
+import { RecapChoices, RecapNote } from './RecapChoices.jsx'
 
 const QUESTION_MS = 13000 // tem que ser igual ao intervalo em deal_question (supabase/034_thirteen_seconds.sql)
+const CHOICE_MS = 15000 // Pyth Recap Month (alternativas): igual ao intervalo em deal_choice_question (supabase/038_recap_month.sql)
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso,
 // repete. Visual da arte atual (banco embutido batendo com o degrau) foi
@@ -339,10 +341,14 @@ export default function GameArenaV2({
   seatNudge = null,
   // arte em pé pro personagem do centro (arquivo sentado -> arquivo em pé), fora do pódio
   stageArt = null,
+  // Pyth Recap Month: toque numa alternativa (App -> submit_choice); só usado quando room.quiz_mode === 'choice'
+  onChoose = null,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
-  const pct = Math.max(0, Math.min(100, (questionMs / QUESTION_MS) * 100))
+  const choiceMode = room?.quiz_mode === 'choice'
+  const questionTotal = choiceMode ? CHOICE_MS : QUESTION_MS
+  const pct = Math.max(0, Math.min(100, (questionMs / questionTotal) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
 
@@ -505,7 +511,8 @@ export default function GameArenaV2({
         error={error} feedback={feedback} mistakes={mistakes} flash={flash}
         myPlayerId={myPlayerId} holder={holder} iAmHolder={iAmHolder} iAmEliminated={iAmEliminated}
         avatarOf={avatarOf} avatarRefs={avatarRefs} flight={flight} bombSeq={povSeq}
-        questionMax={QUESTION_MS / 1000} onLeave={onLeave} chat={chat} lifeFlash={lifeFlash} chip={chip}
+        questionMax={questionTotal / 1000} onLeave={onLeave} chat={chat} lifeFlash={lifeFlash} chip={chip}
+        onChoose={onChoose}
       />
     )
   }
@@ -724,23 +731,31 @@ export default function GameArenaV2({
         )}
 
         {inGame && (
-        <section className={`ga-card dl-${danger}`}>
+        <section className={`ga-card dl-${danger}${choiceMode ? ' is-choice' : ''}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
-          <p className="ga-qnum">Question</p>
+          <p className="ga-qnum">{choiceMode ? 'Recap Month · Question' : 'Question'}</p>
           <p className="ga-qtext">{room.current_question_text}</p>
 
           <div className="ga-time">
             <div className="ga-track" role="progressbar" aria-label="Time left for this question"
-              aria-valuemin={0} aria-valuemax={QUESTION_MS / 1000} aria-valuenow={secs}>
+              aria-valuemin={0} aria-valuemax={questionTotal / 1000} aria-valuenow={secs}>
               <div className={`ga-fill${urgent ? ' is-urgent' : ''}`} style={{ width: `${pct}%` }} />
             </div>
             <span className={`ga-secs${urgent ? ' is-urgent' : ''}`}>{secs}s</span>
           </div>
 
+          {/* Recap Month: 4 botões A/B/C/D; só quem tem a bomba toca, os outros veem as opções apagadas */}
+          {choiceMode && (
+            <RecapChoices choices={room.current_choices} canAnswer={iAmHolder && !iAmEliminated}
+              onChoose={onChoose} questionKey={room.question_expires_at} />
+          )}
+
           {/* só quem tem a bomba responde — todo mundo vê a pergunta, mas o
               campo só fica ativo pra quem está segurando (spec item 4) */}
           {iAmEliminated ? (
-            <p className="ga-status ga-status-out">ELIMINATED — WATCHING</p>
+            <p className="ga-status ga-status-out" style={choiceMode ? { marginTop: 8 } : undefined}>ELIMINATED — WATCHING</p>
+          ) : choiceMode ? (
+            !iAmHolder && <p className="ga-status" style={{ marginTop: 8 }}>{holder?.nickname ?? '...'} HAS THE BOMB</p>
           ) : iAmHolder ? (
             <form className="ga-answer" onSubmit={onSubmit}>
               <label className="ga-field">
@@ -765,7 +780,7 @@ export default function GameArenaV2({
 
           {/* 5 bolinhas discretas — erros do holder atual nessa bomba (spec
               item 7). So aparece pra quem tem a bomba, onde importa de verdade. */}
-          {iAmHolder && !iAmEliminated && (
+          {iAmHolder && !iAmEliminated && !choiceMode && (
             <div className="ga-mistakes" aria-label={`${mistakes} of 5 mistakes`}>
               {Array.from({ length: 5 }, (_, i) => (
                 <span key={i} className={`ga-mistake-dot${i < mistakes ? ' is-filled' : ''}`} />
@@ -776,6 +791,11 @@ export default function GameArenaV2({
           {feedback && <p className="ga-error" role="alert">{feedback}</p>}
           {error && <p className="ga-error" role="alert">{error}</p>}
         </section>
+        )}
+
+        {/* Recap Month: a resposta certa da pergunta anterior, numa faixa no alto (dentro do cartão o meu personagem tapava) */}
+        {inGame && choiceMode && room.last_recap && (
+          <div className="rc-top"><RecapNote recap={room.last_recap} /></div>
         )}
 
         {/* overlay de calibração (spec item 2) — mostra os 19 assentos do

@@ -3,6 +3,12 @@ import './Home.css'   // fundo, painel de mármore, personagens (compartilhados)
 import './Modes.css'
 import SoundToggle from './SoundToggle.jsx'
 
+// Pyth Recap Month (alternativas A/B/C/D): só aparece com ?recap=1 no endereço, até o SQL 038 estar rodado e o modo liberado.
+// Pra abrir pra todo mundo: troque o valor de RECAP_OPEN pra true.
+const RECAP_OPEN = false
+let recapUrl = false
+try { recapUrl = new URLSearchParams(window.location.search).get('recap') === '1' } catch { /* tudo bem */ }
+
 // icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
@@ -12,6 +18,15 @@ const MODES = [
     title: 'Pyth Bomb Classic',
     sub: 'Answer fast, pass the bomb, don\'t get rugged.',
     locked: false,
+  },
+  {
+    id: 'recap',
+    icon: '🗓️',
+    img: '/bomb-laurel.webp',
+    title: 'Pyth Recap Month',
+    sub: 'The Classic bomb, but tap A, B, C or D. The month in Pyth, one question at a time.',
+    locked: false,
+    hidden: !(RECAP_OPEN || recapUrl),
   },
   {
     id: 'song',
@@ -69,7 +84,7 @@ function ModeIcon({ m }) {
 
 // Escolha de modo de jogo: a "porta de entrada" do /play, antes do Classic.
 // O Classic abre por props do App.jsx; os outros modos têm página própria (href) e abrem por endereço.
-export default function Modes({ onSelectClassic }) {
+export default function Modes({ onSelectClassic, onSelectRecap }) {
   return (
     <main className="hm-stage">
       <SoundToggle className="sound-fixed" />
@@ -95,7 +110,7 @@ export default function Modes({ onSelectClassic }) {
                 type="button"
                 className={`md-mode${m.locked ? ' is-locked' : ''}`}
                 disabled={m.locked}
-                onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : undefined}
+                onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : m.id === 'recap' ? onSelectRecap : undefined}
               >
                 <ModeIcon m={m} />
                 <span className="md-mode-text">

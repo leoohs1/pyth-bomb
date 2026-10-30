@@ -8,7 +8,7 @@ import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 import { preloadCharacters } from './characters'
 import useChat from './useChat'
 import { readInviteCode } from './invite'
-import ClassicHowTo from './ClassicHowTo'
+import ClassicHowTo, { RecapHowTo } from './ClassicHowTo'
 
 function makeCode(extra = 2) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -292,7 +292,9 @@ export default function App() {
     // outro. Depois de 5 tentativas passa pra 3 letras no fim, que dá bem mais combinações.
     let data, e
     for (let i = 0; i < 8; i++) {
-      ({ data, error: e } = await supabase.from('rooms').insert({ code: makeCode(i < 5 ? 2 : 3) }).select().single())
+      // Pyth Recap Month: a sala nasce "choice" (alternativas). O Classic continua mandando só o código.
+      const row = { code: makeCode(i < 5 ? 2 : 3), ...(mode === 'recap' ? { quiz_mode: 'choice' } : {}) }
+      ;({ data, error: e } = await supabase.from('rooms').insert(row).select().single())
       if (e?.code !== '23505') break
     }
     if (e) return setError(e.code === '23505' ? 'Could not create a room right now. Please try again.' : e.message)
@@ -358,18 +360,40 @@ export default function App() {
     answerRef.current?.focus()
   }
 
+  // Pyth Recap Month: toque numa alternativa. Devolve false se não chegou ao servidor (aí a pessoa pode tocar de novo)
+  async function submitChoice(choice) {
+    setError(null)
+    const { data, error: e } = await supabase.rpc('submit_choice', { p_room_id: room.id, p_choice: choice })
+    if (e) {
+      setError(e.message)
+      setTimeout(() => setError(null), 2500)
+      return false
+    }
+    if (data === 'wrong') setFeedback('❌ Wrong! You lost a life')
+    else if (data === 'timeout') setFeedback('⏱ Time is up! You lost a life')
+    else if (data === 'exploded') setFeedback('💥 No lives left!')
+    else setFeedback(null)
+    if (data !== 'correct') setTimeout(() => setFeedback(null), 1600)
+    return true
+  }
+
   if (!room) {
-    if (mode !== 'classic') {
-      return <Modes onSelectClassic={() => setMode('classic')} />
+    if (mode !== 'classic' && mode !== 'recap') {
+      return <Modes onSelectClassic={() => setMode('classic')} onSelectRecap={() => setMode('recap')} />
     }
     return (
       <Home
         nickname={nickname} setNickname={setNickname}
         codeInput={codeInput} setCodeInput={setCodeInput}
         onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error} invite={invite}
+        subtitle={mode === 'recap' ? 'Pyth Recap Month' : undefined}
       />
     )
   }
+
+  // Recap Month = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql)
+  const recapRoom = room.quiz_mode === 'choice'
+  const modeTag = recapRoom ? 'Recap Month' : 'Classic'
 
   const alive = players.filter((p) => p.alive)
   const winner = players.find((p) => p.id === room.winner_id)
@@ -381,9 +405,11 @@ export default function App() {
         <GameArenaV2
           room={room} players={players} alive={alive} danger={1} questionMs={0}
           myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
-          panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error} />}
+          chip={recapRoom ? `Lobby · ${modeTag}` : undefined}
+          panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error}
+            subtitle={recapRoom ? 'Pyth Recap Month' : null} />}
         />
-        <ClassicHowTo />
+        {recapRoom ? <RecapHowTo /> : <ClassicHowTo />}
       </>
     )
   }
@@ -403,6 +429,7 @@ export default function App() {
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
         error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom} chat={chat}
         mistakes={room.holder_mistakes ?? 0}
+        onChoose={submitChoice} chip={recapRoom ? `Round ${room.round_number} · ${modeTag}` : undefined}
       />
     )
   }

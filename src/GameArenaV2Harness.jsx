@@ -43,10 +43,18 @@ export default function GameArenaV2Harness() {
   const [feedbackMsg, setFeedbackMsg] = useState(null)
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), lives: livesMap[p.id] ?? 2, avatar_idx: p.id === MY_ID ? myIdx : i }))
+  // ?choice=1 -> pré-visualiza o Pyth Recap Month (alternativas A/B/C/D + nota de recap)
+  const choice = new URLSearchParams(window.location.search).get('choice') === '1'
   const room = {
     round_number: 3,
-    current_question_text: 'Which ancient wonder was located in the city of Rhodes?',
+    current_question_text: choice ? 'By how much did Pyth\'s ARR grow from Q2 to Q3 2026?' : 'Which ancient wonder was located in the city of Rhodes?',
     bomb_holder_id: players[holderIdx % players.length]?.id,
+    ...(choice ? {
+      quiz_mode: 'choice',
+      question_expires_at: 'preview-1',
+      current_choices: ['44%', '86%', '220%', 'Only by feed ID, never by name or symbol'],
+      last_recap: { q: 'When was Pyth Connect (the Q3 2026 review) held?', a: 'Oct 8, 2:00 PM UTC', src: 'Pythian Bulletin, Oct 3' },
+    } : {}),
   }
 
   // mesma regra do servidor (supabase/008_fair_passing.sql): vai pro próximo
@@ -106,6 +114,7 @@ export default function GameArenaV2Harness() {
         setAnswer={setAnswer}
         answerRef={answerRef}
         onSubmit={(e) => e.preventDefault()}
+        onChoose={async (c) => { setFeedbackMsg('(preview) you tapped: ' + c); setTimeout(() => setFeedbackMsg(null), 1500); return true }}
         error={null}
         myPlayerId={MY_ID}
         povFlash={povSeq || null}

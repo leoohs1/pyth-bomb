@@ -7,6 +7,7 @@ import LeaveButton from './LeaveButton.jsx'
 import ChatBox from './ChatBox.jsx'
 import Hearts from './Hearts.jsx'
 import LifeToast from './LifeToast.jsx'
+import { RecapChoices, RecapNote } from './RecapChoices.jsx'
 
 // Layout do CELULAR EM PÉ (e tablet pequeno em pé). Mesma lógica do jogo (os sons, a bomba
 // passando, o relógio etc. continuam no GameArenaV2); aqui é só o que a pessoa VÊ, bem
@@ -29,8 +30,10 @@ export default function GameCompact({
   answer, setAnswer, answerRef, onSubmit, error, feedback, mistakes, flash,
   myPlayerId, holder, iAmHolder, iAmEliminated,
   avatarOf, avatarRefs, flight, bombSeq, onLeave, chat, lifeFlash, chip = null,
+  onChoose = null,
 }) {
   const inGame = phase === 'playing'
+  const choiceMode = room?.quiz_mode === 'choice'   // Pyth Recap Month: alternativas A/B/C/D em vez de digitar
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
   const meNow = players.find((p) => p.id === myPlayerId)
   const hero = inGame ? holder : phase === 'finished' ? players.find((p) => p.id === centerId) : meNow
@@ -64,8 +67,15 @@ export default function GameCompact({
             <span className={`ga-secs${urgent ? ' is-urgent' : ''}`}>{secs}s</span>
           </div>
 
+          {choiceMode && (
+            <RecapChoices choices={room.current_choices} canAnswer={iAmHolder && !iAmEliminated}
+              onChoose={onChoose} questionKey={room.question_expires_at} />
+          )}
+
           {iAmEliminated ? (
-            <p className="ga-status ga-status-out">ELIMINATED — WATCHING</p>
+            <p className="ga-status ga-status-out" style={choiceMode ? { marginTop: 8 } : undefined}>ELIMINATED — WATCHING</p>
+          ) : choiceMode ? (
+            !iAmHolder && <p className="ga-status" style={{ marginTop: 8 }}>{holder?.nickname ?? '...'} HAS THE BOMB</p>
           ) : iAmHolder ? (
             <form className="ga-answer" onSubmit={onSubmit}>
               <input
@@ -87,7 +97,7 @@ export default function GameCompact({
             <p className="ga-status">{holder?.nickname ?? '...'} HAS THE BOMB</p>
           )}
 
-          {iAmHolder && !iAmEliminated && (
+          {iAmHolder && !iAmEliminated && !choiceMode && (
             <div className="ga-mistakes" aria-label={`${mistakes} of 5 mistakes`}>
               {Array.from({ length: 5 }, (_, i) => (
                 <span key={i} className={`ga-mistake-dot${i < mistakes ? ' is-filled' : ''}`} />
@@ -97,6 +107,7 @@ export default function GameCompact({
 
           {feedback && <p className="ga-error" role="alert">{feedback}</p>}
           {error && <p className="ga-error" role="alert">{error}</p>}
+          {choiceMode && <RecapNote recap={room.last_recap} />}
 
           {/* "você ficou com a bomba": avisinho que some sozinho (a cena grande é só da arena) */}
           {bombSeq > 0 && <p key={bombSeq} className="mb-bombtoast" aria-hidden="true">YOU HAVE THE BOMB!</p>}
