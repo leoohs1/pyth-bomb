@@ -17,6 +17,7 @@ alter table public.questions add column if not exists wrong_options text[];     
 alter table public.questions add column if not exists fact text;                 -- frase extra do recap (opcional)
 alter table public.questions add column if not exists recap_on boolean not null default false; -- liga/desliga as perguntas do Recap do mês
 alter table public.questions add column if not exists times_correct int not null default 0;     -- quantas vezes alguém ACERTOU esta pergunta (baralho do Recap)
+alter table public.questions add column if not exists deck_tier int not null default 0;          -- 0 = perguntas do mês (saem primeiro); 1 = reserva "Pyth em geral" (saem depois, em cada volta)
 alter table public.questions add column if not exists last_dealt_at timestamptz;                -- quando ela foi sorteada pela última vez
 
 alter table public.rooms add column if not exists quiz_mode text not null default 'typed';  -- 'typed' (Classic) | 'choice' (Recap)
@@ -25,8 +26,9 @@ alter table public.rooms add column if not exists last_recap jsonb;             
 
 -- ============================================================
 -- deal_choice_question: sorteia uma pergunta de alternativas. O "baralho" do Recap funciona em VOLTAS:
---   * volta 1: só saem perguntas novas, sem repetir nenhuma (as 109 antes de qualquer repetição);
---   * quando acabam as novas, começa a volta 2 e, dentro de cada volta, a ordem é:
+--   * volta 1: só saem perguntas novas, sem repetir nenhuma. Dentro de cada volta, primeiro as perguntas DO MÊS
+--     (deck_tier 0) e só depois a reserva "Pyth em geral" (deck_tier 1);
+--   * quando acabam as novas, começa a volta 2 e, dentro de cada camada, a ordem é:
 --       primeiro as que NINGUÉM acertou (erraram ou o tempo estourou), depois as que alguém já acertou (fim do baralho);
 --       empatando, a que saiu há mais tempo vem primeiro (nunca repete a que acabou de sair).
 -- Só faz diferença quando as perguntas começam a faltar. Também grava o "recap" da pergunta que acabou de fechar.
@@ -63,7 +65,7 @@ begin
   select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
   from questions
   where kind = 'choice' and verified and recap_on
-  order by times_dealt, (times_correct > 0), last_dealt_at nulls first, random()
+  order by times_dealt, deck_tier, (times_correct > 0), last_dealt_at nulls first, random()
   limit 1
   for update skip locked;
 
@@ -71,7 +73,7 @@ begin
     -- (duas salas no mesmo instante e a melhor estava travada pela outra: pega a melhor sem travar)
     select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
     from questions where kind = 'choice' and verified and recap_on
-    order by times_dealt, (times_correct > 0), last_dealt_at nulls first, random()
+    order by times_dealt, deck_tier, (times_correct > 0), last_dealt_at nulls first, random()
     limit 1;
   end if;
 
