@@ -292,12 +292,12 @@ export default function App() {
     // outro. Depois de 5 tentativas passa pra 3 letras no fim, que dá bem mais combinações.
     let data, e
     for (let i = 0; i < 8; i++) {
-      // Recap Month e Classic A/B/C/D: a sala nasce "choice" (alternativas); o baralho (quiz_pool) diz de onde vêm as perguntas.
-      // O Classic de digitar continua mandando só o código.
+      // Classic e Recap Month: a sala nasce "choice" (alternativas); o baralho (quiz_pool) diz de onde vêm as perguntas.
+      // (O Classic de digitar saiu do menu em 2026-11-06: ele continua no banco, mas nenhuma sala nova nasce assim.)
       const row = {
         code: makeCode(i < 5 ? 2 : 3),
-        ...(mode === 'recap' ? { quiz_mode: 'choice', quiz_pool: 'recap' } : {}),
-        ...(mode === 'abcd' ? { quiz_mode: 'choice', quiz_pool: 'classic' } : {}),
+        quiz_mode: 'choice',
+        quiz_pool: mode === 'recap' ? 'recap' : 'classic',
       }
       ;({ data, error: e } = await supabase.from('rooms').insert(row).select().single())
       if (e?.code !== '23505') break
@@ -383,25 +383,26 @@ export default function App() {
   }
 
   if (!room) {
-    if (mode !== 'classic' && mode !== 'recap' && mode !== 'abcd') {
-      return <Modes onSelectClassic={() => setMode('classic')} onSelectRecap={() => setMode('recap')} onSelectAbcd={() => setMode('abcd')} />
+    if (mode !== 'classic' && mode !== 'recap') {
+      return <Modes onSelectClassic={() => setMode('classic')} onSelectRecap={() => setMode('recap')} />
     }
     return (
       <Home
         nickname={nickname} setNickname={setNickname}
         codeInput={codeInput} setCodeInput={setCodeInput}
         onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error} invite={invite}
-        subtitle={mode === 'recap' ? 'Pyth Recap Month' : mode === 'abcd' ? 'Classic A/B/C/D' : undefined}
+        subtitle={mode === 'recap' ? 'Pyth Recap Month' : undefined}
       />
     )
   }
 
-  // Recap Month e Classic A/B/C/D = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql).
-  // quiz_pool 'classic' = trivia geral (10 s, 2 vidas); qualquer outro valor (ou vazio) = Recap Month (15 s, 3 vidas)
+  // Classic e Recap Month = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql).
+  // quiz_pool 'classic' = o Classic de hoje, trivia geral (10 s, 2 vidas); qualquer outro valor (ou vazio) = Recap Month (15 s, 3 vidas).
+  // Sala sem "choice" = sala antiga do Classic de digitar (ainda abre, mas não nasce mais nenhuma).
   const choiceRoom = room.quiz_mode === 'choice'
   const abcdRoom = choiceRoom && room.quiz_pool === 'classic'
   const recapRoom = choiceRoom && !abcdRoom
-  const modeTag = abcdRoom ? 'Classic A/B/C/D' : recapRoom ? 'Recap Month' : 'Classic'
+  const modeTag = recapRoom ? 'Recap Month' : 'Classic'
 
   const alive = players.filter((p) => p.alive)
   const winner = players.find((p) => p.id === room.winner_id)
@@ -415,7 +416,7 @@ export default function App() {
           myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
           chip={choiceRoom ? `Lobby · ${modeTag}` : undefined}
           panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error}
-            subtitle={choiceRoom ? modeTag : null} />}
+            subtitle={recapRoom ? modeTag : null} />}
         />
         {abcdRoom ? <AbcdHowTo /> : recapRoom ? <RecapHowTo /> : <ClassicHowTo />}
       </>

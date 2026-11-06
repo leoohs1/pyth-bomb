@@ -9,12 +9,6 @@ const RECAP_OPEN = false
 let recapUrl = false
 try { recapUrl = new URLSearchParams(window.location.search).get('recap') === '1' } catch { /* tudo bem */ }
 
-// Classic A/B/C/D (trivia geral em alternativas, 10 s, 2 vidas): só aparece com ?abcd=1, até os SQLs 043/044 rodarem e o modo ser liberado.
-// Pra abrir pra todo mundo: troque o valor de ABCD_OPEN pra true.
-const ABCD_OPEN = false
-let abcdUrl = false
-try { abcdUrl = new URLSearchParams(window.location.search).get('abcd') === '1' } catch { /* tudo bem */ }
-
 // icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
@@ -24,15 +18,6 @@ const MODES = [
     title: 'Pyth Bomb Classic',
     sub: 'Answer fast, pass the bomb, don\'t get rugged.',
     locked: false,
-  },
-  {
-    id: 'abcd',
-    icon: '🔤',
-    img: '/bomb-laurel.webp',
-    title: 'Classic A/B/C/D',
-    sub: 'Same bomb, but tap one of 4 options. 10 seconds, 2 lives.',
-    locked: false,
-    hidden: !(ABCD_OPEN || abcdUrl),
   },
   {
     id: 'recap',
@@ -99,7 +84,7 @@ function ModeIcon({ m }) {
 
 // Escolha de modo de jogo: a "porta de entrada" do /play, antes do Classic.
 // O Classic abre por props do App.jsx; os outros modos têm página própria (href) e abrem por endereço.
-export default function Modes({ onSelectClassic, onSelectRecap, onSelectAbcd }) {
+export default function Modes({ onSelectClassic, onSelectRecap }) {
   return (
     <main className="hm-stage">
       <SoundToggle className="sound-fixed" />
@@ -125,7 +110,7 @@ export default function Modes({ onSelectClassic, onSelectRecap, onSelectAbcd }) 
                 type="button"
                 className={`md-mode${m.locked ? ' is-locked' : ''}`}
                 disabled={m.locked}
-                onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : m.id === 'recap' ? onSelectRecap : m.id === 'abcd' ? onSelectAbcd : undefined}
+                onClick={m.href ? () => { window.location.assign(m.href) } : m.id === 'classic' ? onSelectClassic : m.id === 'recap' ? onSelectRecap : undefined}
               >
                 <ModeIcon m={m} />
                 <span className="md-mode-text">

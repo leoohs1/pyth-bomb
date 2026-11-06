@@ -736,7 +736,7 @@ export default function GameArenaV2({
         {inGame && (
         <section className={`ga-card dl-${danger}${choiceMode ? ' is-choice' : ''}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
-          <p className="ga-qnum">{abcdPool ? 'Classic A/B/C/D · Question' : choiceMode ? 'Recap Month · Question' : 'Question'}</p>
+          <p className="ga-qnum">{choiceMode && !abcdPool ? 'Recap Month · Question' : 'Question'}</p>
           <p className="ga-qtext">{room.current_question_text}</p>
 
           <div className="ga-time">
