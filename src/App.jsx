@@ -8,7 +8,7 @@ import { LobbyPanel, FinishedPanel } from './ArenaPanels'
 import { preloadCharacters } from './characters'
 import useChat from './useChat'
 import { readInviteCode } from './invite'
-import ClassicHowTo, { RecapHowTo } from './ClassicHowTo'
+import ClassicHowTo, { RecapHowTo, AbcdHowTo } from './ClassicHowTo'
 
 function makeCode(extra = 2) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -292,8 +292,13 @@ export default function App() {
     // outro. Depois de 5 tentativas passa pra 3 letras no fim, que dá bem mais combinações.
     let data, e
     for (let i = 0; i < 8; i++) {
-      // Pyth Recap Month: a sala nasce "choice" (alternativas). O Classic continua mandando só o código.
-      const row = { code: makeCode(i < 5 ? 2 : 3), ...(mode === 'recap' ? { quiz_mode: 'choice' } : {}) }
+      // Recap Month e Classic A/B/C/D: a sala nasce "choice" (alternativas); o baralho (quiz_pool) diz de onde vêm as perguntas.
+      // O Classic de digitar continua mandando só o código.
+      const row = {
+        code: makeCode(i < 5 ? 2 : 3),
+        ...(mode === 'recap' ? { quiz_mode: 'choice', quiz_pool: 'recap' } : {}),
+        ...(mode === 'abcd' ? { quiz_mode: 'choice', quiz_pool: 'classic' } : {}),
+      }
       ;({ data, error: e } = await supabase.from('rooms').insert(row).select().single())
       if (e?.code !== '23505') break
     }
@@ -378,22 +383,25 @@ export default function App() {
   }
 
   if (!room) {
-    if (mode !== 'classic' && mode !== 'recap') {
-      return <Modes onSelectClassic={() => setMode('classic')} onSelectRecap={() => setMode('recap')} />
+    if (mode !== 'classic' && mode !== 'recap' && mode !== 'abcd') {
+      return <Modes onSelectClassic={() => setMode('classic')} onSelectRecap={() => setMode('recap')} onSelectAbcd={() => setMode('abcd')} />
     }
     return (
       <Home
         nickname={nickname} setNickname={setNickname}
         codeInput={codeInput} setCodeInput={setCodeInput}
         onCreate={createRoom} onJoin={joinByCode} onBack={() => setMode(null)} error={error} invite={invite}
-        subtitle={mode === 'recap' ? 'Pyth Recap Month' : undefined}
+        subtitle={mode === 'recap' ? 'Pyth Recap Month' : mode === 'abcd' ? 'Classic A/B/C/D' : undefined}
       />
     )
   }
 
-  // Recap Month = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql)
-  const recapRoom = room.quiz_mode === 'choice'
-  const modeTag = recapRoom ? 'Recap Month' : 'Classic'
+  // Recap Month e Classic A/B/C/D = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql).
+  // quiz_pool 'classic' = trivia geral (10 s, 2 vidas); qualquer outro valor (ou vazio) = Recap Month (15 s, 3 vidas)
+  const choiceRoom = room.quiz_mode === 'choice'
+  const abcdRoom = choiceRoom && room.quiz_pool === 'classic'
+  const recapRoom = choiceRoom && !abcdRoom
+  const modeTag = abcdRoom ? 'Classic A/B/C/D' : recapRoom ? 'Recap Month' : 'Classic'
 
   const alive = players.filter((p) => p.alive)
   const winner = players.find((p) => p.id === room.winner_id)
@@ -405,11 +413,11 @@ export default function App() {
         <GameArenaV2
           room={room} players={players} alive={alive} danger={1} questionMs={0}
           myPlayerId={me?.id} phase="lobby" onLeave={leaveRoom} chat={chat}
-          chip={recapRoom ? `Lobby · ${modeTag}` : undefined}
+          chip={choiceRoom ? `Lobby · ${modeTag}` : undefined}
           panel={<LobbyPanel room={room} players={players} me={me} iAmHost={iAmHost} onStart={startGame} onLeave={leaveRoom} onPick={pickCharacter} error={error}
-            subtitle={recapRoom ? 'Pyth Recap Month' : null} />}
+            subtitle={choiceRoom ? modeTag : null} />}
         />
-        {recapRoom ? <RecapHowTo /> : <ClassicHowTo />}
+        {abcdRoom ? <AbcdHowTo /> : recapRoom ? <RecapHowTo /> : <ClassicHowTo />}
       </>
     )
   }
@@ -420,7 +428,9 @@ export default function App() {
     : 0
 
   // perigo (batida, brilho, ritmo do tique) sobe a cada turno conforme o tempo acaba
-  const danger = questionMs > 8500 ? 1 : questionMs > 6000 ? 2 : questionMs > 3500 ? 3 : 4
+  // (no Classic A/B/C/D o turno tem 10 s em vez de 13: as faixas encolhem na mesma proporção)
+  const dz = abcdRoom ? 10 / 13 : 1
+  const danger = questionMs > 8500 * dz ? 1 : questionMs > 6000 * dz ? 2 : questionMs > 3500 * dz ? 3 : 4
 
   if (room.status === 'playing') {
     return (
@@ -429,7 +439,7 @@ export default function App() {
         answer={answer} setAnswer={setAnswer} answerRef={answerRef} onSubmit={submitAnswer}
         error={error} myPlayerId={me?.id} flash={flash} feedback={feedback} onLeave={leaveRoom} chat={chat}
         mistakes={room.holder_mistakes ?? 0}
-        onChoose={submitChoice} chip={recapRoom ? `Round ${room.round_number} · ${modeTag}` : undefined}
+        onChoose={submitChoice} chip={choiceRoom ? `Round ${room.round_number} · ${modeTag}` : undefined}
       />
     )
   }

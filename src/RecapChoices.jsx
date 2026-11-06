@@ -40,11 +40,11 @@ export function RecapChoices({ choices, canAnswer, onChoose, questionKey }) {
 }
 
 // o "recap": a resposta certa da pergunta anterior (e a fonte). Aparece pra todo mundo, a cada turno.
-export function RecapNote({ recap }) {
+export function RecapNote({ recap, tag = 'Recap' }) {
   if (!recap?.a) return null
   return (
     <div className="rc-note" key={recap.q} aria-live="polite">
-      <span className="rc-note-tag">Recap</span>
+      <span className="rc-note-tag">{tag}</span>
       <span className="rc-note-q">{recap.q}</span>
       <span className="rc-note-a"><b>{recap.a}</b>{recap.src ? <i> · {recap.src}</i> : null}</span>
       {recap.fact ? <span className="rc-note-fact">{recap.fact}</span> : null}

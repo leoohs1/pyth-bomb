@@ -34,7 +34,8 @@ export default function GameCompact({
 }) {
   const inGame = phase === 'playing'
   const choiceMode = room?.quiz_mode === 'choice'   // Pyth Recap Month: alternativas A/B/C/D em vez de digitar
-  const livesMax = choiceMode ? 3 : 2                // Recap Month começa com 3 vidas; o Classic, 2
+  const abcdPool = choiceMode && room?.quiz_pool === 'classic'   // Classic A/B/C/D: 2 vidas, 10 s
+  const livesMax = choiceMode && !abcdPool ? 3 : 2   // Recap Month começa com 3 vidas; Classic e Classic A/B/C/D, 2
   // destaque grande no meio: na partida, quem está com a bomba; no lobby, eu; no fim, o vencedor
   const meNow = players.find((p) => p.id === myPlayerId)
   const hero = inGame ? holder : phase === 'finished' ? players.find((p) => p.id === centerId) : meNow
@@ -108,7 +109,7 @@ export default function GameCompact({
 
           {feedback && <p className="ga-error" role="alert">{feedback}</p>}
           {error && <p className="ga-error" role="alert">{error}</p>}
-          {choiceMode && <RecapNote recap={room.last_recap} />}
+          {choiceMode && <RecapNote recap={room.last_recap} tag={abcdPool ? 'Last answer' : 'Recap'} />}
 
           {/* "você ficou com a bomba": avisinho que some sozinho (a cena grande é só da arena) */}
           {bombSeq > 0 && <p key={bombSeq} className="mb-bombtoast" aria-hidden="true">YOU HAVE THE BOMB!</p>}

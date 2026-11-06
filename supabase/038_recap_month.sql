@@ -20,6 +20,13 @@ alter table public.questions add column if not exists times_correct int not null
 alter table public.questions add column if not exists deck_tier int not null default 0;          -- 0 = perguntas do mês (saem primeiro); 1 = reserva "Pyth em geral" (saem depois, em cada volta)
 alter table public.questions add column if not exists last_dealt_at timestamptz;                -- quando ela foi sorteada pela última vez
 
+alter table public.questions add column if not exists classic_on boolean not null default false;   -- entra no Classic A/B/C/D
+alter table public.questions add column if not exists classic_tier int not null default 0;         -- 0 = com desafio (sai primeiro); 1 = óbvia (reserva)
+alter table public.questions add column if not exists c_times_dealt int not null default 0;        -- contadores do baralho do Classic A/B/C/D
+alter table public.questions add column if not exists c_times_correct int not null default 0;
+alter table public.questions add column if not exists c_last_dealt_at timestamptz;
+
+alter table public.rooms add column if not exists quiz_pool text not null default 'recap';   -- 'recap' (Recap Month) | 'classic' (Classic A/B/C/D)
 alter table public.rooms add column if not exists quiz_mode text not null default 'typed';  -- 'typed' (Classic) | 'choice' (Recap)
 alter table public.rooms add column if not exists current_choices text[];        -- as 4 opções já embaralhadas (todo mundo vê; a certa NÃO é marcada)
 alter table public.rooms add column if not exists last_recap jsonb;             -- a pergunta que acabou de fechar: {q, a, fact, src}
@@ -46,7 +53,10 @@ declare
   v_correct text;
   v_wrong text[];
   v_opts text[];
+  v_pool text;
+  v_secs interval;
 begin
+  select coalesce(quiz_pool, 'recap') into v_pool from rooms where id = p_room_id;
   -- recap da pergunta anterior (a que acabou de ser respondida, ou que estourou o tempo)
   select current_question_id into v_prev from room_secrets where room_id = p_room_id;
   if v_prev is not null then
@@ -62,26 +72,42 @@ begin
     update rooms set last_recap = null where id = p_room_id;   -- partida nova: começa sem recap
   end if;
 
-  select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
-  from questions
-  where kind = 'choice' and verified and recap_on
-  order by times_dealt, deck_tier, (times_correct > 0), last_dealt_at nulls first, random()
-  limit 1
-  for update skip locked;
-
-  if v_qid is null then
-    -- (duas salas no mesmo instante e a melhor estava travada pela outra: pega a melhor sem travar)
+  if v_pool = 'classic' then
+    -- CLASSIC A/B/C/D: perguntas gerais + as do Recap (classic_on), contadores próprios (c_*), 10 segundos
+    v_secs := interval '10 seconds';
     select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
-    from questions where kind = 'choice' and verified and recap_on
+    from questions
+    where kind = 'choice' and verified and classic_on
+    order by c_times_dealt, classic_tier, (c_times_correct > 0), c_last_dealt_at nulls first, random()
+    limit 1
+    for update skip locked;
+    if v_qid is null then
+      select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
+      from questions where kind = 'choice' and verified and classic_on
+      order by c_times_dealt, classic_tier, (c_times_correct > 0), c_last_dealt_at nulls first, random()
+      limit 1;
+    end if;
+    if v_qid is null then raise exception 'No Classic A/B/C/D questions are turned on'; end if;
+    update questions set c_times_dealt = c_times_dealt + 1, c_last_dealt_at = now() where id = v_qid;
+  else
+    -- RECAP MONTH: só as do mês e as de Pyth em geral (recap_on), 15 segundos
+    v_secs := interval '15 seconds';
+    select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
+    from questions
+    where kind = 'choice' and verified and recap_on
     order by times_dealt, deck_tier, (times_correct > 0), last_dealt_at nulls first, random()
-    limit 1;
+    limit 1
+    for update skip locked;
+    if v_qid is null then
+      -- (duas salas no mesmo instante e a melhor estava travada pela outra: pega a melhor sem travar)
+      select id, text, accepted_answers[1], wrong_options into v_qid, v_text, v_correct, v_wrong
+      from questions where kind = 'choice' and verified and recap_on
+      order by times_dealt, deck_tier, (times_correct > 0), last_dealt_at nulls first, random()
+      limit 1;
+    end if;
+    if v_qid is null then raise exception 'No multiple-choice questions are turned on'; end if;
+    update questions set times_dealt = times_dealt + 1, last_dealt_at = now() where id = v_qid;
   end if;
-
-  if v_qid is null then
-    raise exception 'No multiple-choice questions are turned on';
-  end if;
-
-  update questions set times_dealt = times_dealt + 1, last_dealt_at = now() where id = v_qid;
 
   -- as 4 opções (a certa + as 3 erradas) embaralhadas
   select array_agg(o order by random()) into v_opts
@@ -92,7 +118,7 @@ begin
   update rooms
   set current_question_text = v_text,
       current_choices = v_opts,
-      question_expires_at = now() + interval '15 seconds'
+      question_expires_at = now() + v_secs
   where id = p_room_id;
 end;
 $function$;
@@ -188,7 +214,11 @@ begin
   end if;
 
   -- certo: a pergunta vai pro fim do baralho (só volta depois das que ninguém acertou)
-  update questions set times_correct = times_correct + 1 where id = v_qid;
+  if v_room.quiz_pool = 'classic' then
+    update questions set c_times_correct = c_times_correct + 1 where id = v_qid;
+  else
+    update questions set times_correct = times_correct + 1 where id = v_qid;
+  end if;
 
   -- a bomba passa já, e o próximo ganha uma pergunta nova
   v_next := public.pick_next_holder(p_room_id, v_me);

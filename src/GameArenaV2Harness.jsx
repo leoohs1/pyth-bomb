@@ -44,16 +44,25 @@ export default function GameArenaV2Harness() {
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), lives: livesMap[p.id] ?? 2, avatar_idx: p.id === MY_ID ? myIdx : i }))
   // ?choice=1 -> pré-visualiza o Pyth Recap Month (alternativas A/B/C/D + nota de recap)
-  const choice = new URLSearchParams(window.location.search).get('choice') === '1'
+  // ?choice=1&pool=classic -> pré-visualiza o Classic A/B/C/D (trivia geral: 10 s, 2 vidas)
+  const sp = new URLSearchParams(window.location.search)
+  const choice = sp.get('choice') === '1'
+  const abcd = choice && sp.get('pool') === 'classic'
   const room = {
     round_number: 3,
-    current_question_text: choice ? 'By how much did Pyth\'s ARR grow from Q2 to Q3 2026?' : 'Which ancient wonder was located in the city of Rhodes?',
+    current_question_text: abcd ? 'Which planet is known as the Red Planet?' : choice ? 'By how much did Pyth\'s ARR grow from Q2 to Q3 2026?' : 'Which ancient wonder was located in the city of Rhodes?',
     bomb_holder_id: players[holderIdx % players.length]?.id,
     ...(choice ? {
       quiz_mode: 'choice',
       question_expires_at: 'preview-1',
-      current_choices: ['44%', '86%', '220%', 'Only by feed ID, never by name or symbol'],
-      last_recap: { q: 'When was Pyth Connect (the Q3 2026 review) held?', a: 'Oct 8, 2:00 PM UTC', src: 'Pythian Bulletin, Oct 3' },
+      ...(abcd ? {
+        quiz_pool: 'classic',
+        current_choices: ['Venus', 'Mars', 'Jupiter', 'Mercury'],
+        last_recap: { q: 'What is the largest ocean on Earth?', a: 'The Pacific Ocean', src: null },
+      } : {
+        current_choices: ['44%', '86%', '220%', 'Only by feed ID, never by name or symbol'],
+        last_recap: { q: 'When was Pyth Connect (the Q3 2026 review) held?', a: 'Oct 8, 2:00 PM UTC', src: 'Pythian Bulletin, Oct 3' },
+      }),
     } : {}),
   }
 

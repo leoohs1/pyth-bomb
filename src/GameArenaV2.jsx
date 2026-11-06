@@ -16,6 +16,7 @@ import { RecapChoices, RecapNote } from './RecapChoices.jsx'
 
 const QUESTION_MS = 13000 // tem que ser igual ao intervalo em deal_question (supabase/034_thirteen_seconds.sql)
 const CHOICE_MS = 15000 // Pyth Recap Month (alternativas): igual ao intervalo em deal_choice_question (supabase/038_recap_month.sql)
+const ABCD_MS = 10000   // Classic A/B/C/D: 10 s (o mesmo deal_choice_question, no baralho "classic")
 
 // elenco sentado (entregue por Halls) — se um dia tiver mais gente que isso,
 // repete. Visual da arte atual (banco embutido batendo com o degrau) foi
@@ -347,8 +348,9 @@ export default function GameArenaV2({
   const inGame = phase === 'playing'
   const compact = useCompact()
   const choiceMode = room?.quiz_mode === 'choice'
-  const questionTotal = choiceMode ? CHOICE_MS : QUESTION_MS
-  const livesMax = choiceMode ? 3 : 2   // Recap Month começa com 3 vidas (supabase/040_recap_three_lives.sql); o Classic, 2
+  const abcdPool = choiceMode && room?.quiz_pool === 'classic'   // Classic A/B/C/D (supabase/043): 10 s e 2 vidas
+  const questionTotal = abcdPool ? ABCD_MS : choiceMode ? CHOICE_MS : QUESTION_MS
+  const livesMax = choiceMode && !abcdPool ? 3 : 2   // Recap Month começa com 3 vidas (supabase/040_recap_three_lives.sql); Classic e Classic A/B/C/D, 2
   const pct = Math.max(0, Math.min(100, (questionMs / questionTotal) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000
@@ -734,7 +736,7 @@ export default function GameArenaV2({
         {inGame && (
         <section className={`ga-card dl-${danger}${choiceMode ? ' is-choice' : ''}`}>
           <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
-          <p className="ga-qnum">{choiceMode ? 'Recap Month · Question' : 'Question'}</p>
+          <p className="ga-qnum">{abcdPool ? 'Classic A/B/C/D · Question' : choiceMode ? 'Recap Month · Question' : 'Question'}</p>
           <p className="ga-qtext">{room.current_question_text}</p>
 
           <div className="ga-time">
@@ -796,7 +798,7 @@ export default function GameArenaV2({
 
         {/* Recap Month: a resposta certa da pergunta anterior, numa faixa no alto (dentro do cartão o meu personagem tapava) */}
         {inGame && choiceMode && room.last_recap && (
-          <div className="rc-top"><RecapNote recap={room.last_recap} /></div>
+          <div className="rc-top"><RecapNote recap={room.last_recap} tag={abcdPool ? 'Last answer' : 'Recap'} /></div>
         )}
 
         {/* overlay de calibração (spec item 2) — mostra os 19 assentos do
