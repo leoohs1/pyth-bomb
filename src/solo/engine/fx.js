@@ -67,6 +67,19 @@ export function consumeEvents(s) {
         const a = (i / 10) * Math.PI * 2
         add({ kind: 'spark', x: cx, y: cy, life: rand(0.3, 0.5), vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, color: '255, 240, 180' })
       }
+    } else if (ev.type === 'powerupGone') {
+      // item que o fogo queimou: faíscas laranja e fumaça. Item que acabou o tempo: só um sopro de poeira e um anel apagando.
+      if (ev.burned) {
+        for (let i = 0; i < 9; i++) {
+          const a = rand(0, Math.PI * 2), sp = rand(1.2, 2.6)
+          add({ kind: 'spark', x: cx, y: cy, life: rand(0.25, 0.45), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, color: Math.random() < 0.6 ? '255, 170, 70' : '255, 235, 170' })
+        }
+        add({ kind: 'ring', x: cx, y: cy, life: 0.3, color: '255, 150, 60', big: true })
+        for (let i = 0; i < 3; i++) add({ kind: 'smoke', x: cx + rand(-0.15, 0.15), y: cy, life: rand(0.6, 0.9), vx: rand(-0.15, 0.15), vy: -rand(0.3, 0.6), size: rand(0.14, 0.22) })
+      } else {
+        add({ kind: 'ring', x: cx, y: cy, life: 0.35, color: '200, 200, 210', big: false })
+        for (let i = 0; i < 4; i++) add({ kind: 'dust', x: cx + rand(-0.2, 0.2), y: cy + rand(-0.1, 0.2), life: rand(0.35, 0.55), size: rand(0.12, 0.2) })
+      }
     } else if (ev.type === 'blockBroken') {
       // pedaços voando + poeira + faísca
       for (let i = 0; i < 5; i++) {

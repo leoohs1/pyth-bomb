@@ -1,6 +1,6 @@
 // Desenha o estado do jogo num <canvas>, por enquanto só com formas simples (sem arte).
 // Tudo é desenhado em "casas": 1 unidade = 1 casa da grade; a escala vem de fora.
-import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME } from './constants.js'
+import { FLOOR, WALL, BLOCK, FLAME_TIME, BURN_TIME, FUSE_TIME, ITEM_LIFE, ITEM_BLINK } from './constants.js'
 import { doorOpen, chestNear } from './game.js'
 import { BOSS } from './boss.js'
 import { hullWallOf, borderWallOf } from './wallmix.js'
@@ -831,6 +831,10 @@ const PU_COLOR = {
 function drawPowerup(ctx, pu, time) {
   const { x, y } = pu
   const age = time - (pu.revealedAt ?? -9)
+  // o item some sozinho depois de ITEM_LIFE s: nos últimos ITEM_BLINK s ele pisca (mais rápido no fim)
+  const left = pu.revealedAt == null ? Infinity : ITEM_LIFE - age
+  ctx.save()
+  if (left < ITEM_BLINK) ctx.globalAlpha = Math.sin(time * (left < ITEM_BLINK / 2 ? 24 : 12)) > 0 ? 1 : 0.3
   const t = Math.min(1, age / 0.35)
   const pop = t >= 1 ? 1 : 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2) // vai até ~1.1 e volta
   const lift = Math.sin(time * 4 + x) * 0.04
@@ -866,6 +870,7 @@ function drawPowerup(ctx, pu, time) {
     ctx.lineTo(sx, sy + r); ctx.lineTo(sx - r * 0.3, sy + r * 0.3); ctx.lineTo(sx - r, sy); ctx.lineTo(sx - r * 0.3, sy - r * 0.3)
     ctx.closePath(); ctx.fill()
   }
+  ctx.restore()
 }
 
 function drawPowerupBox(ctx, pu, time, lift) {

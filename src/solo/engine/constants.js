@@ -38,5 +38,10 @@ export const FUSE_TIME = 2.4
 export const FLAME_TIME = 0.55
 export const BURN_TIME = 0.45      // quanto tempo o bloco leva "queimando" antes de sumir
 
+// Itens (power-ups) no chão: o fogo de uma bomba queima o item, e ele some sozinho se ninguém pegar (segundos)
+export const ITEM_LIFE = 20        // quanto tempo o item fica no chão antes de sumir (pisca nos últimos ITEM_BLINK)
+export const ITEM_BLINK = 4        // quanto tempo antes de sumir o item começa a piscar
+export const ITEM_GRACE = 0.7      // logo que o item aparece (o bloco acabou de queimar), o fogo que ainda está aceso ali não conta
+
 // Passo fixo da simulação (60 vezes por segundo, igual em qualquer computador)
 export const STEP = 1 / 60

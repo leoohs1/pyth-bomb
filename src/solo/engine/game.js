@@ -9,7 +9,7 @@ import {
   PLAYER_SPEED, START_BOMBS, START_RANGE, START_LIVES,
   SPEED_STEP, MAX_SPEED, MAX_BOMBS, MAX_RANGE,
   SHIELD_INVULN, DETONATOR_FUSE, KICK_SPEED,
-  FUSE_TIME, FLAME_TIME, BURN_TIME,
+  FUSE_TIME, FLAME_TIME, BURN_TIME, ITEM_LIFE, ITEM_GRACE,
 } from './constants.js'
 import { makeLevel, makeArena, tileAt, setTile } from './level.js'
 import { LEVELS } from './levels.js'
@@ -711,6 +711,19 @@ export function update(s, controls, dt) {
     s.events.push({ type: 'enemyHit', x: e.x, y: e.y, killed: e.hp <= 0 })
     if (e.hp <= 0) e.alive = false
     else { e.hurtT = 1; e.angry = true } // pisca um segundo sem levar dano e fica bravo
+  }
+
+  // --- itens no chão: o fogo de uma bomba queima o item, e ele some sozinho se ninguém pegar em ITEM_LIFE segundos
+  // (some = fica "taken", então ninguém mais pega e a casa libera pra um item novo do chefe)
+  for (const pu of s.powerups) {
+    if (!pu.revealed || pu.taken) continue
+    if (pu.revealedAt == null) pu.revealedAt = s.time
+    const age = s.time - pu.revealedAt
+    const burned = age > ITEM_GRACE && flameAt(s, pu.x, pu.y)
+    if (burned || age >= ITEM_LIFE) {
+      pu.taken = true
+      s.events.push({ type: 'powerupGone', x: pu.x, y: pu.y, kind: pu.kind, burned })
+    }
   }
 
   if (p.alive) {
