@@ -11,7 +11,7 @@ try { recapUrl = new URLSearchParams(window.location.search).get('recap') === '1
 
 // Guess the Person (foto pixelada que clareia, digitar o nome): só aparece com ?person=1 no endereço, até o SQL
 // supabase/person/W01 estar rodado, as fotos subidas e o modo liberado. Pra abrir pra todo mundo: PERSON_OPEN = true.
-const PERSON_OPEN = false
+const PERSON_OPEN = true
 let personUrl = false
 try { personUrl = new URLSearchParams(window.location.search).get('person') === '1' } catch { /* tudo bem */ }
 
