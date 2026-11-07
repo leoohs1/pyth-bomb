@@ -17,8 +17,23 @@ const CHARACTERS = {
     noFlip: true,
   },
   nysa: { idle: '/solo/nysa.webp', walk: { down: ['/solo/nysa-walk1.webp', '/solo/nysa-walk2.webp'] } },
+  // Derrpu (xerife): só existe em pixel. Os 9 quadros (parado + 2 passos x 4 direções, a esquerda é a direita espelhada)
+  // vêm de PIXEL_FILES; os caminhos pintados abaixo não existem (no estilo pintado cai no quadradinho provisório).
+  derrpu: {
+    idle: '/solo/derrpu.webp',
+    walk: {
+      down: ['/solo/derrpu-down1.webp', '/solo/derrpu-down2.webp'],
+      right: ['/solo/derrpu-right1.webp', '/solo/derrpu-right2.webp'],
+      left: ['/solo/derrpu-left1.webp', '/solo/derrpu-left2.webp'],
+      up: ['/solo/derrpu-up1.webp', '/solo/derrpu-up2.webp'],
+    },
+    noFlip: true, // a esquerda tem arte própria (espelhada na hora de montar), então o jogo não gira a imagem
+  },
 }
-const PLAYER = 'pirb' // quem o jogador controla (a Nysa ficou guardada pra depois)
+// quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu usa o Derrpu (ainda não existe seletor de personagem)
+const PLAYER = (() => {
+  try { return new URLSearchParams(window.location.search).get('hero') === 'derrpu' ? 'derrpu' : 'pirb' } catch { return 'pirb' }
+})()
 
 // Inimigos com arte (uma imagem de frente; o jogo faz a marchinha e espelha pro lado).
 // Tipo sem imagem aqui continua com o desenho provisório.
@@ -89,16 +104,19 @@ export function setStyle(style) {
 }
 
 // versões pixel (mesmos nomes de FILES). Vai crescendo conforme as artes chegam.
+const HERO_PIXEL = (name) => ({
+  player: `/solo/pixel/${name}.png`,
+  walk_down_1: `/solo/pixel/${name}-down1.png`,
+  walk_down_2: `/solo/pixel/${name}-down2.png`,
+  walk_right_1: `/solo/pixel/${name}-right1.png`,
+  walk_right_2: `/solo/pixel/${name}-right2.png`,
+  walk_left_1: `/solo/pixel/${name}-left1.png`,
+  walk_left_2: `/solo/pixel/${name}-left2.png`,
+  walk_up_1: `/solo/pixel/${name}-up1.png`,
+  walk_up_2: `/solo/pixel/${name}-up2.png`,
+})
 const PIXEL_FILES = {
-  player: '/solo/pixel/pirb.png',
-  walk_down_1: '/solo/pixel/pirb-down1.png',
-  walk_down_2: '/solo/pixel/pirb-down2.png',
-  walk_right_1: '/solo/pixel/pirb-right1.png',
-  walk_right_2: '/solo/pixel/pirb-right2.png',
-  walk_left_1: '/solo/pixel/pirb-left1.png',
-  walk_left_2: '/solo/pixel/pirb-left2.png',
-  walk_up_1: '/solo/pixel/pirb-up1.png',
-  walk_up_2: '/solo/pixel/pirb-up2.png',
+  ...HERO_PIXEL(PLAYER), // os 9 quadros do personagem escolhido (Pirb por padrão)
   bomb: '/solo/pixel/bomb.png',
   pu_bomb: '/solo/pixel/pu-bomb.png',
   pu_fire: '/solo/pixel/pu-fire.png',
