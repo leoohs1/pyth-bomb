@@ -128,7 +128,7 @@
   padding: 0.8em 1.2em 0.8em 1.62em;
   box-shadow: inset 0 0 0 4px rgba(233, 206, 130, 0.35), 0 10px 28px rgba(40, 20, 90, 0.18);
 }
-/* "Play now": selo dourado SEM link por enquanto (jogo ainda fechado). Pra abrir: trocar o <div> por <a href="/play"> no Landing.jsx */
+/* "Play now": selo dourado. Na página inicial é um link pro /play (classe pb-play-link); no portão "Coming soon" é só o selo */
 .pb-play {
   display: inline-block;
   color: #2c1a06;
@@ -136,6 +136,22 @@
   border-color: #a9771a;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 8px 22px rgba(90, 55, 5, 0.35);
 }
+
+/* o selo como link: sem sublinhado, mão do mouse, sobe um pouco e brilha ao passar o mouse ou focar com o teclado */
+.pb-play-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+.pb-play-link:hover,
+.pb-play-link:focus-visible {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 12px 28px rgba(90, 55, 5, 0.45);
+  outline: none;
+}
+.pb-play-link:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .pb-play-link { transition: none; } }
 
 .pb-tag {
   display: inline-block;

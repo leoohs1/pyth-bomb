@@ -19,7 +19,9 @@ function Laurel({ flip = false }) {
   )
 }
 
-export default function Landing({ label = 'Play now' }) {
+// href: se vier, o selo dourado vira um link (a página inicial manda pro /play). Sem href (o portão "Coming soon"
+// do PlayGate), continua um selo sem link.
+export default function Landing({ label = 'Play now', href = null }) {
   return (
     <main className="pb-stage">
       <SoundToggle className="sound-fixed" />
@@ -39,7 +41,9 @@ export default function Landing({ label = 'Play now' }) {
         </h1>
         <div className="pb-laurel">
           <Laurel />
-          <div className="pb-soon pb-play">{label}</div>
+          {href
+            ? <a className="pb-soon pb-play pb-play-link" href={href}>{label}</a>
+            : <div className="pb-soon pb-play">{label}</div>}
           <Laurel flip />
         </div>
         <p className="pb-tag">Answer fast. Pass the bomb. Don't get rugged.</p>

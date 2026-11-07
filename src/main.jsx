@@ -32,7 +32,7 @@ const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/person-preview') ? <PersonPreview /> // prévia do visual do Guess the Person (dados de mentira)
   : path.startsWith('/person') ? <PlayGate><PersonApp /></PlayGate> // Guess the Person (fechado como o /play)
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
-  : <Landing />
+  : <Landing href="/play" /> // página inicial: o "Play now" leva pro /play
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>{page}</StrictMode>,
