@@ -397,7 +397,7 @@ export default function App() {
   }
 
   // Classic e Recap Month = a mesma arena, mas a sala "choice" responde por alternativas (supabase/038_recap_month.sql).
-  // quiz_pool 'classic' = o Classic de hoje, trivia geral (10 s, 2 vidas); qualquer outro valor (ou vazio) = Recap Month (15 s, 3 vidas).
+  // quiz_pool 'classic' = o Classic de hoje, trivia geral (10 s, 3 vidas); qualquer outro valor (ou vazio) = Recap Month (15 s, 3 vidas).
   // Sala sem "choice" = sala antiga do Classic de digitar (ainda abre, mas não nasce mais nenhuma).
   const choiceRoom = room.quiz_mode === 'choice'
   const abcdRoom = choiceRoom && room.quiz_pool === 'classic'

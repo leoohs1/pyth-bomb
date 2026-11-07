@@ -1,9 +1,10 @@
 -- PYTH BOMB: 3 vidas no PYTH RECAP MONTH (step 40)
 -- Rode no SQL Editor do Supabase, DEPOIS do 038, de preferência ENTRE partidas. Pode rodar mais de uma vez.
 --
--- O Classic de digitar continua com 2 vidas (nada muda pra ele). Só as salas "choice" (Recap Month) começam com 3.
+-- Salas "choice" (alternativas: o Classic de hoje e o Recap Month) começam com 3 vidas. Sala antiga do Classic de digitar
+-- (sem "choice") continua com 2, nada muda pra ela. (Em 2026-11-07 o Classic A/B/C/D passou de 2 para 3 vidas.)
 -- Como: a start_game de sempre é só RENOMEADA para start_game_typed e continua fazendo tudo igual; a "start_game" nova
--- chama ela e, se a sala for do Recap, põe 3 vidas em todo mundo. O "Play again" também passa por aqui, então recomeça com 3.
+-- chama ela e, se a sala for "choice", põe 3 vidas em todo mundo. O "Play again" também passa por aqui, então recomeça com 3.
 -- Se algo der errado: rode 040b_recap_three_lives_DESFAZER.sql e a start_game original volta.
 
 -- (a coluna do "baralho" da sala; o 038 também cria. Aqui só por segurança: a ordem em que você roda os arquivos não importa)
@@ -25,13 +26,12 @@ create or replace function public.start_game(p_room_id uuid)
 as $function$
 declare
   v_mode text;
-  v_pool text;
 begin
   -- tudo que o jogo já fazia (confere o dono, zera tudo, sorteia a primeira pergunta...)
   perform public.start_game_typed(p_room_id);
 
-  select quiz_mode, coalesce(quiz_pool, 'recap') into v_mode, v_pool from rooms where id = p_room_id;
-  if v_mode = 'choice' and v_pool = 'recap' then   -- só o Recap tem 3 vidas; o Classic A/B/C/D fica com as 2 de sempre
+  select quiz_mode into v_mode from rooms where id = p_room_id;
+  if v_mode = 'choice' then   -- Classic (A/B/C/D) e Recap Month: 3 vidas
     update players set lives = 3 where room_id = p_room_id;
   end if;
 end;

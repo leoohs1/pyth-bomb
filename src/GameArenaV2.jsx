@@ -348,9 +348,9 @@ export default function GameArenaV2({
   const inGame = phase === 'playing'
   const compact = useCompact()
   const choiceMode = room?.quiz_mode === 'choice'
-  const abcdPool = choiceMode && room?.quiz_pool === 'classic'   // Classic A/B/C/D (supabase/043): 10 s e 2 vidas
+  const abcdPool = choiceMode && room?.quiz_pool === 'classic'   // Classic A/B/C/D (supabase/043): 10 s e 3 vidas
   const questionTotal = abcdPool ? ABCD_MS : choiceMode ? CHOICE_MS : QUESTION_MS
-  const livesMax = choiceMode && !abcdPool ? 3 : 2   // Recap Month começa com 3 vidas (supabase/040_recap_three_lives.sql); Classic e Classic A/B/C/D, 2
+  const livesMax = choiceMode ? 3 : 2   // salas de alternativas (Classic e Recap Month) começam com 3 vidas (supabase/040_recap_three_lives.sql); sala antiga de digitar, 2
   const pct = Math.max(0, Math.min(100, (questionMs / questionTotal) * 100))
   const secs = Math.ceil(questionMs / 1000)
   const urgent = questionMs <= 3000

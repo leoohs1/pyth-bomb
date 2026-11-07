@@ -44,7 +44,7 @@ export default function GameArenaV2Harness() {
 
   const players = ALL_MOCK_PLAYERS.slice(0, count).map((p, i) => ({ ...p, alive: !outIds.has(p.id), lives: livesMap[p.id] ?? 2, avatar_idx: p.id === MY_ID ? myIdx : i }))
   // ?choice=1 -> pré-visualiza o Pyth Recap Month (alternativas A/B/C/D + nota de recap)
-  // ?choice=1&pool=classic -> pré-visualiza o Classic A/B/C/D (trivia geral: 10 s, 2 vidas)
+  // ?choice=1&pool=classic -> pré-visualiza o Classic A/B/C/D (trivia geral: 10 s, 3 vidas)
   const sp = new URLSearchParams(window.location.search)
   const choice = sp.get('choice') === '1'
   const abcd = choice && sp.get('pool') === 'classic'
