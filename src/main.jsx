@@ -13,6 +13,8 @@ import PriceApp from './price/PriceApp.jsx'
 import PricePreview from './price/PricePreview.jsx'
 import SongApp from './song/SongApp.jsx'
 import SongPreview from './song/SongPreview.jsx'
+import PersonApp from './person/PersonApp.jsx'
+import PersonPreview from './person/PersonPreview.jsx'
 
 const path = window.location.pathname
 // rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
@@ -27,6 +29,8 @@ const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/price') ? <PlayGate><PriceApp /></PlayGate> // Guess the Price (fechado como o /play)
   : path.startsWith('/song-preview') ? <SongPreview /> // prévia do visual do Guess the Song (dados de mentira)
   : path.startsWith('/song') ? <PlayGate><SongApp /></PlayGate> // Guess the Song (fechado como o /play)
+  : path.startsWith('/person-preview') ? <PersonPreview /> // prévia do visual do Guess the Person (dados de mentira)
+  : path.startsWith('/person') ? <PlayGate><PersonApp /></PlayGate> // Guess the Person (fechado como o /play)
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing />
 

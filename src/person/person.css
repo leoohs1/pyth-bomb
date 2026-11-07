@@ -1,0 +1,114 @@
+/* Guess the Person: o cartão do meio da arena (a arena é a MESMA do Classic, sem arte nova).
+   Tamanhos em cqw (acompanham a arena), com mínimos em px. */
+
+.ga-card.ga-panel-person {
+  top: 10%;
+  width: 38cqw;
+  max-height: 86%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.1cqw 1.8cqw 1.2cqw;
+}
+
+/* prepara: 5, 4, 3 */
+.pe-ready { margin: 0.4cqw 0 0; font: 800 max(16px, 1.6cqw)/1.2 Cinzel, Georgia, serif; text-transform: uppercase; letter-spacing: 0.1em; color: #6a3fc4; }
+.pe-count {
+  margin: 0.2cqw 0;
+  font: 900 max(48px, 6cqw)/1 Cinzel, Georgia, serif;
+  color: var(--ga-ink, #2e1f63);
+  animation: pe-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.pe-hint { margin: 0.3cqw 0 0; font: 600 max(12px, 1.1cqw)/1.35 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.75); }
+@keyframes pe-pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* a foto: quadrada, moldura dourada, pixels bem duros (a página não suaviza) */
+.pe-photo {
+  position: relative;
+  width: 17cqw;
+  aspect-ratio: 1;
+  margin: 0.5cqw auto 0.6cqw;
+  overflow: hidden;
+  background: linear-gradient(160deg, #d9d2ee, #b9aedc);
+  border: 3px solid var(--ga-gold, #c9a24a);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(30, 15, 70, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+.pe-photo canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.pe-photo.is-sharp canvas { image-rendering: auto; }
+.pe-photo.is-small { width: 11cqw; margin-bottom: 0.3cqw; }
+.pe-photo-q { position: absolute; inset: 0; display: grid; place-items: center; font: 900 max(40px, 5cqw)/1 Cinzel, Georgia, serif; color: rgba(46, 31, 99, 0.35); }
+
+.pe-time { margin-bottom: 0.6cqw; }
+
+.pe-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.6cqw; }
+.pe-input {
+  min-width: 0;
+  height: max(42px, 3.6cqw);
+  box-sizing: border-box;
+  padding: 0 0.9cqw;
+  font: 700 max(16px, 1.5cqw)/1 Inter, system-ui, sans-serif;
+  color: #f6eeff;
+  background: linear-gradient(180deg, #4e4560, #3b3350);
+  border: 2px solid var(--ga-gold, #c9a24a);
+  border-radius: 10px;
+  box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45);
+  outline: none;
+}
+.pe-input::placeholder { color: rgba(246, 238, 255, 0.5); font-weight: 600; }
+.pe-input:focus { border-color: #ffe08a; box-shadow: inset 0 3px 8px rgba(10, 4, 30, 0.45), 0 0 0 3px rgba(169, 139, 255, 0.55); }
+.pe-form .ga-send { height: max(42px, 3.6cqw); }
+.pe-form .ga-send:disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.4); }
+.pe-done { margin: 0.4cqw 0; font: 800 max(14px, 1.3cqw)/1.3 Inter, system-ui, sans-serif; color: #2f9a5a; }
+
+.pe-feedback { min-height: 1.4em; margin: 0.35cqw 0 0; font: 800 max(12px, 1.1cqw)/1.3 Inter, system-ui, sans-serif; }
+.pe-feedback.is-hit { color: #2f9a5a; }
+.pe-feedback.is-close { color: #c27a00; }
+.pe-feedback.is-wrong { color: #b3143f; }
+
+.pe-divider { height: 2px; margin: 0.6cqw auto 0.2cqw; width: 75%; border: 0; background: linear-gradient(90deg, transparent, rgba(106, 63, 196, 0.45), transparent); }
+
+/* ✓ de cada um na leaderboard da rodada: apagado até acertar */
+.pe-got { white-space: nowrap; font-weight: 900; opacity: 0.2; filter: grayscale(1); }
+.pe-got.is-got { opacity: 1; filter: none; color: #2f9a5a; }
+
+/* revelação */
+.pe-was { margin: 0.2cqw 0 0; font: 700 max(11px, 1cqw)/1.2 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(46, 31, 99, 0.6); }
+.pe-name { margin: 0 0 0.5cqw; overflow-wrap: anywhere; font: 800 max(20px, 2.2cqw)/1.15 Cinzel, Georgia, serif; color: var(--ga-ink, #2e1f63); animation: pe-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.pe-list { list-style: none; margin: 0.3cqw 0 0; padding: 0; text-align: left; }
+.pe-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) auto;
+  gap: 0.6cqw;
+  align-items: center;
+  padding: 0.25cqw 0.6cqw;
+  font: 600 max(11px, 1cqw)/1.35 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  border-radius: 8px;
+}
+.pe-row:nth-child(odd) { background: rgba(106, 63, 196, 0.07); }
+.pe-row.is-me { background: rgba(106, 63, 196, 0.2); }
+.pe-row .is-miss { opacity: 0.4; }
+.pe-nick { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-first { color: #c27a00; font-size: 0.85em; }
+.pe-pts { font-weight: 800; color: #2f7a4a; text-align: right; }
+.pe-next { margin: 0.5cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.6); }
+
+/* celular em pé (cartão mb-panel: as medidas em cqw ficam minúsculas lá) */
+.mb-panel-person .pe-photo { width: min(56vw, 34dvh); margin: 6px auto 8px; }
+.mb-panel-person .pe-photo.is-small { width: min(34vw, 20dvh); }
+.mb-panel-person .pe-divider { margin: 8px auto 2px; }
+.mb-panel-person .pe-input, .mb-panel-person .pe-form .ga-send { height: 50px; }
+.mb-panel-person .pe-input { font-size: 18px; }
+.mb-panel-person .pe-name { font-size: 24px; }
+.mb-panel-person .pe-row { font-size: 13px; }
+.mb-panel-person .pe-count { font-size: 64px; }
+
+/* celular deitado (tela baixa) */
+@media (max-height: 520px) {
+  .ga-card.ga-panel-person { top: 6%; width: 44%; padding: 6px 10px 8px; }
+  .pe-photo { width: 24vh; margin: 2px auto 4px; }
+  .pe-photo.is-small { width: 16vh; }
+  .pe-count { font-size: 36px; }
+  .pe-input, .pe-form .ga-send { height: 32px; font-size: 14px; }
+  .pe-row { font-size: 10px; }
+}

@@ -321,6 +321,9 @@ export default function App() {
       return setError('Could not reach the game server. Check your connection and try again.')
     }
     if (!data) return setError('Room not found. Check the code (' + code + ').')
+    // código de uma sala de outro modo (Song, Price, Person): manda pro endereço certo em vez de abrir uma tela em branco
+    const otherPath = { price: '/price', song: '/song', person: '/person' }[data.mode]
+    if (otherPath) { window.location.href = otherPath + '?room=' + code; return }
     joinRoom(data)
   }
 

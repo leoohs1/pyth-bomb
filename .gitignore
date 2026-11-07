@@ -32,3 +32,7 @@ musicas-prontas/
 
 # fotos das pessoas da comunidade (viram desenho no ChatGPT; nunca vão pro GitHub)
 para-o-chatgpt/10-elenco-comunidade/fotos/
+
+# Guess the Person: imagens das pessoas NUNCA vao pro GitHub (ficam no Supabase Storage)
+pessoas/
+pessoas-prontas/

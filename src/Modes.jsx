@@ -9,6 +9,12 @@ const RECAP_OPEN = false
 let recapUrl = false
 try { recapUrl = new URLSearchParams(window.location.search).get('recap') === '1' } catch { /* tudo bem */ }
 
+// Guess the Person (foto pixelada que clareia, digitar o nome): só aparece com ?person=1 no endereço, até o SQL
+// supabase/person/W01 estar rodado, as fotos subidas e o modo liberado. Pra abrir pra todo mundo: PERSON_OPEN = true.
+const PERSON_OPEN = false
+let personUrl = false
+try { personUrl = new URLSearchParams(window.location.search).get('person') === '1' } catch { /* tudo bem */ }
+
 // icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
@@ -36,6 +42,16 @@ const MODES = [
     sub: 'Hear a clip, name the artist and the song. Fastest ears win.',
     locked: false,
     href: '/song',
+  },
+  {
+    id: 'person',
+    icon: '📸',
+    img: '/modes/person.webp',
+    title: 'Guess the Person',
+    sub: 'A pixelated photo gets sharper. Name the person first.',
+    locked: false,
+    href: '/person',
+    hidden: !(PERSON_OPEN || personUrl),
   },
   {
     id: 'new',
