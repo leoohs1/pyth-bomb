@@ -3,13 +3,16 @@ import { useEffect, useRef, useState } from 'react'
 // A foto do Guess the Person: começa MUITO pixelada e vai ficando nítida com o tempo.
 // progress vai de 0 (começo da rodada) a 1 (fim). Cada degrau é "quantos quadradões cabem na largura";
 // 0 = foto nítida. Só visual: quem decide o acerto e os pontos é o servidor (supabase/person/W01).
+// (2026-11-08: rodada de 25 s, a pedido de quem jogou: a foto já dá pra reconhecer ANTES da metade do tempo,
+//  e fica nítida nos últimos 5 s. Em 25 s: 0-3 s = 8, 3-7 s = 14, 7-11 s = 24, 11-15 s = 40, 15-20 s = 72, 20-25 s = nítida.
+//  Os números abaixo são frações do tempo, então valem para qualquer duração de rodada.)
 const STEPS = [
-  [0.85, 0],   // últimos 15%: nítida
-  [0.7, 72],
-  [0.55, 40],
-  [0.4, 24],
-  [0.25, 14],
-  [0, 8],      // primeiros 25%: bem borrada (8 x 8)
+  [0.8, 0],    // últimos 20% (5 s de 25): nítida
+  [0.6, 72],
+  [0.44, 40],
+  [0.28, 24],
+  [0.12, 14],
+  [0, 8],      // primeiros 12% (3 s de 25): bem borrada (8 x 8)
 ]
 export function blocksFor(progress) {
   for (const [from, n] of STEPS) if (progress >= from) return n

@@ -39,7 +39,7 @@ export default function PersonPreview() {
   const room = {
     id: 'r', code: 'PYTHM4', status: phase === 'finished' ? 'finished' : phase === 'lobby' ? 'lobby' : 'playing',
     mode: 'person', round_number: 3, person_total: 10, person_phase: phase, host_user_id: 'u0', winner_id: 'p2',
-    person_round: { file: 'x.jpg', guess_at: new Date().toISOString(), guess_secs: 20 },
+    person_round: { file: 'x.jpg', guess_at: new Date().toISOString(), guess_secs: 25 },
     person_reveal: phase === 'reveal' ? REVEAL : null,
   }
   const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {} }
@@ -61,7 +61,7 @@ export default function PersonPreview() {
     view = <GameArenaV2 {...common} phase="person" chip={chip} panel={<RevealPanel room={room} players={players} me={players[0]} msLeft={6000} photoUrl={PHOTO} />} />
   } else {
     view = <GameArenaV2 {...common} phase="person" chip={chip}
-      panel={<GuessPanel room={room} players={players} me={players[0]} msLeft={Math.round((1 - p) * 20000)} total={20} photoUrl={PHOTO} progress={p}
+      panel={<GuessPanel room={room} players={players} me={players[0]} msLeft={Math.round((1 - p) * 25000)} total={25} photoUrl={PHOTO} progress={p}
         text={text} setText={setText} onSubmit={() => {}} feedback={{ kind: 'close', text: 'So close! Check the spelling or the full name' }} />} />
   }
 

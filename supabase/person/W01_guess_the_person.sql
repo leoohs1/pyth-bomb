@@ -3,7 +3,8 @@
 --
 -- How a match works:
 --   * 10 rounds. Each round shows a photo of a person, starting very pixelated and getting sharper
---     as the seconds pass. Everybody sees the same photo at the same moment, for 20 seconds.
+--     as the seconds pass. Everybody sees the same photo at the same moment, for 25 seconds
+--     (20 until 2026-11-08, see W03).
 --   * Players type the person's name (as many tries as they want). Only the name counts; spelling
 --     must be right (capital letters, accents and punctuation do not matter). The other names a
 --     person answers to (nickname, first name...) are saved with the person.
@@ -161,7 +162,7 @@ begin
   set round_number = round_number + 1,
       person_phase = 'ready',
       person_reveal = null,
-      person_round = jsonb_build_object('file', v_p.file, 'guess_at', now() + v_ready, 'guess_secs', 20),
+      person_round = jsonb_build_object('file', v_p.file, 'guess_at', now() + v_ready, 'guess_secs', 25),
       round_started_at = now() + v_ready,
       question_expires_at = now() + v_ready
   where id = p_room_id;
