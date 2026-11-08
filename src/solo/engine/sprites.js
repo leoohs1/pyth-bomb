@@ -29,10 +29,36 @@ const CHARACTERS = {
     },
     noFlip: true, // a esquerda tem arte própria (espelhada na hora de montar), então o jogo não gira a imagem
   },
+  // Boryso (a estátua corredora): mesma ideia do Derrpu, só em pixel, esquerda = direita espelhada.
+  boryso: {
+    idle: '/solo/boryso.webp',
+    walk: {
+      down: ['/solo/boryso-down1.webp', '/solo/boryso-down2.webp'],
+      right: ['/solo/boryso-right1.webp', '/solo/boryso-right2.webp'],
+      left: ['/solo/boryso-left1.webp', '/solo/boryso-left2.webp'],
+      up: ['/solo/boryso-up1.webp', '/solo/boryso-up2.webp'],
+    },
+    noFlip: true,
+  },
+  // Plancky (versão humana): só em pixel, esquerda = direita espelhada.
+  plancky: {
+    idle: '/solo/plancky.webp',
+    walk: {
+      down: ['/solo/plancky-down1.webp', '/solo/plancky-down2.webp'],
+      right: ['/solo/plancky-right1.webp', '/solo/plancky-right2.webp'],
+      left: ['/solo/plancky-left1.webp', '/solo/plancky-left2.webp'],
+      up: ['/solo/plancky-up1.webp', '/solo/plancky-up2.webp'],
+    },
+    noFlip: true,
+  },
 }
-// quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu usa o Derrpu (ainda não existe seletor de personagem)
+// quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu, ?hero=boryso ou ?hero=plancky usa esse personagem (ainda não existe seletor de personagem)
+const TEST_HEROES = ['derrpu', 'boryso', 'plancky']
 const PLAYER = (() => {
-  try { return new URLSearchParams(window.location.search).get('hero') === 'derrpu' ? 'derrpu' : 'pirb' } catch { return 'pirb' }
+  try {
+    const q = new URLSearchParams(window.location.search).get('hero')
+    return TEST_HEROES.includes(q) ? q : 'pirb'
+  } catch { return 'pirb' }
 })()
 
 // Inimigos com arte (uma imagem de frente; o jogo faz a marchinha e espelha pro lado).
