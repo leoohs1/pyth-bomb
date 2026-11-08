@@ -320,6 +320,8 @@ export default function GameArenaV2({
   room, players, alive, danger, questionMs,
   answer, setAnswer, answerRef, onSubmit, error,
   myPlayerId, povFlash, onPovFlashDone,
+  // limite de jogadores mostrado no topo (o poker usa 9; os outros modos, o número de assentos)
+  maxPlayers = null,
   // explosão ("fulano got rugged!") e aviso de resposta errada, vindos do App
   flash = null, feedback = null,
   // novo (spec da Halls, só a parte visual por enquanto): quantos erros o
@@ -527,7 +529,7 @@ export default function GameArenaV2({
         <div className="ga-shade" />
 
         <div className="ga-hud">
-          <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/{ARENA2_SEATS.length} players</span>
+          <span className="ga-chip">👥 {inGame ? (alive?.length ?? 0) : players.length}/{maxPlayers ?? ARENA2_SEATS.length} players</span>
           <div className="ga-hud-right">
             <LeaveButton onLeave={onLeave} inGame={inGame} />
             <SoundToggle />

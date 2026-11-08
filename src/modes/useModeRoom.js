@@ -243,7 +243,7 @@ export default function useModeRoom({ mode, tickRpc }) {
     if (!data) return setError('Room not found. Check the code (' + code + ').')
     // código de uma sala de outro modo: manda pro endereço certo
     if (data.mode !== mode) {
-      const paths = { classic: '/play', price: '/price', song: '/song', person: '/person' }
+      const paths = { classic: '/play', price: '/price', song: '/song', person: '/person', poker: '/poker' }
       window.location.href = (paths[data.mode] ?? '/play') + '?room=' + code
       return
     }

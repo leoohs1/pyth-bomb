@@ -15,6 +15,12 @@ const PERSON_OPEN = true
 let personUrl = false
 try { personUrl = new URLSearchParams(window.location.search).get('person') === '1' } catch { /* tudo bem */ }
 
+// Pyth Poker (Texas Hold'em, fichas de brincadeira): só aparece com ?poker=1 no endereço, até o SQL
+// supabase/poker/K01 estar rodado e o modo testado. Pra abrir pra todo mundo: POKER_OPEN = true.
+const POKER_OPEN = false
+let pokerUrl = false
+try { pokerUrl = new URLSearchParams(window.location.search).get('poker') === '1' } catch { /* tudo bem */ }
+
 // icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
@@ -52,6 +58,16 @@ const MODES = [
     locked: false,
     href: '/person',
     hidden: !(PERSON_OPEN || personUrl),
+  },
+  {
+    id: 'poker',
+    icon: '🃏',
+    img: '/modes/poker.webp',
+    title: 'Pyth Poker',
+    sub: "Texas Hold'em tournament with play chips. Last one with chips wins.",
+    locked: false,
+    href: '/poker',
+    hidden: !(POKER_OPEN || pokerUrl),
   },
   {
     id: 'new',
