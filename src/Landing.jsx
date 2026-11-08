@@ -46,7 +46,7 @@ export default function Landing({ label = 'Play now', href = null }) {
             : <div className="pb-soon pb-play">{label}</div>}
           <Laurel flip />
         </div>
-        <p className="pb-tag">Answer fast. Pass the bomb. Don't get rugged.</p>
+        <p className="pb-tag">The Pyth community's game portal.</p>
       </header>
 
       <div className="pb-cast">
