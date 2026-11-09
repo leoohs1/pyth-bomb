@@ -8,7 +8,8 @@
 //   seguintes formam a de 2, e a final de 2 espera essas duas);
 // - quem perde assiste; quem cai da internet fica parado e é eliminado se não voltar em 15 s;
 // - bot nunca é campeão: se um bot ganhar a sala, passa o último humano vivo (bots de verdade = fase 2).
-import { randomInt } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
+import { newSecret, commitOf, seedOf, seedNumber, hex } from './entropy.js'
 import { createMatch, step, eliminate } from '../src/pvp/engine/match.js'
 import { createBot } from '../src/pvp/engine/bot.js'
 import { pickRoomMap, MAPS } from '../src/pvp/engine/maps.js'
@@ -21,9 +22,12 @@ export const DRAW_FIRST = 6 // segundos mostrando o sorteio antes da 1ª rodada
 export const DRAW_NEXT = 4  // segundos mostrando "sua sala" antes das salas seguintes
 const HEROES = ['pirb', 'derrpu', 'boryso', 'plancky']
 
-// A SORTE do torneio sai daqui (salas, cantos, mapa e a semente de cada sala).
-// Fase 2: trocar por Pyth Entropy misturado com um segredo do servidor (commit-reveal).
-export const drawSeed = () => randomInt(0, 2 ** 32)
+export const DRAW_TIMEOUT = 25 // segundos esperando o Pyth Entropy; depois disso vale o plano B (sorteio do servidor)
+
+// A SORTE do torneio (salas, cantos, mapa, baús, itens da final, desempates) sai de UMA semente:
+//   semente = sha256(segredo do servidor || número do Pyth Entropy)
+// A impressão digital do segredo (sha256) vai pro contrato junto com o pedido, ANTES de o número sair; o segredo é
+// revelado no fim do torneio. Assim ninguém prevê a sorte e o servidor não consegue escolher (ver server/entropy.js).
 
 export const cleanName = (s) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16)
 export const cleanHero = (h) => (HEROES.includes(h) ? h : 'pirb')
@@ -125,31 +129,57 @@ export class Tournament {
     if (next) this.hostId = next.id
   }
 
-  start(byId, now = 0) {
+  start(byId, now = 0, entropy = null) {
     if (byId !== this.hostId) return { ok: false, error: 'Only the host can start' }
     if (this.status !== 'lobby') return { ok: false, error: 'Already started' }
     const ids = [...this.players.values()].filter((p) => p.status === 'lobby' && p.connected).map((p) => p.id)
     if (ids.length < 2) return { ok: false, error: 'You need at least 2 fighters' }
     // quem estava no lobby mas caiu da internet fica de fora
     for (const p of [...this.players.values()]) if (p.status === 'lobby' && !p.connected) this.players.delete(p.id)
+    // sorteio: guarda o segredo, manda a impressão digital pro Pyth Entropy e espera o número (status 'drawing')
+    this.drawIds = ids
+    this.secret = newSecret()
+    this.proof = { via: 'pending', commit: commitOf(this.secret) }
+    this.status = 'drawing'
+    this.drawStartedAt = now
+    this.drawResult = null
+    if (entropy?.state?.enabled) {
+      entropy.draw(this.proof.commit, DRAW_TIMEOUT * 1000)
+        .then((r) => { if (this.status === 'drawing') this.drawResult = { ok: true, ...r } })
+        .catch((e) => { if (this.status === 'drawing') this.drawResult = { ok: false, error: e.message } })
+    } else {
+      this.drawResult = { ok: false, error: 'Entropy is off on this server' }
+    }
+    return { ok: true }
+  }
+
+  // o número chegou (ou o tempo acabou): monta a semente e a 1ª rodada
+  finishDraw(now) {
+    const r = this.drawResult ?? { ok: false, error: 'Entropy did not answer in time' }
+    const random = r.ok ? r.random : hex(randomBytes(32)) // plano B: número do próprio servidor (sem prova pública)
+    this.proof = {
+      via: r.ok ? 'entropy' : 'server', commit: this.proof.commit, random,
+      sequence: r.sequence ?? null, tx: r.tx ?? null, contract: r.contract ?? null,
+      chain: r.chain ?? null, chainName: r.chainName ?? null, explorer: r.explorer ?? null, note: r.ok ? null : r.error,
+    }
+    this.seed = seedOf(this.secret, random)
+    const ids = this.drawIds.filter((id) => this.players.has(id))
     const plan = planRounds(ids.length)
-    this.rounds = plan.map((r) => ({ final: r.final, sizes: [...r.rooms], formed: 0, waiting: [], rooms: [] }))
-    const rng = makeRng(drawSeed())
-    const order = shuffle([...ids], rng)
+    this.rounds = plan.map((p) => ({ final: p.final, sizes: [...p.rooms], formed: 0, waiting: [], rooms: [] }))
+    const order = shuffle([...ids], makeRng(seedNumber(this.seed, 'draw')))
     let at = 0
     for (const size of this.rounds[0].sizes) {
       this.formRoom(0, order.slice(at, at + size), now)
       at += size
     }
     this.status = 'running'
-    return { ok: true }
   }
 
   formRoom(roundIdx, ids, now) {
     const R = this.rounds[roundIdx]
     // opção 'Fill rooms with bots': salas normais vão até 4 com bots (a final fica só com quem ganhou)
     if (this.fillBots && !R.final) { ids = [...ids]; while (ids.length < 4) ids.push(this.makeFillBot(ids)) }
-    const seed = drawSeed()
+    const seed = seedNumber(this.seed, `room:${this.roomSeq + 1}`) // cada sala tem a sua parte da semente do torneio
     const rng = makeRng(seed ^ 0xa5a5a5a5)
     const order = shuffle([...ids], rng) // quem fica em cada canto
     const room = {
@@ -201,6 +231,10 @@ export class Tournament {
 
   // um passinho fixo (STEP) do torneio inteiro. now = relógio do servidor em segundos
   tick(now) {
+    if (this.status === 'drawing') {
+      if (this.drawResult || now - this.drawStartedAt > DRAW_TIMEOUT + 2) this.finishDraw(now)
+      return
+    }
     if (this.status === 'lobby') {
       // quem caiu da internet no lobby e não voltou em 15 s sai da lista
       for (const p of [...this.players.values()]) {
@@ -278,6 +312,8 @@ export class Tournament {
       status: this.status,
       host: this.hostId,
       fill: this.fillBots,
+      // prova do sorteio: o segredo só aparece quando o torneio acaba
+      proof: this.proof ? { ...this.proof, secret: this.status === 'done' ? hex(this.secret) : null } : null,
       champion: this.champion,
       max: MAX_PLAYERS,
       players: [...this.players.values()].map((p) => ({ id: p.id, name: p.name, hero: p.hero, bot: p.bot, on: p.connected, st: p.status, room: p.roomId, rd: p.reached })),

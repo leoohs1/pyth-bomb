@@ -12,6 +12,7 @@ import { WebSocketServer } from 'ws'
 import { Tournament, cleanName, cleanHero } from './tournament.js'
 import { verifyToken, authReady, supabaseConfig } from './auth.js'
 import { startKeepAlive } from './keepalive.js'
+import { createEntropy } from './entropy.js'
 import { matchInit, matchSnap } from '../src/pvp/engine/snapshot.js'
 import { STEP } from '../src/pvp/engine/constants.js'
 
@@ -34,6 +35,7 @@ function originOk(origin) {
 }
 
 const tournaments = new Map() // código -> Tournament
+const entropy = createEntropy() // Pyth Entropy (desligado se não tiver PVP_WALLET_KEY; ver entropy.js)
 const userSocket = new Map()  // id do usuário -> socket (uma conexão por pessoa)
 let now = 0                   // relógio do servidor (segundos de simulação)
 
@@ -104,7 +106,7 @@ async function onMessage(ws, msg) {
     case 'hero': if (t) t.setHero(pv.user, msg.hero); return
     case 'start': {
       if (!t) return
-      const r = t.start(pv.user, now)
+      const r = t.start(pv.user, now, entropy)
       if (!r.ok) fail(ws, r.error)
       return
     }
@@ -127,7 +129,9 @@ async function onMessage(ws, msg) {
 const server = http.createServer((req, res) => {
   // página simples pra saber se o servidor está de pé (o Railway usa pra checar a saúde)
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'access-control-allow-origin': '*' })
-  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected\n`)
+  const e = entropy.state
+  const ent = !e.enabled ? 'off' : e.ready ? `on (${e.chain.name}, contract ${e.contract})` : e.error ? `error: ${e.error}` : 'starting'
+  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent}\n`)
 })
 
 const wss = new WebSocketServer({

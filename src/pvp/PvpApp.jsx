@@ -10,7 +10,7 @@ import { loadNickname, saveNickname } from '../roomStorage'
 import { store } from '../storageMode'
 import { connectPvp } from './net.js'
 import OnlineMatch from './OnlineMatch.jsx'
-import { EntryPanel, LobbyPanel, DrawPanel, WaitPanel, ChampionPanel } from './screens.jsx'
+import { EntryPanel, LobbyPanel, DrawingPanel, DrawPanel, WaitPanel, ChampionPanel } from './screens.jsx'
 import './pvp.css'
 
 const HERO_KEY = 'pvp_hero'
@@ -148,6 +148,9 @@ export default function PvpApp() {
     chip = 'Lobby · Pyth Bomb PVP'
     panel = <LobbyPanel tour={tour} meId={meId} onHero={onHero} onStart={() => { setError(''); send({ t: 'start' }) }}
       onBot={() => send({ t: 'bot' })} onFill={(on) => send({ t: 'fill', on })} testBots={testBots} onLeave={onLeave} error={error} />
+  } else if (tour.status === 'drawing') {
+    chip = 'Drawing · Pyth Bomb PVP'
+    panel = <DrawingPanel tour={tour} />
   } else if (tour.status === 'done') {
     chip = 'Champion · Pyth Bomb PVP'
     confetti = true

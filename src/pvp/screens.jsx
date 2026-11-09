@@ -182,13 +182,43 @@ function RoomCard({ room, players, mine, title }) {
 
 const roomTitle = (round, room) => (round.final ? 'Final' : `Room ${room.index + 1}`)
 
+const short = (h) => (h ? `${h.slice(0, 8)}…${h.slice(-6)}` : '')
+
+// linha da prova do sorteio: Pyth Entropy (com link pra transação) ou o plano B do servidor
+export function ProofLine({ proof }) {
+  if (!proof || proof.via === 'pending') return null
+  if (proof.via !== 'entropy') return <p className="pv-proof">Drawn by the game server (Pyth Entropy was not available this time)</p>
+  return (
+    <p className="pv-proof">
+      🎲 Drawn with <b>Pyth Entropy</b> on {proof.chainName}
+      {proof.tx && <> · <a href={`${proof.explorer}/tx/${proof.tx}`} target="_blank" rel="noreferrer">proof ↗</a></>}
+    </p>
+  )
+}
+
+// esperando o número do Pyth Entropy (logo depois do Start)
+export function DrawingPanel({ tour }) {
+  return (
+    <>
+      <Logo />
+      <p className="ga-mode-name">⚔️ Round 1</p>
+      <div className="pv-drawing" role="status">
+        <span className="pv-dice" aria-hidden="true">🎲</span>
+        <p className="ga-wait">Drawing the rooms with Pyth Entropy<span className="ga-dots" aria-hidden="true" /></p>
+      </div>
+      {tour.proof?.commit && <p className="pv-proof">Server secret locked first · fingerprint <code>{short(tour.proof.commit)}</code></p>}
+    </>
+  )
+}
+
 // ---- sorteio: na 1ª rodada, todas as salas; depois, só a sua sala que acabou de se formar
 export function DrawPanel({ tour, meId, room }) {
   const ri = room.round ?? tour.rounds.findIndex((r) => r.rooms.some((x) => x.id === room.id))
   const round = tour.rounds[ri]
   const rooms = ri === 0 ? round.rooms : [room]
-  const [drawn, setDrawn] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setDrawn(true), 1500); return () => clearTimeout(t) }, [room.id])
+  // 1ª rodada: o suspense já foi na espera do Entropy; salas seguintes ganham um "sorteando" curtinho
+  const [drawn, setDrawn] = useState(ri === 0)
+  useEffect(() => { if (ri === 0) return; const t = setTimeout(() => setDrawn(true), 1200); return () => clearTimeout(t) }, [room.id, ri])
   return (
     <>
       <Logo />
@@ -204,6 +234,7 @@ export function DrawPanel({ tour, meId, room }) {
           <div className={`pv-cards${rooms.length === 1 ? ' is-single' : ''}`}>
             {rooms.map((r) => <RoomCard key={r.id} room={r} players={tour.players} mine={r.ids.includes(meId)} title={roomTitle(round, r)} />)}
           </div>
+          <ProofLine proof={tour.proof} />
           <p className="ga-wait">Starting in {room.startIn ?? 0}<span className="ga-dots" aria-hidden="true" /></p>
         </>
       )}
@@ -278,8 +309,33 @@ export function ChampionPanel({ tour, meId, onNew, onLeave }) {
       </div>
       {mine && <p className="ga-me is-win">🎉 You won the tournament!</p>}
       <p className="ga-hint">{wins > 1 ? `Won ${wins} rooms in a row` : 'Won the only room'} · last one standing in Shark Tank</p>
+      <VerifyBox proof={tour.proof} />
       <button type="button" className="ga-send ga-bigbtn" onClick={onNew}>New tournament</button>
       <button type="button" className="ga-leave" onClick={onLeave}>Leave</button>
     </>
+  )
+}
+
+// "Verify": tudo pra qualquer um conferir o sorteio depois do torneio
+function VerifyBox({ proof }) {
+  if (!proof || proof.via === 'pending') return null
+  return (
+    <details className="pv-verify">
+      <summary>{proof.via === 'entropy' ? '🔍 Verify the draw (Pyth Entropy)' : '🔍 About this draw'}</summary>
+      {proof.via === 'entropy' ? (
+        <>
+          <p>1. Before the draw, the server locked the <b>fingerprint</b> of a secret on {proof.chainName}:</p>
+          <code>{proof.commit}</code>
+          <p>2. <b>Pyth Entropy</b> returned this random number{proof.tx && <> (<a href={`${proof.explorer}/tx/${proof.tx}`} target="_blank" rel="noreferrer">transaction ↗</a>)</>}:</p>
+          <code>{proof.random}</code>
+          <p>3. Now the server reveals its <b>secret</b>:</p>
+          <code>{proof.secret ?? 'revealed when the tournament ends'}</code>
+          <p className="pv-verify-how">Check: sha256(secret) must equal the fingerprint. The tournament seed is sha256(secret + Entropy number), and it decided the rooms, corners, maps, what each chest hides, the final's items and any tie. Nobody could predict it (the secret was hidden) and the server could not pick it (the fingerprint was locked before the number existed).</p>
+          {proof.contract && <p className="pv-verify-how">Contract: <a href={`${proof.explorer}/address/${proof.contract}`} target="_blank" rel="noreferrer">{short(proof.contract)} ↗</a> · request #{proof.sequence}</p>}
+        </>
+      ) : (
+        <p>Pyth Entropy did not answer in time, so the game server drew this tournament by itself (no public proof this time).</p>
+      )}
+    </details>
   )
 }

@@ -286,3 +286,20 @@
 .pv-fill small { font-weight: 600; color: rgba(46, 31, 99, 0.6); }
 .pv-fill-note { margin: 8px 0 2px; font: 700 max(12px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: var(--ga-ink, #2e1f63); }
 .pv-room.has-bots { box-shadow: inset 0 0 0 1.5px rgba(106, 63, 196, 0.35); }
+
+/* prova do sorteio (Pyth Entropy) */
+.pv-proof a { color: #6a3fc4; font-weight: 800; }
+.pv-proof code { font: 700 max(10px, 0.85cqw)/1 ui-monospace, Consolas, monospace; }
+.pv-verify {
+  margin: 8px auto 4px; max-width: 100%; text-align: left;
+  font: 600 max(11px, 0.9cqw)/1.4 Inter, system-ui, sans-serif; color: var(--ga-ink, #2e1f63);
+  background: rgba(106, 63, 196, 0.07); border: 1px solid rgba(106, 63, 196, 0.25); border-radius: 10px; padding: 6px 10px;
+}
+.pv-verify summary { cursor: pointer; font-weight: 800; text-align: center; list-style-position: inside; }
+.pv-verify p { margin: 6px 0 2px; }
+.pv-verify code {
+  display: block; padding: 4px 6px; overflow-wrap: anywhere; user-select: all;
+  font: 600 max(10px, 0.8cqw)/1.35 ui-monospace, Consolas, monospace; background: #fff; border-radius: 6px;
+}
+.pv-verify a { color: #6a3fc4; font-weight: 800; }
+.pv-verify-how { font-size: max(10px, 0.8cqw); color: rgba(46, 31, 99, 0.75); }
