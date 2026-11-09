@@ -12,7 +12,8 @@ import { createBot } from './engine/bot.js'
 import { makeRng, randomSeed } from './engine/rng.js'
 import { STEP, COLS, ROWS } from './engine/constants.js'
 import { MAPS, pickRoomMap } from './engine/maps.js'
-import { drawMatch, makeView, loadHeroes, cornerColor } from './render.js'
+import { drawMatch, makeView, loadHeroes } from './render.js'
+import { hudOf, MatchTop, MatchBanners } from './MatchHud.jsx'
 import { loadSprites, PX_TILE } from '../solo/engine/sprites.js'
 import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
@@ -136,11 +137,7 @@ export default function PvpLocal() {
       sfx(view)
       FX.consumeEvents(view) // (também limpa os avisos da regra)
       FX.update(view, n * STEP)
-      const h = {
-        mapId: s.map, status: s.status, phase: Math.ceil(s.phaseT), clock: Math.ceil(s.clock), sudden: !!s.closing, map: s.mapName, final: s.final,
-        winner: s.winner ? s.players.find((p) => p.id === s.winner)?.name : null, tie: !!s.result?.tie,
-        players: s.players.map((p) => ({ id: p.id, name: p.name, hero: p.hero, corner: p.corner, alive: p.alive, bombs: p.maxBombs, range: p.range, speed: Math.round((p.speed - 3.4) / 0.4), shield: p.shield, kick: p.kick, detonator: p.detonator, bot: p.bot })),
-      }
+      const h = hudOf(s)
       const key = JSON.stringify(h)
       if (key !== hudKey) { hudKey = key; setHud(h) }
       raf = requestAnimationFrame(frame)
@@ -155,39 +152,15 @@ export default function PvpLocal() {
   }, [cfg])
 
   const set = (k, v) => setCfg((c) => ({ ...c, [k]: v, humans: k === 'n' ? Math.min(c.humans, v) : k === 'humans' ? v : c.humans }))
-  const timeText = hud ? `${Math.floor(hud.clock / 60)}:${String(hud.clock % 60).padStart(2, '0')}` : '2:00'
 
   return (
     <div className={`pl-page is-map-${hud?.mapId ?? 'tavern'}`}>
       <SoundToggle className="sound-fixed" />
-      <header className="pl-top">
-        <div className="pl-players">
-          {hud?.players.map((p) => (
-            <div key={p.id} className={`pl-card${p.alive ? '' : ' is-out'}`} style={{ '--ring': cornerColor(p.corner) }}>
-              <img className="pl-face" src={heroById(p.hero).img} alt="" />
-              <div className="pl-info">
-                <b>{p.name}</b>
-                <span className="pl-stats">
-                  {p.alive ? <>💣{p.bombs} 🔥{p.range}{p.speed > 0 ? ` 👟${p.speed}` : ''}{p.shield ? ' 🛡️' : ''}{p.kick ? ' 🦶' : ''}{p.detonator ? ' 📡' : ''}</> : 'OUT'}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className={`pl-clock${hud?.sudden ? ' is-sudden' : ''}`}>{hud?.sudden ? 'SUDDEN DEATH' : timeText}</div>
-      </header>
+      <MatchTop hud={hud} />
 
       <div className="pl-stage" ref={wrapRef}>
         <canvas ref={canvasRef} className="pl-canvas" />
-        {hud?.status === 'countdown' && <div className="pl-banner pl-count" key={hud.phase}>{hud.phase}</div>}
-        {hud?.status === 'countdown' && <div className="pl-mapname">{hud.final ? 'FINAL · ' : ''}{hud.map}</div>}
-        {(hud?.status === 'ending' || hud?.status === 'over') && (
-          <div className="pl-banner pl-win">
-            <span>{hud.winner} wins!</span>
-            {hud.tie && <small>Tie broken by a draw</small>}
-            {hud.status === 'over' && <small>Press R for a new room</small>}
-          </div>
-        )}
+        <MatchBanners hud={hud} overNote={hud?.status === 'over' ? 'Press R for a new room' : null} />
       </div>
 
       <footer className="pl-bar">

@@ -200,3 +200,36 @@
 .pv-feet-gold { --ring: #f0b928; filter: drop-shadow(0 0 1cqw rgba(255, 214, 110, 0.8)); }
 .pv-feet-gold::after { width: 11cqw; height: 3cqw; bottom: -1cqw; }
 .pv-champ-name { margin-top: 0.8cqw; font: 800 max(16px, 1.9cqw)/1.2 Cinzel, Georgia, serif; color: var(--ga-ink, #2e1f63); }
+
+/* ---- jogo de verdade (/pvp): entrada, salas por situação, lutador desconectado */
+.pv-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 22cqw;
+  min-width: 160px;
+  padding: 0.5cqw 0.8cqw;
+  font: 700 max(13px, 1.1cqw)/1.2 Inter, system-ui, sans-serif;
+  color: #2e1f63;
+  text-align: center;
+  background: #fff;
+  border: 2px solid rgba(46, 31, 99, 0.25);
+  border-radius: 10px;
+}
+.pv-input:focus { outline: none; border-color: #6a3fc4; box-shadow: 0 0 0 3px rgba(106, 63, 196, 0.25); }
+.pv-join-row { display: flex; justify-content: center; align-items: center; gap: 0.5cqw; }
+.pv-join-row .pv-input { margin: 0; max-width: 12cqw; min-width: 110px; letter-spacing: 0.2em; text-transform: uppercase; }
+.pv-chip.is-off { opacity: 0.45; }
+.pv-room.is-playing { border-color: #6a3fc4; background: linear-gradient(180deg, #c9b0ff, #a883f0); color: #fff; }
+.pv-room.is-draw { border-color: #6a3fc4; background: #fff; }
+.pv-room.is-done { opacity: 0.5; }
+.pv-room.is-wait { border-style: dashed; background: rgba(255, 255, 255, 0.5); }
+.pv-round.is-now .pv-room.is-done { opacity: 0.5; background: linear-gradient(180deg, #efe6ff, #d9c9fb); color: #2e1f63; }
+.pv-testbot { display: block; margin: 0.4cqw auto 0; }
+.ga-send:disabled, .ga-copy:disabled { opacity: 0.5; cursor: not-allowed; }
+.pv-netbar {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50;
+  padding: 8px 14px; font: 700 13px/1.2 Inter, system-ui, sans-serif; color: #fff;
+  background: rgba(180, 40, 60, 0.92); border-radius: 8px;
+}

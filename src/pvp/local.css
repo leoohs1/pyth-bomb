@@ -131,3 +131,7 @@
   .pl-banner { font-size: 28px; }
   .pl-win { font-size: 18px; }
 }
+
+/* jogo online: "você saiu" (menor que o do vencedor) */
+.pl-out { display: flex; flex-direction: column; gap: 10px; font-size: 22px; color: #ff8a95; background: rgba(10, 6, 20, 0.6); padding: 14px 20px; top: 22%; }
+.pl-out small { font-size: 9px; color: var(--pl-text); }
