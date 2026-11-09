@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Teste local do PVP (/pvp-local): placar em cima, sala no meio, barra de teste embaixo */
+.pl-page {
+  --pl-bg: #120c1f;
+  --pl-panel: rgba(32, 22, 56, 0.92);
+  --pl-text: #f1eaff;
+  --pl-dim: rgba(241, 234, 255, 0.6);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 40%, #2a1b48 0%, var(--pl-bg) 70%);
+  color: var(--pl-text);
+  font-family: Inter, system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* fundo da página = o fundo em pixel da fase do Solo de cada mapa (taverna, porão, navio afundando) */
+.pl-page.is-map-tavern { background: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-tavern.png') center / cover no-repeat, var(--pl-bg); }
+.pl-page.is-map-hull { background: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-hold.png') center / cover no-repeat, var(--pl-bg); }
+.pl-page.is-map-chop { background: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-flood.png') center / cover no-repeat, var(--pl-bg); }
+@media (min-aspect-ratio: 19/10) {
+  .pl-page.is-map-tavern { background-image: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-tavern-wide.png'); }
+  .pl-page.is-map-hull { background-image: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-hold-wide.png'); }
+  .pl-page.is-map-chop { background-image: linear-gradient(rgba(10, 8, 18, 0.25), rgba(10, 8, 18, 0.25)), url('/solo/pixel/bg-flood-wide.png'); }
+}
+.pl-page[class*='is-map-'] { image-rendering: pixelated; }
+.pl-page[class*='is-map-'] .pl-bar { background: rgba(14, 9, 26, 0.75); }
+
+.pl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 64px 8px 16px; /* à direita fica o botão de som */
+  flex-wrap: wrap;
+}
+.pl-players { display: flex; gap: 8px; flex-wrap: wrap; }
+.pl-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  background: var(--pl-panel);
+  border: 2px solid var(--ring);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  min-width: 140px;
+}
+.pl-card.is-out { opacity: 0.4; filter: grayscale(1); }
+.pl-face { height: 34px; image-rendering: pixelated; }
+.pl-info { display: flex; flex-direction: column; gap: 3px; }
+.pl-info b { font: 9px/1.2 'Press Start 2P', monospace; color: var(--ring); }
+.pl-stats { font-size: 12px; color: var(--pl-dim); white-space: nowrap; }
+
+.pl-clock {
+  font: 18px/1 'Press Start 2P', monospace;
+  padding: 8px 12px;
+  background: var(--pl-panel);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+.pl-clock.is-sudden { color: #ff5a6a; border-color: #ff5a6a; animation: pl-blink 0.6s steps(2) infinite; font-size: 12px; }
+@keyframes pl-blink { 50% { opacity: 0.55; } }
+
+.pl-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 16px;
+  display: grid;
+  place-items: center;
+}
+.pl-canvas {
+  display: block;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 4px #2b1d47, 0 0 0 6px #000, 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.pl-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font: 48px/1.2 'Press Start 2P', monospace;
+  color: #ffd84d;
+  text-shadow: 4px 4px 0 #000;
+  text-align: center;
+  pointer-events: none;
+}
+.pl-count { animation: pl-pop 1s ease-out; }
+@keyframes pl-pop { from { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } 30% { opacity: 1; } }
+.pl-win { display: flex; flex-direction: column; gap: 14px; font-size: 30px; background: rgba(10, 6, 20, 0.7); padding: 22px 28px; }
+.pl-win small { font-size: 11px; color: var(--pl-text); text-shadow: 2px 2px 0 #000; }
+.pl-mapname {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  font: 14px/1 'Press Start 2P', monospace;
+  color: #fff;
+  text-shadow: 3px 3px 0 #000;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.pl-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 16px 10px;
+  font-size: 13px;
+  color: var(--pl-dim);
+}
+.pl-bar label { display: flex; align-items: center; gap: 6px; }
+.pl-bar select, .pl-bar button {
+  font: inherit;
+  color: var(--pl-text);
+  background: var(--pl-panel);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+}
+.pl-bar button { cursor: pointer; }
+.pl-tag { font: 8px/1 'Press Start 2P', monospace; color: #ffd84d; }
+.pl-help { flex-basis: 100%; font-size: 12px; }
+
+@media (max-width: 600px) {
+  .pl-top, .pl-bar { padding-left: 16px; padding-right: 16px; }
+  .pl-stage { margin: 0 8px; }
+  .pl-card { min-width: 0; }
+  .pl-banner { font-size: 28px; }
+  .pl-win { font-size: 18px; }
+}
