@@ -14,6 +14,7 @@ import { loadSprites, PX_TILE } from '../solo/engine/sprites.js'
 import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
 import { TouchPad, TouchButtons } from '../solo/TouchControls.jsx'
+import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
 
 // tela de toque (sem mouse): mostra os controles na tela
 export const TOUCH = (() => {
@@ -144,6 +145,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
     }
   }, [feedRef, meId, spectating, send])
 
+  useSoloAudio(PVP_MUSIC[hud?.mapId] ?? null) // efeitos e música do Solo (a música do mapa, assim que o mapa chega)
   const me = hud?.players.find((p) => p.id === meId)
   const iAmOut = !spectating && me && !me.alive && hud.status === 'playing'
   return (

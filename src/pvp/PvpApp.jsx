@@ -9,6 +9,7 @@ import { supabase, ensureSession } from '../supabaseClient'
 import { loadNickname, saveNickname } from '../roomStorage'
 import { store } from '../storageMode'
 import { connectPvp } from './net.js'
+import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
 import OnlineMatch from './OnlineMatch.jsx'
 import { EntryPanel, LobbyPanel, DrawingPanel, DrawPanel, WaitPanel, ChampionPanel } from './screens.jsx'
 import './pvp.css'
@@ -117,6 +118,9 @@ export default function PvpApp() {
   const stopWatching = () => { setWatching(null); send({ t: 'watch', room: null }) }
 
   const me = tour?.players.find((p) => p.id === meId) ?? null
+  // tela do campeão: música da vitória do Solo (a partida tem a música do mapa, dentro do OnlineMatch)
+  const inMatch = me?.st === 'playing' || !!watching
+  useSoloAudio(tour?.status === 'done' && !inMatch ? PVP_MUSIC.victory : null)
   const myRoom = useMemo(() => {
     if (!tour || !me?.room) return null
     for (const r of tour.rounds) { const x = r.rooms.find((q) => q.id === me.room); if (x) return x }

@@ -14,6 +14,7 @@ import { STEP, COLS, ROWS } from './engine/constants.js'
 import { MAPS, pickRoomMap } from './engine/maps.js'
 import { drawMatch, makeView, loadHeroes } from './render.js'
 import { hudOf, MatchTop, MatchBanners } from './MatchHud.jsx'
+import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
 import { loadSprites, PX_TILE } from '../solo/engine/sprites.js'
 import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
@@ -151,6 +152,7 @@ export default function PvpLocal() {
     }
   }, [cfg])
 
+  useSoloAudio(PVP_MUSIC[hud?.mapId] ?? null)
   const set = (k, v) => setCfg((c) => ({ ...c, [k]: v, humans: k === 'n' ? Math.min(c.humans, v) : k === 'humans' ? v : c.humans }))
 
   return (
