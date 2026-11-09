@@ -13,6 +13,47 @@ export function Sprite({ hero, k = 0.075 }) {
 
 const Logo = () => <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
 
+// topo das telas de entrada e lobby: o logo do jogo pequeno em cima do selo "PVP" (arte nova)
+const PvpLogo = () => (
+  <div className="pv-logo">
+    <img className="pv-logo-game" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />
+    <img className="pv-logo-pvp" src="/pvp/logo-pvp.webp" alt="PVP" width="640" height="409" />
+  </div>
+)
+
+// CENA DO LOBBY: os heróis dos lutadores em pé no chão do salão (metade de cada lado do painel), "respirando".
+// heroes: [{ id, name, hero, host }]. Até 8 aparecem (4 de cada lado).
+// rightOnly: com o chat aberto (canto de baixo à esquerda), todos ficam do lado direito, em duas fileiras (até 7).
+const SCENE_X = { left: [4.5, 11, 17.5, 24], right: [76, 82.5, 89, 95.5] }
+const BACK_X = [79.2, 85.7, 92.2]
+export function LobbyScene({ heroes, rightOnly = false }) {
+  const list = heroes.slice(0, rightOnly ? 7 : 8)
+  const half = Math.ceil(list.length / 2)
+  const spots = rightOnly
+    ? list.map((h, i) => (i < 4 ? { ...h, x: SCENE_X.right[i], side: 'right' } : { ...h, x: BACK_X[i - 4], side: 'right', back: true }))
+    : list.map((h, i) => {
+      const side = i < half ? 'left' : 'right'
+      const j = side === 'left' ? i : i - half
+      const xs = SCENE_X[side]
+      // poucos de cada lado: ficam mais pro meio do salão
+      const x = side === 'left' ? xs[xs.length - Math.min(half, 4) + j] : xs[j]
+      return { ...h, x, side }
+    })
+  return (
+    <div className="pv-scene" aria-hidden="true">
+      {spots.map((h, i) => {
+        const art = heroById(h.hero)
+        return (
+          <div key={h.id} className={`pv-scene-hero is-${h.side}${h.back ? ' is-back' : ''}`} style={{ left: `${h.x}%`, '--d': `${(i * 0.37) % 1.2}s` }}>
+            <img src={art.img} alt="" style={{ width: `${art.w * 0.15}cqw`, height: `${art.h * 0.15}cqw` }} />
+            <span className="pv-scene-name">{h.host ? '👑 ' : ''}{h.name}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function HeroPicker({ hero, onPick }) {
   return (
     <div className="pv-picker" role="radiogroup" aria-label="Choose your fighter">
@@ -72,8 +113,7 @@ export function Bracket({ n, rounds = null, fill = false }) {
 export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCreate, onJoin, busy, error, status }) {
   return (
     <>
-      <Logo />
-      <p className="ga-mode-name">⚔️ PVP</p>
+      <PvpLogo />
       <p className="ga-hint">Up to 20 fighters. 4 per room, winners move on until the final.</p>
       <p className="pv-label">Your nickname</p>
       <input className="pv-input" value={name} maxLength={16} placeholder="Nickname" onChange={(e) => setName(e.target.value)} />
@@ -106,8 +146,7 @@ export function LobbyPanel({ tour, meId, onHero, onStart, onBot, onFill, testBot
   }
   return (
     <>
-      <Logo />
-      <p className="ga-mode-name">⚔️ PVP</p>
+      <PvpLogo />
       <p className="ga-qnum">Tournament code</p>
       <div className="ga-code-row">
         <div className="ga-code">{tour.code}</div>
@@ -293,6 +332,41 @@ export function WaitPanel({ tour, meId, onWatch, onLeave }) {
   )
 }
 
+// PÓDIO do campeão (arte em pixel): 1º no meio com a coroa, 2º e 3º da final dos lados, e o troféu ao lado.
+// Medidas do desenho do pódio (public/pvp/podium.png, 178x111 pixels): centro e topo de cada degrau.
+const PODIUM = { w: 178, h: 111, steps: { 1: { x: 0.5, top: 6 }, 2: { x: 0.16, top: 30 }, 3: { x: 0.84, top: 42 } } }
+function Podium({ tour, champ }) {
+  const finalRoom = tour.rounds.at(-1)?.rooms?.[0]
+  const places = finalRoom?.places ?? []
+  const byId = (id) => tour.players.find((p) => p.id === id)
+  const others = places.filter((id) => id !== tour.champion) // (se um bot "ganhou", ele fica em 2º e o campeão é o melhor humano)
+  const second = others[0] ? byId(others[0]) : null
+  const third = others[1] ? byId(others[1]) : null
+  // tamanho de 1 pixel do desenho: --pu (no computador 0.13cqw, o pódio fica com ~23cqw; no celular em pé, px; ver pvp.css)
+  const u = (n) => `calc(${n} * var(--pu))`
+  const hu = (n) => `calc(${n * 1.35} * var(--pu))` // heróis um pouco maiores que o desenho do pódio
+  const stand = (p, place) => {
+    if (!p) return null
+    const art = heroById(p.hero), st = PODIUM.steps[place]
+    return (
+      <span key={place} className={`pv-podium-hero is-${place}`} style={{ left: `${st.x * 100}%`, top: u(st.top) }}>
+        {place === 1 && <span className="pv-crown" aria-hidden="true">👑</span>}
+        <img src={art.img} alt="" style={{ width: hu(art.w), height: hu(art.h) }} />
+        {place !== 1 && <span className="pv-podium-name">{p.name}</span>}
+      </span>
+    )
+  }
+  return (
+    <div className="pv-podium-wrap">
+      <div className="pv-podium" style={{ width: u(PODIUM.w), height: u(PODIUM.h) }}>
+        <img className="pv-podium-img" src="/pvp/podium.png" alt="" />
+        {stand(second, 2)}{stand(third, 3)}{stand(champ, 1)}
+      </div>
+      <img className="pv-trophy" src="/pvp/trophy.png" alt="" style={{ width: u(85), height: u(132) }} />
+    </div>
+  )
+}
+
 // ---- campeão
 export function ChampionPanel({ tour, meId, onNew, onLeave }) {
   const champ = tour.players.find((p) => p.id === tour.champion)
@@ -302,11 +376,8 @@ export function ChampionPanel({ tour, meId, onNew, onLeave }) {
     <>
       <Logo />
       <p className="ga-mode-name">🏆 Champion</p>
-      <div className="pv-champ">
-        <span className="pv-crown" aria-hidden="true">👑</span>
-        <span className="pv-feet pv-feet-gold"><Sprite hero={champ?.hero ?? 'pirb'} k={0.16} /></span>
-        <span className="pv-champ-name">{champ?.name ?? '?'}</span>
-      </div>
+      <Podium tour={tour} champ={champ} />
+      <span className="pv-champ-name">{champ?.name ?? '?'}</span>
       {mine && <p className="ga-me is-win">🎉 You won the tournament!</p>}
       <p className="ga-hint">{wins > 1 ? `Won ${wins} rooms in a row` : 'Won the only room'} · last one standing in Shark Tank</p>
       <VerifyBox proof={tour.proof} />

@@ -326,7 +326,7 @@ export class Tournament {
         rooms: R.rooms.map((rid) => {
           const r = this.rooms.get(rid)
           return {
-            id: r.id, index: r.index, map: r.map, mapName: MAPS[r.map]?.name ?? r.map, st: r.status, ids: r.ids, winner: r.winner,
+            id: r.id, index: r.index, map: r.map, mapName: MAPS[r.map]?.name ?? r.map, st: r.status, ids: r.ids, winner: r.winner, places: r.places,
             startIn: r.status === 'draw' ? Math.ceil(Math.max(0, r.startAt - now)) : null,
             alive: r.match ? r.match.players.filter((p) => p.alive).length : r.ids.length,
           }

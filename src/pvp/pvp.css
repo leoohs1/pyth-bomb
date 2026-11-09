@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 /* Pyth Bomb PVP: o cartão do meio da arena (a arena é a MESMA do Classic, sem arte nova).
    Tamanhos em cqw (acompanham a arena), com mínimos em px. */
 
@@ -316,3 +317,58 @@
 /* Join com cara de botão (antes parecia apagado mesmo funcionando) */
 .pv-join-row .ga-copy { padding: 0.55cqw 1.4cqw; min-height: 36px; font-weight: 800; }
 .pv-join-row .ga-copy:disabled { opacity: 0.55; filter: grayscale(0.4); }
+
+/* ---- VISUAL DE JOGO (artes novas): salão de luta pirata em pixel, logo PVP, heróis em cena */
+.ga-arena:has(.pv-panel) .ga-bg { background: url('/pvp/lobby-pixel.png') center / cover no-repeat; image-rendering: pixelated; }
+.ga-arena:has(.pv-panel) .ga-shade { background: linear-gradient(180deg, rgba(10, 5, 20, 0.35) 0%, rgba(10, 5, 20, 0) 25%, rgba(10, 5, 20, 0) 70%, rgba(10, 5, 20, 0.45) 100%); }
+.mb-stage:has(.pv-panel) {
+  background: linear-gradient(180deg, rgba(14, 8, 26, 0.6) 0%, rgba(14, 8, 26, 0.15) 40%, rgba(14, 8, 26, 0.75) 100%), url('/pvp/lobby-pixel.png') center 70% / cover no-repeat, #120a1e;
+  image-rendering: pixelated;
+}
+/* painel com cara de jogo: moldura dourada grossa e sombra "dura" de pixel */
+.ga-card.ga-panel-pvp {
+  border-radius: 6px;
+  border: 4px solid #c9a24a;
+  box-shadow: inset 0 0 0 3px #f3e3b0, 0 0 0 4px #1a0f08, 10px 10px 0 4px rgba(0, 0, 0, 0.45), 0 0 50px rgba(255, 170, 80, 0.22);
+}
+/* logo: Pyth Bomb pequeno em cima do selo PVP */
+.pv-logo { display: grid; justify-items: center; margin: -0.4cqw 0 0.2cqw; }
+.pv-logo-game { width: 32%; height: auto; position: relative; z-index: 1; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.15)); }
+.pv-logo-pvp { width: 25%; height: auto; margin-top: -1cqw; filter: drop-shadow(0 4px 6px rgba(40, 10, 80, 0.35)); }
+.mb-panel .pv-logo-game { width: 60%; }
+.mb-panel .pv-logo-pvp { width: 46%; margin-top: -10px; }
+
+/* heróis em cena no chão do salão */
+.pv-scene { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.pv-scene-hero {
+  position: absolute; bottom: 5.5%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.35cqw;
+}
+.pv-scene-hero img { image-rendering: pixelated; filter: drop-shadow(0 0.25cqw 0 rgba(0, 0, 0, 0.5)); animation: pv-breathe 1.2s steps(2) infinite; animation-delay: var(--d); }
+.pv-scene-hero::before { /* sombra no chão */
+  content: ''; position: absolute; bottom: 1.45cqw; left: 50%; width: 4.2cqw; height: 0.9cqw; transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55), transparent 70%);
+}
+@keyframes pv-breathe { 50% { translate: 0 -0.15cqw; } }
+.pv-scene-name {
+  font: max(8px, 0.62cqw)/1 'Press Start 2P', monospace; color: #fff; white-space: nowrap; max-width: 9cqw; overflow: hidden; text-overflow: ellipsis;
+  padding: 0.3cqw 0.45cqw; background: rgba(20, 10, 30, 0.85); border: 2px solid #c9a24a; box-shadow: 2px 2px 0 #000;
+}
+
+/* pódio do campeão (arte em pixel) */
+.pv-podium-wrap { --pu: 0.13cqw; display: flex; align-items: flex-end; justify-content: center; gap: 1.2cqw; margin: 6.5cqw 0 0.4cqw; }
+.pv-podium { position: relative; flex: none; }
+.pv-podium-img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.pv-podium-hero { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.pv-podium-hero img { image-rendering: pixelated; filter: drop-shadow(0 0.2cqw 0 rgba(0, 0, 0, 0.4)); animation: pv-breathe 1.2s steps(2) infinite; }
+.pv-podium-hero.is-1 img { filter: drop-shadow(0 0 0.8cqw rgba(255, 214, 110, 0.9)); }
+.pv-podium-hero .pv-crown { position: static; margin-bottom: -0.3cqw; }
+.pv-podium-name {
+  position: absolute; bottom: -1.6cqw; white-space: nowrap; font: max(8px, 0.6cqw)/1 'Press Start 2P', monospace; color: #fff;
+  padding: 0.25cqw 0.4cqw; background: rgba(20, 10, 30, 0.85); border: 2px solid #c9a24a;
+}
+.pv-trophy { image-rendering: pixelated; animation: pv-shine 2.4s ease-in-out infinite; }
+@keyframes pv-shine { 50% { filter: drop-shadow(0 0 0.9cqw rgba(255, 214, 110, 0.9)) brightness(1.08); } }
+.mb-panel .pv-podium-wrap { --pu: 1.15px; margin-top: 52px; gap: 8px; }
+
+.pv-scene-hero.is-back { bottom: 13%; z-index: -1; scale: 0.85; filter: brightness(0.85); }

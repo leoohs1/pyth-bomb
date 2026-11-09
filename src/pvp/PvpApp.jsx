@@ -3,6 +3,7 @@
 //   lobby -> sorteio das salas -> partida -> (ganhou: espera a próxima sala | perdeu: assiste) -> campeão
 // Endereço com código: /pvp?code=ABC123 (o link que o "Copy link" copia). ?tab=1 = cada aba é um jogador (teste).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import GameArenaV2 from '../GameArenaV2'
 import Confetti from '../Confetti.jsx'
 import { supabase, ensureSession } from '../supabaseClient'
@@ -11,13 +12,17 @@ import { store } from '../storageMode'
 import { connectPvp } from './net.js'
 import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
 import { usePvpChat } from './usePvpChat.js'
+import { HEROES } from './heroes.js'
+
+const HERO_IDS = HEROES.map((h) => h.id)
+const heroLabel = (id) => HEROES.find((h) => h.id === id)?.label ?? id
 import ChatBox from '../ChatBox.jsx'
 
 // celular em pé: a arena usa o layout compacto, e o chat também (mesma regra do GameArenaV2)
 const COMPACT_QUERY = '(orientation: portrait) and (max-width: 900px)'
 const isCompact = () => !!window.matchMedia?.(COMPACT_QUERY).matches
 import OnlineMatch from './OnlineMatch.jsx'
-import { EntryPanel, LobbyPanel, DrawingPanel, DrawPanel, WaitPanel, ChampionPanel } from './screens.jsx'
+import { EntryPanel, LobbyPanel, DrawingPanel, DrawPanel, WaitPanel, ChampionPanel, LobbyScene } from './screens.jsx'
 import './pvp.css'
 
 const HERO_KEY = 'pvp_hero'
@@ -51,6 +56,9 @@ export default function PvpApp() {
   const chatRef = useRef(onChatMsg)
   chatRef.current = onChatMsg
   const [compact, setCompact] = useState(isCompact)
+  // a cena do lobby entra DENTRO da arena (pra acompanhar o tamanho dela): acha o elemento depois que ela aparece
+  const [arenaEl, setArenaEl] = useState(null)
+  useEffect(() => { const el = document.querySelector('.ga-arena'); if (el !== arenaEl) setArenaEl(el) })
   useEffect(() => {
     const mq = window.matchMedia?.(COMPACT_QUERY)
     if (!mq) return
@@ -194,10 +202,17 @@ export default function PvpApp() {
     panel = <WaitPanel tour={tour} meId={meId} onWatch={onWatch} onLeave={onLeave} />
   }
 
+  // cena do lobby: na entrada, os 4 heróis; no lobby, os lutadores que já entraram (com a coroa do host)
+  const sceneHeroes = compact || kicked ? null
+    : !tour ? HERO_IDS.map((h) => ({ id: h, name: heroLabel(h), hero: h }))
+    : tour.status === 'lobby' ? tour.players.filter((p) => p.st === 'lobby').map((p) => ({ id: p.id, name: p.name, hero: p.hero, host: p.id === tour.host }))
+    : null
+
   return (
     <>
       <GameArenaV2 {...common} phase="pvp" chip={chip} panel={<div className={`pv-panel${tour ? '' : ' is-entry'}`}>{panel}</div>} />
       {confetti && <Confetti />}
+      {sceneHeroes && arenaEl && createPortal(<LobbyScene heroes={sceneHeroes} rightOnly={!!tour} />, arenaEl)}
       {tour && !kicked && <ChatBox chat={chat} myPlayerId={meId} phase={tour.status === 'done' ? 'finished' : 'lobby'} variant={compact ? 'compact' : 'arena'} />}
       {tour && status !== 'open' && <div className="pv-netbar" role="status">Reconnecting to the game server…</div>}
     </>
