@@ -62,6 +62,25 @@ function attach(ws, t) {
   ws.pv.initRoom = null
   ws.pv.watch = null
   t._last = null // manda o resumo de novo pra todo mundo
+  send(ws, { t: 'chatlog', list: t.chat }) // as últimas mensagens do chat
+}
+
+// CHAT do torneio: passa pelo nosso servidor (não usa o Supabase). Texto curto, sem caracteres estranhos,
+// no máximo uma mensagem a cada 0,8 s por pessoa; guarda só as últimas 60.
+const CHAT_MAX = 140
+function onChat(ws, t, text) {
+  const p = t.players.get(ws.pv.user)
+  if (!p || p.bot) return
+  const body = String(text ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, CHAT_MAX)
+  if (!body) return
+  const nowMs = Date.now()
+  if (nowMs - (ws.pv.lastChat ?? 0) < 800) return send(ws, { t: 'chaterr', error: 'Slow down a little 🙂' })
+  ws.pv.lastChat = nowMs
+  const m = { id: `${t.code}-${++t.chatSeq}`, player_id: p.id, nickname: p.name, body, at: nowMs }
+  t.chat.push(m)
+  if (t.chat.length > 60) t.chat.shift()
+  const str = JSON.stringify({ t: 'chat', m })
+  for (const s of socketsOf(t.code)) send(s, str)
 }
 
 async function onMessage(ws, msg) {
@@ -122,6 +141,7 @@ async function onMessage(ws, msg) {
       return
     }
     case 'ping': send(ws, { t: 'pong', at: msg.at }); return
+    case 'chat': if (t) onChat(ws, t, msg.text); return
     default: return
   }
 }

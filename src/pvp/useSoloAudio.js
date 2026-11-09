@@ -11,6 +11,7 @@ export const PVP_MUSIC = {
   hull: LEVELS[1]?.music ?? '/music/solo-hull.mp3',
   chop: LEVELS[2]?.music ?? '/music/solo-boss.mp3',
   victory: '/music/solo-victory.mp3',
+  lobby: '/music/solo.mp3', // "Pixel Adventure" do Solo (não toca em nenhuma fase): lobby, sorteio e telas de espera
 }
 
 export function useSoloAudio(track) {

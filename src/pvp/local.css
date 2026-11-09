@@ -196,3 +196,9 @@
   }
   .pl-touch > * { pointer-events: auto; }
 }
+
+/* chat durante a partida: no computador, no canto de baixo à esquerda acima da barra; no celular, em cima à esquerda
+   (embaixo ficam o direcional e a bomba) */
+.pl-page .ct-fab.ct-arena, .pl-page .ct-panel.ct-arena { left: 0; bottom: 8px; }
+.pl-page.is-touch .ct-fab.ct-compact { top: calc(64px + env(safe-area-inset-top)); bottom: auto; left: 8px; width: 40px; height: 40px; font-size: 18px; }
+.pl-page.is-touch .ct-panel.ct-compact { top: calc(60px + env(safe-area-inset-top)); bottom: auto; left: 8px; right: 8px; }

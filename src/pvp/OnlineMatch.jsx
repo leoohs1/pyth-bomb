@@ -17,6 +17,7 @@ import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
 import { TouchPad, TouchButtons } from '../solo/TouchControls.jsx'
 import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
+import ChatBox from '../ChatBox.jsx'
 
 // tela de toque (sem mouse): mostra os controles na tela
 export const TOUCH = (() => {
@@ -35,7 +36,7 @@ const KEYS = {
 }
 
 // feedRef.current = { init, snaps: [...], events: [...] } (quem enche é o PvpApp, com as mensagens do servidor)
-export default function OnlineMatch({ feedRef, meId, spectating = false, send, title = null, onBack = null, note = null }) {
+export default function OnlineMatch({ feedRef, meId, spectating = false, send, title = null, onBack = null, note = null, chat = null }) {
   const [hud, setHud] = useState(null)
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
@@ -71,15 +72,16 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
       if (i >= 0) { held.splice(i, 1); sendDir() }
     }
     padRef.current = { press, release }
+    const typing = (e) => !!e.target?.closest?.('input, textarea') // escrevendo no chat: as teclas não mexem o boneco
     const onDown = (e) => {
-      if (spectating || e.altKey || e.ctrlKey || e.metaKey) return
+      if (spectating || e.altKey || e.ctrlKey || e.metaKey || typing(e)) return
       const a = KEYS[e.code]
       if (!a) return
       e.preventDefault()
       if ((a === 'bomb' || a === 'detonate') && e.repeat) return
       press(a)
     }
-    const onUp = (e) => { const a = KEYS[e.code]; if (a) release(a) }
+    const onUp = (e) => { const a = KEYS[e.code]; if (a && !typing(e)) release(a) }
     const onBlur = () => { held.length = 0; sendDir() }
     window.addEventListener('keydown', onDown)
     window.addEventListener('keyup', onUp)
@@ -208,6 +210,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
       <div className="pl-stage" ref={wrapRef}>
         <canvas ref={canvasRef} className="pl-canvas" />
         <MatchBanners hud={hud} overNote={note} />
+        {chat && <ChatBox chat={chat} myPlayerId={meId} phase="playing" variant={TOUCH ? 'compact' : 'arena'} />}
         {iAmOut && <div className="pl-banner pl-out">You're out<small>Watching the rest of your room</small></div>}
       </div>
       {TOUCH && !spectating && (

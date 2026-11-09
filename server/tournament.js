@@ -47,6 +47,8 @@ export class Tournament {
     this.roomSeq = 0
     this.botSeq = 0
     this.fillBots = false // opção do lobby: completar as salas com bots (menos a final)
+    this.chat = []        // chat do torneio (as últimas mensagens; só na memória)
+    this.chatSeq = 0
   }
 
   setFill(byId, on) {

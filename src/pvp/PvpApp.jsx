@@ -10,6 +10,12 @@ import { loadNickname, saveNickname } from '../roomStorage'
 import { store } from '../storageMode'
 import { connectPvp } from './net.js'
 import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
+import { usePvpChat } from './usePvpChat.js'
+import ChatBox from '../ChatBox.jsx'
+
+// celular em pé: a arena usa o layout compacto, e o chat também (mesma regra do GameArenaV2)
+const COMPACT_QUERY = '(orientation: portrait) and (max-width: 900px)'
+const isCompact = () => !!window.matchMedia?.(COMPACT_QUERY).matches
 import OnlineMatch from './OnlineMatch.jsx'
 import { EntryPanel, LobbyPanel, DrawingPanel, DrawPanel, WaitPanel, ChampionPanel } from './screens.jsx'
 import './pvp.css'
@@ -40,6 +46,18 @@ export default function PvpApp() {
   const [kicked, setKicked] = useState(false)
   const feedRef = useRef(null)
   const netRef = useRef(null)
+  const sendRef = useRef(null)
+  const { chat, onServer: onChatMsg, reset: resetChat } = usePvpChat(sendRef)
+  const chatRef = useRef(onChatMsg)
+  chatRef.current = onChatMsg
+  const [compact, setCompact] = useState(isCompact)
+  useEffect(() => {
+    const mq = window.matchMedia?.(COMPACT_QUERY)
+    if (!mq) return
+    const h = () => setCompact(mq.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
   const wantRef = useRef({ code: codeFromUrl(), name: loadNickname() ?? '', hero: loadHero() }) // reentrar sozinho depois de cair
 
   useEffect(() => {
@@ -85,6 +103,8 @@ export default function PvpApp() {
           setError(m.error)
           // código que não existe mais: esquece, pra não ficar tentando
           if (/not found/i.test(m.error)) { wantRef.current.code = ''; setUrlCode('') }
+        } else if (m.t === 'chat' || m.t === 'chatlog' || m.t === 'chaterr') {
+          chatRef.current(m)
         } else if (m.t === 'pong') {
           // tempo de ida e volta até o servidor (o OnlineMatch usa pra prever o próprio boneco)
           const rtt = performance.now() / 1000 - m.at
@@ -96,6 +116,7 @@ export default function PvpApp() {
       },
     })
     netRef.current = net
+    sendRef.current = (o) => net.send(o)
     if (import.meta.env.DEV) window.__pvpFeed = () => feedRef.current // só no desenvolvimento: deixa os testes olharem a sala
     return () => net.close()
   }, [])
@@ -117,15 +138,13 @@ export default function PvpApp() {
     setCode('')
     setTour(null)
     setWatching(null)
+    resetChat()
   }
   const onHero = (h) => { setHero(h); saveHero(h); wantRef.current.hero = h; send({ t: 'hero', hero: h }) }
   const onWatch = (roomId) => { setWatching(roomId); send({ t: 'watch', room: roomId }) }
   const stopWatching = () => { setWatching(null); send({ t: 'watch', room: null }) }
 
   const me = tour?.players.find((p) => p.id === meId) ?? null
-  // tela do campeão: música da vitória do Solo (a partida tem a música do mapa, dentro do OnlineMatch)
-  const inMatch = me?.st === 'playing' || !!watching
-  useSoloAudio(tour?.status === 'done' && !inMatch ? PVP_MUSIC.victory : null)
   const myRoom = useMemo(() => {
     if (!tour || !me?.room) return null
     for (const r of tour.rounds) { const x = r.rooms.find((q) => q.id === me.room); if (x) return x }
@@ -134,11 +153,14 @@ export default function PvpApp() {
 
   // ---- o que mostrar
   const playingNow = me?.st === 'playing' && myRoom?.st === 'playing' && hasFeed
+  const watchingNow = !!watching && hasFeed && me?.st !== 'playing'
+  // música: na partida, a do mapa (dentro do OnlineMatch); fora dela, Pixel Adventure; no campeão, a da vitória
+  useSoloAudio(playingNow || watchingNow ? null : tour?.status === 'done' ? PVP_MUSIC.victory : PVP_MUSIC.lobby)
   if (playingNow) {
-    return <OnlineMatch feedRef={feedRef} meId={meId} send={send} />
+    return <OnlineMatch feedRef={feedRef} meId={meId} send={send} chat={chat} />
   }
-  if (watching && hasFeed && me?.st !== 'playing') {
-    return <OnlineMatch feedRef={feedRef} meId={meId} spectating send={send} onBack={stopWatching} title="WATCHING" />
+  if (watchingNow) {
+    return <OnlineMatch feedRef={feedRef} meId={meId} spectating send={send} onBack={stopWatching} title="WATCHING" chat={chat} />
   }
 
   const room = { id: tour?.code ?? 'pvp', code: tour?.code ?? '', status: tour?.status === 'lobby' || !tour ? 'lobby' : 'playing', mode: 'pvp', round_number: 1, host_user_id: tour?.host }
@@ -176,6 +198,7 @@ export default function PvpApp() {
     <>
       <GameArenaV2 {...common} phase="pvp" chip={chip} panel={<div className="pv-panel">{panel}</div>} />
       {confetti && <Confetti />}
+      {tour && !kicked && <ChatBox chat={chat} myPlayerId={meId} phase={tour.status === 'done' ? 'finished' : 'lobby'} variant={compact ? 'compact' : 'arena'} />}
       {tour && status !== 'open' && <div className="pv-netbar" role="status">Reconnecting to the game server…</div>}
     </>
   )
