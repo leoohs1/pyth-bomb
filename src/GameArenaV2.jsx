@@ -346,6 +346,8 @@ export default function GameArenaV2({
   stageArt = null,
   // Pyth Recap Month: toque numa alternativa (App -> submit_choice); só usado quando room.quiz_mode === 'choice'
   onChoose = null,
+  // Pyth Bomb PVP: arquibancada vazia (o elenco sentado não é o dos heróis em pixel); o resto da arena continua igual
+  hideCrowd = false,
 }) {
   const inGame = phase === 'playing'
   const compact = useCompact()
@@ -392,7 +394,7 @@ export default function GameArenaV2({
       if (free) seatAssignmentRef.current.set(p.id, free.id)
     }
   }
-  const seated = crowd
+  const seated = (hideCrowd ? [] : crowd)
     .filter((p) => seatAssignmentRef.current.has(p.id))
     .map((p) => {
       const seat = ARENA2_SEATS.find((s) => s.id === seatAssignmentRef.current.get(p.id))

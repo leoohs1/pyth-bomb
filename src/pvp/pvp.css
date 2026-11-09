@@ -1,0 +1,202 @@
+/* Pyth Bomb PVP: o cartão do meio da arena (a arena é a MESMA do Classic, sem arte nova).
+   Tamanhos em cqw (acompanham a arena), com mínimos em px. */
+
+.ga-card.ga-panel-pvp {
+  top: 5%;
+  width: 46cqw;
+  max-height: 90%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1cqw 1.8cqw 1cqw;
+}
+
+/* O lobby do PVP usa o MESMO fundo pintado do Classic (a Halls preferiu em 2026-11-09). O templo escuro
+   (public/pvp/lobby-bg.webp) fica guardado: na prévia vale com ?bg=temple, e dá pra virar o fundo do PVP
+   com uma regra  .ga-arena:has(.ga-panel-pvp) .ga-bg { background: url('/pvp/lobby-bg.webp') center / cover no-repeat }. */
+
+.pv-label {
+  margin: 0.7cqw 0 0.25cqw;
+  font: 700 max(10px, 0.9cqw)/1.2 Inter, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(46, 31, 99, 0.6);
+}
+
+.pv-sprite { display: block; image-rendering: pixelated; }
+
+/* lutadores que já entraram */
+.pv-roster {
+  list-style: none;
+  margin: 0;
+  padding: 0.35cqw;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6cqw, 1fr));
+  gap: 0.4cqw;
+  max-height: 14.2cqw;
+  overflow-y: auto;
+  background: rgba(106, 63, 196, 0.07);
+  border-radius: 10px;
+}
+.pv-chip {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.15cqw;
+  padding: 0.35cqw 0.2cqw 0.3cqw;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(46, 31, 99, 0.14);
+  border-radius: 8px;
+}
+.pv-chip.is-me { border-color: var(--ga-gold, #c9a24a); box-shadow: 0 0 0 1px var(--ga-gold, #c9a24a); }
+.pv-chip-art { display: flex; align-items: flex-end; justify-content: center; height: 4.7cqw; }
+.pv-chip-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 max(9px, 0.85cqw)/1.2 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+}
+.pv-host { position: absolute; top: -0.35cqw; right: -0.2cqw; font-size: max(10px, 1cqw); line-height: 1; }
+
+/* escolha do herói */
+.pv-picker { display: flex; justify-content: center; gap: 0.6cqw; }
+.pv-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 6.4cqw;
+  min-width: 6cqw;
+  padding: 0.3cqw 0.6cqw;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(46, 31, 99, 0.18);
+  border-radius: 10px;
+}
+.pv-hero:hover { border-color: rgba(106, 63, 196, 0.55); }
+.pv-hero.is-on { border-color: var(--ga-gold, #c9a24a); background: #fff; box-shadow: 0 0 0 3px rgba(201, 162, 74, 0.35); }
+
+/* plano do torneio: Round 1 → Round 2 → Final */
+.pv-bracket {
+  list-style: none;
+  margin: 0.3cqw 0 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.pv-round { position: relative; display: grid; justify-items: center; gap: 0.2cqw; }
+.pv-round + .pv-round { margin-left: 2.6cqw; }
+.pv-round + .pv-round::before {
+  content: '→';
+  position: absolute;
+  left: -2cqw;
+  top: 0;
+  font: 800 max(11px, 1.2cqw)/1.6cqw Inter, system-ui, sans-serif;
+  color: rgba(46, 31, 99, 0.5);
+}
+.pv-rooms { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25cqw; max-width: 13cqw; }
+.pv-room {
+  display: grid;
+  place-items: center;
+  min-width: 2.3cqw;
+  height: 1.7cqw;
+  padding: 0 0.3cqw;
+  font: 800 max(10px, 0.9cqw)/1 Inter, system-ui, sans-serif;
+  color: #2e1f63;
+  background: linear-gradient(180deg, #efe6ff, #d9c9fb);
+  border: 1.5px solid rgba(106, 63, 196, 0.55);
+  border-radius: 5px;
+}
+.pv-round.is-final .pv-room { color: #4a3000; background: linear-gradient(180deg, #fbe7a0, #e2b94c); border-color: #b98a1d; }
+.pv-round-name { font: 700 max(9px, 0.8cqw)/1 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(46, 31, 99, 0.6); }
+.pv-round.is-done { opacity: 0.45; }
+.pv-round.is-now .pv-room { border-color: #6a3fc4; background: linear-gradient(180deg, #c9b0ff, #a883f0); color: #fff; }
+.pv-summary { margin: 0.45cqw 0 0; font: 700 max(11px, 1cqw)/1.3 Inter, system-ui, sans-serif; color: var(--ga-ink, #2e1f63); }
+
+/* sorteio das salas */
+.pv-drawing { padding: 1.5cqw 0 0.8cqw; }
+.pv-dice { display: inline-block; font-size: max(34px, 4cqw); line-height: 1; animation: pv-spin 0.7s linear infinite; }
+@keyframes pv-spin { to { transform: rotate(360deg); } }
+.pv-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7cqw; max-height: 30cqw; overflow-y: auto; padding: 0.15cqw; }
+.pv-cards.is-single { grid-template-columns: minmax(0, 1fr); max-width: 26cqw; margin: 0 auto; }
+.pv-room-card { padding: 0.5cqw; background: rgba(255, 255, 255, 0.55); border: 2px solid rgba(46, 31, 99, 0.16); border-radius: 12px; }
+.pv-room-card.is-mine { border-color: var(--ga-gold, #c9a24a); background: rgba(255, 246, 215, 0.7); }
+.pv-room-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4cqw;
+  margin-bottom: 0.4cqw;
+  font: 800 max(10px, 0.95cqw)/1.2 Cinzel, Georgia, serif;
+  color: var(--ga-ink, #2e1f63);
+}
+.pv-yours { padding: 0.1cqw 0.5cqw; font: 800 max(8px, 0.75cqw)/1.3 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.06em; color: #4a3000; background: linear-gradient(180deg, #fbe7a0, #e2b94c); border-radius: 99px; }
+.pv-corners { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4cqw; }
+.pv-slot {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 0.5cqw;
+  height: 8.6cqw;
+  padding-bottom: 0.4cqw;
+  background: linear-gradient(180deg, #f0eaf8, #e0d6f1);
+  border: 1px solid rgba(46, 31, 99, 0.14);
+  border-radius: 8px;
+}
+.pv-slot.is-empty { opacity: 0.5; align-content: center; }
+.pv-empty { font: 600 max(9px, 0.85cqw)/1 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.5); }
+
+/* o anel da cor do canto, nos pés do herói */
+.pv-feet { position: relative; display: grid; justify-items: center; }
+.pv-feet .pv-sprite { position: relative; z-index: 1; }
+.pv-feet::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -0.45cqw;
+  width: 5.2cqw;
+  height: 1.5cqw;
+  transform: translateX(-50%);
+  border: 0.28cqw solid var(--ring, #c9a24a);
+  border-radius: 50%;
+  box-shadow: 0 0 0.7cqw var(--ring, #c9a24a);
+}
+.pv-tag {
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.05cqw 0.7cqw;
+  font: 800 max(9px, 0.85cqw)/1.35 Inter, system-ui, sans-serif;
+  color: #fff;
+  background: var(--ring, #6a3fc4);
+  border-radius: 99px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+.pv-proof { margin: 0.5cqw 0 0; font: 600 max(9px, 0.85cqw)/1.3 Inter, system-ui, sans-serif; color: rgba(46, 31, 99, 0.5); }
+
+/* quem perdeu assiste */
+.pv-watch { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4cqw; max-height: 15cqw; overflow-y: auto; }
+.pv-watch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.8cqw;
+  padding: 0.35cqw 0.7cqw;
+  text-align: left;
+  font: 700 max(11px, 1.05cqw)/1.2 Inter, system-ui, sans-serif;
+  color: var(--ga-ink, #2e1f63);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(46, 31, 99, 0.14);
+  border-radius: 8px;
+}
+.pv-alive { font-weight: 600; color: rgba(46, 31, 99, 0.65); white-space: nowrap; }
+.pv-watch-row .ga-copy { padding: 0.35cqw 0.9cqw; }
+
+/* campeão */
+.pv-champ { position: relative; display: grid; justify-items: center; gap: 1cqw; margin: 0.6cqw 0 0.2cqw; padding-top: 2.2cqw; }
+.pv-crown { position: absolute; top: 0; font-size: 2.6cqw; line-height: 1; animation: ga-crown-bob 1.6s ease-in-out infinite; }
+.pv-feet-gold { --ring: #f0b928; filter: drop-shadow(0 0 1cqw rgba(255, 214, 110, 0.8)); }
+.pv-feet-gold::after { width: 11cqw; height: 3cqw; bottom: -1cqw; }
+.pv-champ-name { margin-top: 0.8cqw; font: 800 max(16px, 1.9cqw)/1.2 Cinzel, Georgia, serif; color: var(--ga-ink, #2e1f63); }
