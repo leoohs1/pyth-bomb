@@ -60,6 +60,10 @@ export default function Landing({ label = 'Play now', href = null }) {
           alt="Nysa the Oracle, Minos the Minotaur about to catch the bomb, and Plite the Hoplite"
         />
       </div>
+
+      <a className="pb-powered" href="https://www.pyth.network/" target="_blank" rel="noopener noreferrer">
+        Powered by <b>Pyth Network</b> Community
+      </a>
     </main>
   )
 }

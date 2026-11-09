@@ -93,6 +93,8 @@
   border-radius: 999px;
 }
 
+.md-mode-badge.is-beta { color: #fff; background: linear-gradient(180deg, #8f62e6, #5c33b4); box-shadow: 0 0 0 1px rgba(201, 162, 74, 0.8); }
+
 @media (max-width: 860px) {
   .hm-panel.md-panel { width: min(100%, 520px); }
 }

@@ -249,3 +249,24 @@
 @media (prefers-reduced-motion: reduce) {
   .pb-cast-img, .pb-ember, .pb-bomb, .pb-bomb img, .pb-aura, .pb-spark { animation: none; }
 }
+
+/* rodapé: "Powered by Pyth Network Community" (link pro site da Pyth), no canto de baixo à direita */
+.pb-powered {
+  position: absolute;
+  z-index: 5;
+  right: 16px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  padding: 0.45em 1em;
+  font: 500 clamp(12px, 1.2vw, 15px)/1.2 Inter, system-ui, sans-serif;
+  color: rgba(236, 230, 248, 0.82);
+  text-decoration: none;
+  background: rgba(16, 9, 32, 0.72);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(10, 4, 30, 0.35);
+  transition: color 0.15s, background 0.15s;
+}
+.pb-powered b { color: #fff; font-weight: 700; }
+.pb-powered:hover, .pb-powered:focus-visible { color: #fff; background: rgba(46, 24, 92, 0.85); }
+@media (max-width: 640px) {
+  .pb-powered { right: 50%; transform: translateX(50%); white-space: nowrap; font-size: 11px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+}

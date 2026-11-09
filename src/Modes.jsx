@@ -80,6 +80,7 @@ const MODES = [
     icon: '⚔️',
     img: '/modes/pvp.webp',
     title: 'Pyth Bomb PVP',
+    badge: 'Beta', // selo roxo ao lado do nome: o modo ainda está em teste (tirar quando sair do beta)
     sub: 'Bomberman-style knockout tournament. 4 per room, winners move on to the final.',
     locked: false,
     href: '/pvp',
@@ -165,6 +166,7 @@ export default function Modes({ onSelectClassic, onSelectRecap }) {
                   <span className="md-mode-title">
                     {m.title}
                     {m.locked && <span className="md-mode-badge">Coming soon</span>}
+                    {!m.locked && m.badge && <span className="md-mode-badge is-beta">{m.badge}</span>}
                   </span>
                   {m.sub && <span className="md-mode-sub">{m.sub}</span>}
                 </span>
