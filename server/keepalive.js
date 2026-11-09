@@ -7,7 +7,9 @@ export function startKeepAlive({ url, key, log = console.log }) {
   if (!url || !key) { log('Supabase keep-alive: off (no SUPABASE_URL / SUPABASE_ANON_KEY)'); return }
   const ping = async () => {
     try {
-      const res = await fetch(`${url}/rest/v1/rooms?select=id&limit=1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
+      // chave nova (sb_publishable_...) vai só no "apikey"; a antiga (eyJ...) também pode ir como Bearer
+      const headers = key.startsWith('sb_') ? { apikey: key } : { apikey: key, Authorization: `Bearer ${key}` }
+      const res = await fetch(`${url}/rest/v1/rooms?select=id&limit=1`, { headers })
       log(`Supabase keep-alive: HTTP ${res.status}`)
     } catch (e) {
       log(`Supabase keep-alive failed: ${e.message}`)

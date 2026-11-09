@@ -1,8 +1,12 @@
 // Conexão do site com o servidor de jogo do PVP (WebSocket), com reconexão automática.
-// O endereço do servidor vem de VITE_PVP_SERVER (no site publicado); no computador, ws://localhost:8787.
+// Endereço do servidor: no site publicado, o servidor do Railway (Europa); no computador (localhost), o servidor local
+// (node server/index.js, porta 8787). ?server=railway no computador testa contra o Railway. VITE_PVP_SERVER troca tudo.
+const RAILWAY_URL = 'wss://pyth-bomb-production.up.railway.app'
+const LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+const FORCE_RAILWAY = new URLSearchParams(window.location.search).get('server') === 'railway'
 
 export const PVP_URL = import.meta.env.VITE_PVP_SERVER ||
-  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8787`
+  (LOCAL && !FORCE_RAILWAY ? `ws://${window.location.hostname}:8787` : RAILWAY_URL)
 
 // getToken(): devolve o crachá do Supabase (login anônimo) na hora de conectar
 export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
