@@ -332,7 +332,8 @@ export function WaitPanel({ tour, meId, onWatch, onLeave }) {
   )
 }
 
-// PÓDIO do campeão (arte em pixel): 1º no meio com a coroa, 2º e 3º da final dos lados, e o troféu ao lado.
+// PÓDIO do campeão (arte em pixel), centralizado: 1º no meio com a coroa, 2º e 3º da final dos lados.
+// (o troféu public/pvp/trophy.png ficou guardado; a Halls preferiu sem ele)
 // Medidas do desenho do pódio (public/pvp/podium.png, 178x111 pixels): centro e topo de cada degrau.
 const PODIUM = { w: 178, h: 111, steps: { 1: { x: 0.5, top: 6 }, 2: { x: 0.16, top: 30 }, 3: { x: 0.84, top: 42 } } }
 function Podium({ tour, champ }) {
@@ -362,7 +363,6 @@ function Podium({ tour, champ }) {
         <img className="pv-podium-img" src="/pvp/podium.png" alt="" />
         {stand(second, 2)}{stand(third, 3)}{stand(champ, 1)}
       </div>
-      <img className="pv-trophy" src="/pvp/trophy.png" alt="" style={{ width: u(85), height: u(132) }} />
     </div>
   )
 }
