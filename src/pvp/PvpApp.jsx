@@ -85,6 +85,11 @@ export default function PvpApp() {
           setError(m.error)
           // código que não existe mais: esquece, pra não ficar tentando
           if (/not found/i.test(m.error)) { wantRef.current.code = ''; setUrlCode('') }
+        } else if (m.t === 'pong') {
+          // tempo de ida e volta até o servidor (o OnlineMatch usa pra prever o próprio boneco)
+          const rtt = performance.now() / 1000 - m.at
+          const f = feedRef.current
+          if (f && rtt >= 0 && rtt < 3) f.rtt = f.rtt == null ? rtt : f.rtt * 0.8 + rtt * 0.2
         } else if (m.t === 'kicked') {
           setKicked(true)
         }

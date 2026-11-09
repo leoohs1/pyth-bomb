@@ -39,7 +39,7 @@ export function matchSnap(s) {
       mb: p.maxBombs, rg: p.range, sp: r3(p.speed), sd: p.shield ? 1 : 0, k: p.kick ? 1 : 0, dt: p.detonator ? 1 : 0,
       by: p.killedBy, cs: p.cause,
     })),
-    b: s.bombs.map((b) => ({ x: b.x, y: b.y, timer: r3(b.timer), fuse: b.fuse, range: b.range, remote: b.remote, owner: b.owner, slide: b.slide ? { dx: b.slide.dx, dy: b.slide.dy, p: r3(b.slide.p) } : null })),
+    b: s.bombs.map((b) => ({ x: b.x, y: b.y, timer: r3(b.timer), fuse: b.fuse, range: b.range, remote: b.remote, owner: b.owner, passFor: b.passFor, slide: b.slide ? { dx: b.slide.dx, dy: b.slide.dy, p: r3(b.slide.p) } : null })),
     f: s.flames.map((f) => ({ x: f.x, y: f.y, t: r3(f.t), kind: f.kind, sides: f.sides, visual: !!f.visual })),
     bu: s.burning.map((b) => ({ x: b.x, y: b.y, t: r3(b.t) })),
     pu: s.powerups.filter((pu) => pu.revealed && !pu.taken).map((pu) => ({ x: pu.x, y: pu.y, kind: pu.kind, revealed: true, taken: false, revealedAt: r3(pu.revealedAt) })),

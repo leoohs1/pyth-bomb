@@ -436,3 +436,14 @@ export function step(s, inputs = {}) {
 }
 
 export const alivePlayers = (s) => s.players.filter((p) => p.alive)
+
+// Só o ANDAR de um jogador, com as mesmas regras do servidor (o navegador usa pra prever o próprio boneco e ele
+// responder na hora; quem decide de verdade continua sendo o servidor). s precisa de level e bombs (com passFor).
+export function movePlayer(s, p, dir, dt) {
+  const d = DIRS[dir]
+  if (!d) return false
+  const bx = p.x, by = p.y
+  if (d.dx) moveAxis(s, p, 'x', 'y', d.dx, p.speed * dt)
+  else moveAxis(s, p, 'y', 'x', d.dy, p.speed * dt)
+  return p.x !== bx || p.y !== by
+}

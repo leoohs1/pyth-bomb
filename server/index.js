@@ -21,7 +21,7 @@ const ON_RAILWAY = !!process.env.RAILWAY_ENVIRONMENT
 const TEST_BOTS = process.env.ALLOW_TEST_BOTS ? process.env.ALLOW_TEST_BOTS === '1' : !ON_RAILWAY // botão "add test bot" só fora do Railway
 const DEV_AUTH = process.env.PVP_DEV_AUTH === '1' && !ON_RAILWAY // só pra testes automáticos no computador
 const MAX_TOURNAMENTS = 50
-const SNAP_EVERY = 3     // a cada 3 passos (60/3 = 20 por segundo)
+const SNAP_EVERY = 2     // a cada 2 passos (60/2 = 30 por segundo)
 const SUMMARY_EVERY = 15 // resumo do torneio: até 4 por segundo (só quando muda)
 
 const ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://pythbomb.com,https://www.pythbomb.com').split(',').map((s) => s.trim()).filter(Boolean)

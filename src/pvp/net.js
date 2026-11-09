@@ -9,6 +9,10 @@ export const PVP_URL = import.meta.env.VITE_PVP_SERVER ||
   (LOCAL && !FORCE_RAILWAY ? `ws://${window.location.hostname}:8787` : RAILWAY_URL)
 
 // getToken(): devolve o crachá do Supabase (login anônimo) na hora de conectar
+// TESTE (só no computador): ?lag=250 atrasa cada mensagem 125 ms pra ir e 125 ms pra voltar, como uma internet longe
+const LAG = import.meta.env.DEV ? Math.max(0, Number(new URLSearchParams(window.location.search).get('lag')) || 0) / 2 : 0
+const later = (fn) => (LAG ? setTimeout(fn, LAG) : fn())
+
 export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
   let ws = null
   let closed = false
@@ -29,7 +33,7 @@ export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
       let m
       try { m = JSON.parse(e.data) } catch { return }
       if (m.t === 'kicked') closed = true // abriu o jogo em outra aba: esta para de tentar
-      onMessage(m)
+      later(() => onMessage(m))
     }
     ws.onclose = () => {
       ws = null
@@ -45,7 +49,7 @@ export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
   open()
 
   return {
-    send(obj) { if (ws?.readyState === 1) ws.send(JSON.stringify(obj)) },
+    send(obj) { const str = JSON.stringify(obj); later(() => { if (ws?.readyState === 1) ws.send(str) }) },
     close() { closed = true; clearTimeout(timer); ws?.close() },
   }
 }
