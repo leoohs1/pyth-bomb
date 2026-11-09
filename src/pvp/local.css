@@ -274,3 +274,40 @@
 /* celular: o rostinho cabe no placar compacto */
 .pl-page.is-touch .pl-face-box { width: 24px; height: 24px; }
 .pl-page.is-touch .pl-face-box .pl-face { height: 48px; top: 1px; }
+
+/* ---- JOYSTICK FLUTUANTE (estilo Free Fire): a metade esquerda da tela inteira é a área do dedão */
+.pv-joy-zone {
+  position: fixed; left: 0; top: calc(112px + env(safe-area-inset-top)); bottom: 0; width: 50vw; z-index: 20;
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.pv-joy-base, .pv-joy-knob { position: fixed; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
+.pv-joy-base {
+  width: 124px; height: 124px;
+  background: radial-gradient(circle, rgba(30, 16, 52, 0.25), rgba(30, 16, 52, 0.5));
+  border: 3px solid rgba(240, 199, 90, 0.75); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), inset 0 0 18px rgba(0, 0, 0, 0.4);
+}
+.pv-joy-knob {
+  width: 58px; height: 58px;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #f0c75a 45%, #a9771a);
+  border: 3px solid #2a1805; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
+}
+/* sem dedo: um joystick fraquinho no canto, só pra mostrar onde fica */
+.pv-joy-hint {
+  position: absolute; left: 22px; bottom: calc(26px + env(safe-area-inset-bottom)); width: 104px; height: 104px; border-radius: 50%;
+  border: 3px dashed rgba(240, 199, 90, 0.45); background: rgba(30, 16, 52, 0.25); display: grid; place-items: center; pointer-events: none;
+}
+.pv-joy-hint span { width: 44px; height: 44px; border-radius: 50%; background: rgba(240, 199, 90, 0.35); border: 2px solid rgba(0, 0, 0, 0.4); }
+/* o lugar do antigo direcional fica livre: o botão da bomba continua à direita */
+.pl-touch { justify-content: flex-end; }
+@media (orientation: landscape) {
+  .pv-joy-zone { top: 0; width: 45vw; }
+  .pv-joy-hint { left: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .pl-page.is-touch .ct-fab.ct-compact { z-index: 30; }
+}
+.pl-page.is-touch .ct-fab.ct-compact, .pl-page.is-touch .ct-panel.ct-compact { z-index: 30; }
+
+/* balão do chat na partida (celular): embaixo à esquerda, acima do joystick (em cima ele cobria o canto da sala) */
+.pl-page.is-touch .ct-fab.ct-compact { top: auto; bottom: calc(146px + env(safe-area-inset-bottom)); left: 30px; width: 44px; height: 44px; font-size: 20px; }
+@media (orientation: landscape) {
+  .pl-page.is-touch .ct-fab.ct-compact { top: calc(10px + env(safe-area-inset-top)); bottom: auto; left: 10px; }
+}

@@ -213,7 +213,8 @@ export default function PvpApp() {
       <GameArenaV2 {...common} phase="pvp" chip={chip} panel={<div className={`pv-panel${tour ? '' : ' is-entry'}`}>{panel}</div>} />
       {confetti && <Confetti />}
       {sceneHeroes && arenaEl && createPortal(<LobbyScene heroes={sceneHeroes} rightOnly={!!tour} />, arenaEl)}
-      {tour && !kicked && <ChatBox chat={chat} myPlayerId={meId} phase={tour.status === 'done' ? 'finished' : 'lobby'} variant={compact ? 'compact' : 'arena'} />}
+      {/* no celular o chat começa FECHADO (só o balãozinho 💬); no computador, aberto no lobby */}
+      {tour && !kicked && <ChatBox chat={chat} myPlayerId={meId} phase={compact ? 'waiting' : tour.status === 'done' ? 'finished' : 'lobby'} variant={compact ? 'compact' : 'arena'} />}
       {tour && status !== 'open' && <div className="pv-netbar" role="status">Reconnecting to the game server…</div>}
     </>
   )

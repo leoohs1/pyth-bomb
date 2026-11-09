@@ -15,7 +15,8 @@ import { hudOf, MatchTop, MatchBanners } from './MatchHud.jsx'
 import { loadSprites, PX_TILE } from '../solo/engine/sprites.js'
 import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
-import { TouchPad, TouchButtons } from '../solo/TouchControls.jsx'
+import { TouchButtons } from '../solo/TouchControls.jsx'
+import Joystick from './Joystick.jsx'
 import { useSoloAudio, PVP_MUSIC } from './useSoloAudio.js'
 import ChatBox from '../ChatBox.jsx'
 
@@ -215,7 +216,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
       </div>
       {TOUCH && !spectating && (
         <div className="pl-touch">
-          <TouchPad controls={controls} />
+          <Joystick controls={controls} />
           <TouchButtons controls={controls} detonator={!!me?.detonator} onPause={() => {}} />
         </div>
       )}
