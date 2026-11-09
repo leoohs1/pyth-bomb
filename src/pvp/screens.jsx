@@ -7,7 +7,8 @@ import { cornersFor } from './engine/maps.js'
 
 export function Sprite({ hero, k = 0.075 }) {
   const h = heroById(hero)
-  return <img className="pv-sprite" src={h.img} alt="" style={{ width: `${h.w * k}cqw`, height: `${h.h * k}cqw` }} />
+  // tamanho em variáveis: no computador acompanha a arena (cqw); no celular em pé o pvp.css troca por pixels
+  return <img className="pv-sprite pv-sized" src={h.img} alt="" style={{ '--w': h.w, '--h': h.h, '--k': k }} />
 }
 
 const Logo = () => <img className="ga-logo" src="/logo.webp" alt="Pyth Bomb" width="2000" height="667" />

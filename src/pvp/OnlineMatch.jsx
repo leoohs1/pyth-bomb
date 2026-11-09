@@ -2,7 +2,8 @@
 // Os outros jogadores aparecem 0,1 s "atrasados", deslizando entre uma mensagem e outra (fica suave);
 // o próprio jogador usa sempre a posição mais nova (responde mais rápido).
 // Teclado: WASD ou setas pra andar, Espaço ou Enter = bomba, E ou Shift = detonador.
-import { useEffect, useRef, useState } from 'react'
+// Celular/tablet: direcional e botão de bomba na tela (os mesmos do Solo, TouchControls.jsx). ?touch=1 força, ?touch=0 desliga.
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './local.css'
 import SoundToggle from '../SoundToggle.jsx'
 import { COLS, ROWS } from './engine/constants.js'
@@ -12,6 +13,15 @@ import { hudOf, MatchTop, MatchBanners } from './MatchHud.jsx'
 import { loadSprites, PX_TILE } from '../solo/engine/sprites.js'
 import * as FX from '../solo/engine/fx.js'
 import { createSoloSfx } from '../solo/sfx.js'
+import { TouchPad, TouchButtons } from '../solo/TouchControls.jsx'
+
+// tela de toque (sem mouse): mostra os controles na tela
+export const TOUCH = (() => {
+  const v = new URLSearchParams(window.location.search).get('touch')
+  if (v === '1') return true
+  if (v === '0') return false
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches
+})()
 
 const DELAY = 0.1 // segundos de atraso pra deslizar os outros jogadores
 
@@ -25,6 +35,9 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
   const [hud, setHud] = useState(null)
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
+  // direcional/bomba da tela falam com o mesmo controle do teclado (o efeito abaixo preenche press/release)
+  const padRef = useRef({ press() {}, release() {} })
+  const controls = useMemo(() => ({ press: (a) => padRef.current.press(a), release: (a) => padRef.current.release(a) }), [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -43,20 +56,26 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
       const d = held.at(-1) ?? null
       if (d !== sentDir) { sentDir = d; send({ t: 'in', d }) }
     }
+    const press = (a) => {
+      if (spectating) return
+      if (a === 'bomb' || a === 'detonate') { send({ t: 'in', [a === 'bomb' ? 'b' : 'x']: 1 }); return }
+      if (!held.includes(a)) held.push(a)
+      sendDir()
+    }
+    const release = (a) => {
+      const i = held.indexOf(a)
+      if (i >= 0) { held.splice(i, 1); sendDir() }
+    }
+    padRef.current = { press, release }
     const onDown = (e) => {
       if (spectating || e.altKey || e.ctrlKey || e.metaKey) return
       const a = KEYS[e.code]
       if (!a) return
       e.preventDefault()
-      if (a === 'bomb' || a === 'detonate') { if (!e.repeat) send({ t: 'in', [a === 'bomb' ? 'b' : 'x']: 1 }); return }
-      if (!held.includes(a)) held.push(a)
-      sendDir()
+      if ((a === 'bomb' || a === 'detonate') && e.repeat) return
+      press(a)
     }
-    const onUp = (e) => {
-      const a = KEYS[e.code]
-      const i = held.indexOf(a)
-      if (i >= 0) { held.splice(i, 1); sendDir() }
-    }
+    const onUp = (e) => { const a = KEYS[e.code]; if (a) release(a) }
     const onBlur = () => { held.length = 0; sendDir() }
     window.addEventListener('keydown', onDown)
     window.addEventListener('keyup', onUp)
@@ -128,7 +147,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
   const me = hud?.players.find((p) => p.id === meId)
   const iAmOut = !spectating && me && !me.alive && hud.status === 'playing'
   return (
-    <div className={`pl-page is-map-${hud?.mapId ?? 'tavern'}`}>
+    <div className={`pl-page is-map-${hud?.mapId ?? 'tavern'}${TOUCH ? ' is-touch' : ''}`}>
       <SoundToggle className="sound-fixed" />
       <MatchTop hud={hud} />
       <div className="pl-stage" ref={wrapRef}>
@@ -136,10 +155,16 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
         <MatchBanners hud={hud} overNote={note} />
         {iAmOut && <div className="pl-banner pl-out">You're out<small>Watching the rest of your room</small></div>}
       </div>
+      {TOUCH && !spectating && (
+        <div className="pl-touch">
+          <TouchPad controls={controls} />
+          <TouchButtons controls={controls} detonator={!!me?.detonator} onPause={() => {}} />
+        </div>
+      )}
       <footer className="pl-bar">
         {onBack && <button type="button" onClick={onBack}>← Tournament</button>}
         <span className="pl-tag">{title ?? (spectating ? 'WATCHING' : 'PYTH BOMB PVP')}</span>
-        {!spectating && <span className="pl-help">Move: WASD or arrows · Bomb: Space or Enter · Detonator: E or Shift</span>}
+        {!spectating && !TOUCH && <span className="pl-help">Move: WASD or arrows · Bomb: Space or Enter · Detonator: E or Shift</span>}
       </footer>
     </div>
   )

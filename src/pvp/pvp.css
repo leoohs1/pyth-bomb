@@ -233,3 +233,46 @@
   padding: 8px 14px; font: 700 13px/1.2 Inter, system-ui, sans-serif; color: #fff;
   background: rgba(180, 40, 60, 0.92); border-radius: 8px;
 }
+
+/* herói em pixel com tamanho por variável (screens.jsx Sprite): no computador, em cqw como a prévia */
+.pv-sprite.pv-sized { width: calc(var(--w) * var(--k) * 1cqw); height: calc(var(--h) * var(--k) * 1cqw); }
+
+/* ---- CELULAR EM PÉ: a arena vira o layout compacto do Classic (GameCompact, .mb-stage). Lá o cqw fica pequeno demais,
+   então as telas do PVP usam pixels; e somem a personagem sentada do Classic, a fileira de jogadores e o "x/18". */
+.mb-stage:has(.pv-panel) .mb-hero,
+.mb-stage:has(.pv-panel) .mb-players,
+.mb-stage:has(.pv-panel) .mb-top > .ga-chip:first-child { display: none; }
+.mb-panel .pv-sprite.pv-sized { width: calc(var(--w) * var(--k) * 11px); height: calc(var(--h) * var(--k) * 11px); }
+.mb-panel .pv-label { margin: 10px 0 4px; }
+.mb-panel .pv-roster { padding: 4px; gap: 4px; max-height: 150px; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
+.mb-panel .pv-chip { gap: 2px; padding: 4px 2px 3px; }
+.mb-panel .pv-chip-art { height: 46px; }
+.mb-panel .pv-host { top: -4px; right: -2px; font-size: 13px; }
+.mb-panel .pv-picker { gap: 8px; }
+.mb-panel .pv-hero { height: 66px; min-width: 56px; padding: 4px 6px; }
+.mb-panel .pv-bracket { margin-top: 4px; }
+.mb-panel .pv-round { gap: 3px; }
+.mb-panel .pv-round + .pv-round { margin-left: 26px; }
+.mb-panel .pv-round + .pv-round::before { left: -19px; line-height: 20px; }
+.mb-panel .pv-rooms { gap: 3px; max-width: 130px; }
+.mb-panel .pv-room { min-width: 24px; height: 20px; padding: 0 4px; }
+.mb-panel .pv-drawing { padding: 14px 0 8px; }
+.mb-panel .pv-cards { grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 340px; }
+.mb-panel .pv-cards.is-single { max-width: none; }
+.mb-panel .pv-room-card { padding: 6px; }
+.mb-panel .pv-room-head { gap: 4px; margin-bottom: 4px; }
+.mb-panel .pv-corners { gap: 4px; }
+.mb-panel .pv-slot { gap: 5px; height: 86px; padding-bottom: 4px; }
+.mb-panel .pv-feet::after { bottom: -4px; width: 48px; height: 14px; border-width: 3px; box-shadow: 0 0 6px var(--ring, #c9a24a); }
+.mb-panel .pv-tag { padding: 1px 7px; }
+.mb-panel .pv-watch { gap: 4px; max-height: 170px; }
+.mb-panel .pv-watch-row { gap: 8px; padding: 5px 8px; }
+.mb-panel .pv-watch-row .ga-copy { padding: 5px 10px; }
+.mb-panel .pv-champ { gap: 10px; margin: 6px 0 2px; padding-top: 24px; }
+.mb-panel .pv-crown { font-size: 26px; }
+.mb-panel .pv-feet-gold { filter: drop-shadow(0 0 10px rgba(255, 214, 110, 0.8)); }
+.mb-panel .pv-feet-gold::after { width: 100px; height: 28px; bottom: -10px; }
+.mb-panel .pv-input { max-width: 260px; padding: 9px 12px; font-size: 15px; }
+.mb-panel .pv-join-row { gap: 8px; }
+.mb-panel .pv-join-row .pv-input { max-width: 140px; }
+.mb-panel .pv-testbot { margin-top: 6px; }

@@ -162,7 +162,7 @@ export default function PvpApp() {
 
   return (
     <>
-      <GameArenaV2 {...common} phase="pvp" chip={chip} panel={panel} />
+      <GameArenaV2 {...common} phase="pvp" chip={chip} panel={<div className="pv-panel">{panel}</div>} />
       {confetti && <Confetti />}
       {tour && status !== 'open' && <div className="pv-netbar" role="status">Reconnecting to the game server…</div>}
     </>
