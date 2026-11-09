@@ -289,7 +289,7 @@
 
 /* prova do sorteio (Pyth Entropy) */
 .pv-proof a { color: #6a3fc4; font-weight: 800; }
-.pv-proof code { font: 700 max(10px, 0.85cqw)/1 ui-monospace, Consolas, monospace; }
+.pv-proof code { color: #2e1f63; font: 700 max(10px, 0.85cqw)/1 ui-monospace, Consolas, monospace; }
 .pv-verify {
   margin: 8px auto 4px; max-width: 100%; text-align: left;
   font: 600 max(11px, 0.9cqw)/1.4 Inter, system-ui, sans-serif; color: var(--ga-ink, #2e1f63);
@@ -300,6 +300,7 @@
 .pv-verify code {
   display: block; padding: 4px 6px; overflow-wrap: anywhere; user-select: all;
   font: 600 max(10px, 0.8cqw)/1.35 ui-monospace, Consolas, monospace; background: #fff; border-radius: 6px;
+  color: #2e1f63; /* a arena deixa o texto de 'code' claro: aqui precisa ser escuro */
 }
 .pv-verify a { color: #6a3fc4; font-weight: 800; }
 .pv-verify-how { font-size: max(10px, 0.8cqw); color: rgba(46, 31, 99, 0.75); }
