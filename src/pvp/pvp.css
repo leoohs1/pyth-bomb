@@ -304,3 +304,15 @@
 }
 .pv-verify a { color: #6a3fc4; font-weight: 800; }
 .pv-verify-how { font-size: max(10px, 0.8cqw); color: rgba(46, 31, 99, 0.75); }
+
+/* ---- consertos do visual (2026-11-09) */
+/* a personagem sentada do Classic (o "eu" do pódio) não é o herói do PVP: some nas telas do PVP */
+.ga-arena:has(.pv-panel) .ga-me-stage { display: none; }
+/* na entrada (antes de existir torneio) o contador "0/20 players" não faz sentido */
+.ga-arena:has(.pv-panel.is-entry) .ga-hud > .ga-chip:first-child { visibility: hidden; }
+/* a impressão digital do segredo: texto escuro num fundo claro (o estilo geral de <code> é escuro) */
+.pv-proof code { background: rgba(106, 63, 196, 0.12); color: #2e1f63; padding: 2px 6px; border-radius: 6px; }
+.pv-verify code { background: #fff; }
+/* Join com cara de botão (antes parecia apagado mesmo funcionando) */
+.pv-join-row .ga-copy { padding: 0.55cqw 1.4cqw; min-height: 36px; font-weight: 800; }
+.pv-join-row .ga-copy:disabled { opacity: 0.55; filter: grayscale(0.4); }

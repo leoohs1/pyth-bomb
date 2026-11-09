@@ -1,5 +1,6 @@
 // Placar da sala do PVP (em cima: lutadores e relógio) e os avisos por cima da sala (3-2-1, quem ganhou).
 // Usado pelo teste local (/pvp-local) e pelo jogo online (/pvp).
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { cornerColor } from './render.js'
 import { heroById } from './heroes.js'
 import { PLAYER_SPEED, SPEED_STEP } from './engine/constants.js'
@@ -23,7 +24,7 @@ export function MatchTop({ hud }) {
       <div className="pl-players">
         {hud?.players.map((p) => (
           <div key={p.id} className={`pl-card${p.alive ? '' : ' is-out'}`} style={{ '--ring': cornerColor(p.corner) }}>
-            <img className="pl-face" src={heroById(p.hero).img} alt="" />
+            <span className="pl-face-box"><img className="pl-face" src={heroById(p.hero).img} alt="" /></span>
             <div className="pl-info">
               <b>{p.name}</b>
               <span className="pl-stats">
@@ -38,13 +39,48 @@ export function MatchTop({ hud }) {
   )
 }
 
+// TELA VS (nos 3 segundos antes da luta): os lutadores grandes, frente a frente, com o nome e a cor do canto
+function VsIntro({ hud }) {
+  const ps = hud.players
+  return (
+    <div className={`pl-vs n-${ps.length}`} aria-label="Fighters">
+      <div className="pl-vs-map">{hud.final ? <b>FINAL</b> : null}{hud.map}</div>
+      <div className="pl-vs-row">
+        {ps.map((p, i) => (
+          <Fragment key={p.id}>
+            {i > 0 && <span className="pl-vs-vs" aria-hidden="true">VS</span>}
+            <div className="pl-vs-fighter" style={{ '--ring': cornerColor(p.corner), '--i': i, '--side': i < ps.length / 2 ? -1 : 1 }}>
+              <img className="pl-vs-hero" src={heroById(p.hero).img} alt="" />
+              <span className="pl-vs-name">{p.name}</span>
+            </div>
+          </Fragment>
+        ))}
+      </div>
+      <div className="pl-vs-count" key={hud.phase}>{hud.phase}</div>
+    </div>
+  )
+}
+
 // avisos por cima da sala. overNote: frase embaixo do "X wins!" quando a sala acabou
 export function MatchBanners({ hud, overNote = null }) {
+  // "FIGHT!" por quase 1 s logo que a contagem acaba
+  const [fight, setFight] = useState(false)
+  const prev = useRef(null)
+  useEffect(() => {
+    const st = hud?.status
+    if (prev.current === 'countdown' && st === 'playing') {
+      setFight(true)
+      const t = setTimeout(() => setFight(false), 950)
+      prev.current = st
+      return () => clearTimeout(t)
+    }
+    prev.current = st
+  }, [hud?.status])
   if (!hud) return null
   return (
     <>
-      {hud.status === 'countdown' && <div className="pl-banner pl-count" key={hud.phase}>{hud.phase}</div>}
-      {hud.status === 'countdown' && <div className="pl-mapname">{hud.final ? 'FINAL · ' : ''}{hud.map}</div>}
+      {hud.status === 'countdown' && <VsIntro hud={hud} />}
+      {fight && <div className="pl-banner pl-fight">FIGHT!</div>}
       {(hud.status === 'ending' || hud.status === 'over') && (
         <div className="pl-banner pl-win">
           <span>{hud.winner} wins!</span>
