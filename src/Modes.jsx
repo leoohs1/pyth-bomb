@@ -23,7 +23,7 @@ try { pokerUrl = new URLSearchParams(window.location.search).get('poker') === '1
 
 // Pyth Bomb PVP (torneio estilo Bomberman, servidor de jogo no Railway): só aparece com ?pvp=1 no endereço até a arte do
 // card (public/modes/pvp.webp) chegar. Pra abrir pra todo mundo: PVP_OPEN = true.
-const PVP_OPEN = false
+const PVP_OPEN = true
 let pvpUrl = false
 try { pvpUrl = new URLSearchParams(window.location.search).get('pvp') === '1' } catch { /* tudo bem */ }
 
