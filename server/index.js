@@ -10,7 +10,8 @@ import http from 'node:http'
 import { randomInt } from 'node:crypto'
 import { WebSocketServer } from 'ws'
 import { Tournament, cleanName, cleanHero } from './tournament.js'
-import { verifyToken, authReady } from './auth.js'
+import { verifyToken, authReady, supabaseConfig } from './auth.js'
+import { startKeepAlive } from './keepalive.js'
 import { matchInit, matchSnap } from '../src/pvp/engine/snapshot.js'
 import { STEP } from '../src/pvp/engine/constants.js'
 
@@ -241,6 +242,8 @@ setInterval(() => {
     if ((t.status === 'done' && now - t.endedAt > 15 * 60) || idle > 10 * 60) tournaments.delete(code)
   }
 }, 30_000)
+
+if (ON_RAILWAY) startKeepAlive(supabaseConfig) // só no Railway (no computador não precisa)
 
 server.listen(PORT, () => {
   console.log(`Pyth Bomb PVP server on port ${PORT} · login check ${authReady ? 'on' : 'OFF (no Supabase settings)'} · test bots ${TEST_BOTS ? 'on' : 'off'}`)

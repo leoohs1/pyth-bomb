@@ -21,6 +21,7 @@ const local = process.env.SUPABASE_URL ? {} : loadLocalEnv()
 const URL_ = process.env.SUPABASE_URL || local.VITE_SUPABASE_URL || ''
 const KEY = process.env.SUPABASE_ANON_KEY || local.VITE_SUPABASE_ANON_KEY || ''
 export const authReady = !!(URL_ && KEY)
+export const supabaseConfig = { url: URL_, key: KEY } // (endereço e chave pública, pro toque diário)
 
 const cache = new Map() // token -> { id, until }
 
