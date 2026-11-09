@@ -21,6 +21,12 @@ const POKER_OPEN = false
 let pokerUrl = false
 try { pokerUrl = new URLSearchParams(window.location.search).get('poker') === '1' } catch { /* tudo bem */ }
 
+// Pyth Bomb PVP (torneio estilo Bomberman, servidor de jogo no Railway): só aparece com ?pvp=1 no endereço até a arte do
+// card (public/modes/pvp.webp) chegar. Pra abrir pra todo mundo: PVP_OPEN = true.
+const PVP_OPEN = false
+let pvpUrl = false
+try { pvpUrl = new URLSearchParams(window.location.search).get('pvp') === '1' } catch { /* tudo bem */ }
+
 // icon = emoji de reserva; img = arte do ícone (se o arquivo não existir ainda, aparece o emoji)
 const MODES = [
   {
@@ -68,6 +74,16 @@ const MODES = [
     locked: false,
     href: '/poker',
     hidden: !(POKER_OPEN || pokerUrl),
+  },
+  {
+    id: 'pvp',
+    icon: '⚔️',
+    img: '/modes/pvp.webp',
+    title: 'Pyth Bomb PVP',
+    sub: 'Bomberman-style knockout tournament. 4 per room, winners move on to the final.',
+    locked: false,
+    href: '/pvp',
+    hidden: !(PVP_OPEN || pvpUrl),
   },
   {
     id: 'new',
