@@ -42,6 +42,24 @@ export class Tournament {
     this.lastActive = now
     this.roomSeq = 0
     this.botSeq = 0
+    this.fillBots = false // opção do lobby: completar as salas com bots (menos a final)
+  }
+
+  setFill(byId, on) {
+    if (byId === this.hostId && this.status === 'lobby') this.fillBots = !!on
+  }
+
+  // bot que completa sala: herói que ainda não está na sala (se der) e nome 'Bot <herói>'
+  makeFillBot(roomIds) {
+    const used = roomIds.map((id) => this.players.get(id)?.hero)
+    const hero = HEROES.find((h) => !used.includes(h)) ?? HEROES[this.botSeq % HEROES.length]
+    const label = hero.charAt(0).toUpperCase() + hero.slice(1)
+    const names = roomIds.map((id) => this.players.get(id)?.name)
+    let name = `Bot ${label}`
+    for (let n = 2; names.includes(name); n++) name = `Bot ${label} ${n}`
+    const id = `bot-${++this.botSeq}`
+    this.players.set(id, { id, name, hero, bot: true, connected: true, goneAt: null, status: 'playing', roomId: null, reached: 0 })
+    return id
   }
 
   join(id, { name, hero, bot = false }, now = 0) {
@@ -129,6 +147,8 @@ export class Tournament {
 
   formRoom(roundIdx, ids, now) {
     const R = this.rounds[roundIdx]
+    // opção 'Fill rooms with bots': salas normais vão até 4 com bots (a final fica só com quem ganhou)
+    if (this.fillBots && !R.final) { ids = [...ids]; while (ids.length < 4) ids.push(this.makeFillBot(ids)) }
     const seed = drawSeed()
     const rng = makeRng(seed ^ 0xa5a5a5a5)
     const order = shuffle([...ids], rng) // quem fica em cada canto
@@ -257,6 +277,7 @@ export class Tournament {
       code: this.code,
       status: this.status,
       host: this.hostId,
+      fill: this.fillBots,
       champion: this.champion,
       max: MAX_PLAYERS,
       players: [...this.players.values()].map((p) => ({ id: p.id, name: p.name, hero: p.hero, bot: p.bot, on: p.connected, st: p.status, room: p.roomId, rd: p.reached })),

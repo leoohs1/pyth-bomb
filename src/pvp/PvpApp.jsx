@@ -147,7 +147,7 @@ export default function PvpApp() {
   } else if (tour.status === 'lobby') {
     chip = 'Lobby · Pyth Bomb PVP'
     panel = <LobbyPanel tour={tour} meId={meId} onHero={onHero} onStart={() => { setError(''); send({ t: 'start' }) }}
-      onBot={() => send({ t: 'bot' })} testBots={testBots} onLeave={onLeave} error={error} />
+      onBot={() => send({ t: 'bot' })} onFill={(on) => send({ t: 'fill', on })} testBots={testBots} onLeave={onLeave} error={error} />
   } else if (tour.status === 'done') {
     chip = 'Champion · Pyth Bomb PVP'
     confetti = true

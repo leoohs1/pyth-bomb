@@ -109,6 +109,7 @@ async function onMessage(ws, msg) {
       return
     }
     case 'bot': if (t && TEST_BOTS && t.hostId === pv.user) t.addTestBot(now); return
+    case 'fill': if (t) t.setFill(pv.user, msg.on); return
     case 'in': if (t) t.input(pv.user, msg); return
     case 'watch': pv.watch = typeof msg.room === 'string' ? msg.room : null; return
     case 'leave': {

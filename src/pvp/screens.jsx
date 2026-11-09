@@ -27,7 +27,7 @@ function HeroPicker({ hero, onPick }) {
 }
 
 // plano do torneio: no lobby, o plano pelo número de lutadores; depois do Start, as salas de verdade
-export function Bracket({ n, rounds = null }) {
+export function Bracket({ n, rounds = null, fill = false }) {
   if (rounds?.length) {
     const nowIdx = rounds.findIndex((r) => r.rooms.length < r.sizes.length || r.rooms.some((x) => x.st !== 'done'))
     return (
@@ -40,7 +40,8 @@ export function Bracket({ n, rounds = null }) {
                 : r.sizes.map((size, j) => {
                   const room = r.rooms.find((x) => x.index === j)
                   const st = room ? room.st : 'wait'
-                  return <span key={j} className={`pv-room is-${st}`} title={room ? `${st === 'done' ? 'finished' : st === 'playing' ? 'playing now' : 'starting'}` : 'waiting for winners'}>{r.final ? `🏆${size}` : size}</span>
+                  const shown = room ? room.ids.length : fill && !r.final ? 4 : size
+                  return <span key={j} className={`pv-room is-${st}`} title={room ? `${st === 'done' ? 'finished' : st === 'playing' ? 'playing now' : 'starting'}` : 'waiting for winners'}>{r.final ? `🏆${shown}` : shown}</span>
                 })}
             </div>
             <span className="pv-round-name">{r.final ? 'Final' : `Round ${i + 1}`}</span>
@@ -58,7 +59,7 @@ export function Bracket({ n, rounds = null }) {
           <div className="pv-rooms">
             {r.rooms.length > 6
               ? <span className="pv-room is-many">{r.rooms.length} rooms</span>
-              : r.rooms.map((s, j) => <span key={j} className="pv-room">{r.final ? `🏆${s}` : s}</span>)}
+              : r.rooms.map((s, j) => <span key={j} className={`pv-room${fill && !r.final && s < 4 ? ' has-bots' : ''}`}>{r.final ? `🏆${s}` : fill ? 4 : s}</span>)}
           </div>
           <span className="pv-round-name">{r.final ? 'Final' : `Round ${i + 1}`}</span>
         </li>
@@ -91,7 +92,7 @@ export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCrea
 }
 
 // ---- lobby (quem já entrou, herói, plano, Start do host)
-export function LobbyPanel({ tour, meId, onHero, onStart, onBot, testBots, onLeave, error }) {
+export function LobbyPanel({ tour, meId, onHero, onStart, onBot, onFill, testBots, onLeave, error }) {
   const [copied, setCopied] = useState(false)
   const fighters = tour.players.filter((p) => p.st === 'lobby')
   const n = fighters.length
@@ -128,8 +129,14 @@ export function LobbyPanel({ tour, meId, onHero, onStart, onBot, testBots, onLea
       <HeroPicker hero={me?.hero ?? 'pirb'} onPick={onHero} />
 
       <p className="pv-label">Tournament</p>
-      <Bracket n={n} />
+      <Bracket n={n} fill={tour.fill} />
       <p className="pv-summary">{n >= 2 ? summary(n) : 'Waiting for at least 2 fighters…'}</p>
+      {isHost ? (
+        <label className="pv-fill">
+          <input type="checkbox" checked={!!tour.fill} onChange={(e) => onFill(e.target.checked)} />
+          <span>Fill rooms with bots <small>(4 per room · never in the final)</small></span>
+        </label>
+      ) : tour.fill && <p className="pv-fill-note">🤖 Rooms are filled with bots (never in the final)</p>}
 
       {isHost
         ? <button type="button" className="ga-send ga-bigbtn" disabled={n < 2} onClick={onStart}>Start tournament</button>
@@ -249,7 +256,7 @@ export function WaitPanel({ tour, meId, onWatch, onLeave }) {
       <p className="pv-label">Rooms playing now</p>
       <WatchList tour={tour} onWatch={onWatch} />
       <p className="pv-label">Tournament</p>
-      <Bracket rounds={tour.rounds} />
+      <Bracket rounds={tour.rounds} fill={tour.fill} />
       <button type="button" className="ga-leave" onClick={onLeave}>Leave tournament</button>
     </>
   )
