@@ -28,7 +28,9 @@ export const TOUCH = (() => {
   return window.matchMedia('(hover: none) and (pointer: coarse)').matches
 })()
 
-const DELAY = 0.12 // segundos de atraso pra deslizar os outros jogadores
+const DELAY_MIN = 0.1, DELAY_MAX = 0.4 // folga pra deslizar os outros jogadores: cresce sozinha quando a internet oscila
+const EXTRAP = 0.15 // se as mensagens atrasarem, os outros continuam andando na mesma direção por até 0,15 s
+const NET_DEBUG = new URLSearchParams(window.location.search).get('net') === '1' // ?net=1: medidor de internet
 const FIX = 0.3     // quanto da diferença pra posição oficial corrige a cada mensagem do servidor
 
 const KEYS = {
@@ -41,6 +43,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
   const [hud, setHud] = useState(null)
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
+  const netRef = useRef(null) // texto do medidor ?net=1
   // direcional/bomba da tela falam com o mesmo controle do teclado (o efeito abaixo preenche press/release)
   const padRef = useRef({ press() {}, release() {} })
   const controls = useMemo(() => ({ press: (a) => padRef.current.press(a), release: (a) => padRef.current.release(a) }), [])
@@ -54,6 +57,9 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
     canvas.height = PX_TILE * ROWS
     const sfx = createSoloSfx()
     let raf = 0, hudKey = '', init = null, s = null, view = null, offset = null
+    // medição da internet: oscilação (jitter), folga atual, e o relógio do servidor visto daqui
+    const shown = new Map() // posição mostrada de cada outro jogador (suavizada)
+    let jitter = 0.01, delay = DELAY_MIN, lastSnapAt = null, lastSnapTm = null, ests = [], fpsN = 0, fpsT = 0, fps = 0, gapMax = 0
 
     // teclas: manda a direção quando muda e cada toque de bomba/detonador
     const held = []
@@ -157,22 +163,70 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
         view = makeView(s)
         offset = null
         pred = null; hist = []; lastTm = null // sala nova: começa a previsão do zero
+        shown.clear()
         FX.reset()
       }
       const snaps = f?.snaps ?? []
       if (s && snaps.length) {
         const nowS = nowMs / 1000
         const latest = snaps[snaps.length - 1]
-        // relógio do servidor visto daqui: acompanha devagar (a internet varia) e pula se ficou muito longe
-        const est = latest.tm - latest._at
-        offset = offset == null || Math.abs(est - offset) > 0.5 ? est : offset + (est - offset) * 0.05
-        const rt = Math.min(latest.tm, nowS + offset - DELAY)
+        // chegou mensagem nova: mede a oscilação (quanto o intervalo de chegada foge do intervalo do servidor)
+        if (latest.tm !== lastSnapTm) {
+          if (lastSnapAt != null) {
+            const dev = Math.abs((latest._at - lastSnapAt) - (latest.tm - lastSnapTm))
+            jitter = jitter * 0.92 + dev * 0.08
+            gapMax = Math.max(gapMax * 0.995, latest._at - lastSnapAt)
+          }
+          lastSnapAt = latest._at; lastSnapTm = latest.tm
+          ests.push({ at: latest._at, e: latest.tm - latest._at })
+          while (ests.length && ests[0].at < nowS - 3) ests.shift()
+        }
+        // relógio do servidor visto daqui: o da mensagem que chegou MAIS RÁPIDO nos últimos 3 s (as atrasadas não puxam)
+        const est = ests.length ? Math.max(...ests.map((q) => q.e)) : latest.tm - latest._at
+        offset = offset == null || Math.abs(est - offset) > 0.5 ? est : offset + (est - offset) * 0.1
+        // folga: sobe rápido quando a internet oscila, desce devagar quando acalma
+        const want = Math.min(DELAY_MAX, Math.max(DELAY_MIN, 0.06 + jitter * 3 + Math.max(0, gapMax - 0.05) * 0.5))
+        delay += (want - delay) * (want > delay ? 0.2 : 0.01)
+        const rtWanted = nowS + offset - delay
+        const rt = Math.min(latest.tm + EXTRAP, rtWanted)
         let a = null, b = latest
         for (let i = snaps.length - 1; i > 0; i--) {
           if (snaps[i - 1].tm <= rt) { a = snaps[i - 1]; b = snaps[i]; break }
         }
         const k = a ? Math.max(0, Math.min(1, (rt - a.tm) / Math.max(0.001, b.tm - a.tm))) : 1
-        applySnap(s, b, a, k, null, rt)
+        applySnap(s, b, a, k, null, Math.min(rt, latest.tm))
+        // mensagens atrasadas: os outros continuam andando na direção em que iam (por pouco tempo), em vez de congelar
+        if (rt > latest.tm && snaps.length > 1) {
+          const prev = snaps[snaps.length - 2], dtS = latest.tm - prev.tm, ahead = rt - latest.tm
+          // só com duas mensagens seguidas e normais (sem isso a conta da velocidade explode e o boneco "teleporta")
+          if (dtS >= 0.02 && dtS <= 0.25) {
+            for (const p of s.players) {
+              if (p.id === meId && !spectating) continue
+              const q = latest.p.find((x) => x.id === p.id), o = prev.p.find((x) => x.id === p.id)
+              if (!q || !o || !q.a || !q.m) continue
+              const vx = (q.x - o.x) / dtS, vy = (q.y - o.y) / dtS
+              if (Math.abs(vx) + Math.abs(vy) > 12) continue // mais rápido que qualquer herói: foi pulo de posição, não anda
+              p.x = q.x + Math.max(-0.6, Math.min(0.6, vx * ahead))
+              p.y = q.y + Math.max(-0.6, Math.min(0.6, vy * ahead))
+            }
+          }
+        }
+        // suaviza os outros jogadores: em vez de "pular" quando chegam mensagens atrasadas, deslizam rápido até a posição nova
+        for (const p of s.players) {
+          if (p.id === meId && !spectating) continue
+          const sh = shown.get(p.id)
+          const far = !sh || !p.alive || Math.abs(sh.x - p.x) + Math.abs(sh.y - p.y) > 3
+          if (far) { shown.set(p.id, { x: p.x, y: p.y }); continue }
+          // anda até a posição nova, mas no máximo ~2x a velocidade de um herói (sem trancos)
+          const k = Math.min(1, dt * 14), ex = (p.x - sh.x) * k, ey = (p.y - sh.y) * k
+          const cap = dt * 11, len = Math.abs(ex) + Math.abs(ey), f = len > cap ? cap / len : 1
+          sh.x += ex * f; sh.y += ey * f
+          p.x = sh.x; p.y = sh.y
+        }
+        // medidor (?net=1)
+        fpsN++
+        if (nowS - fpsT >= 1) { fps = fpsN; fpsN = 0; fpsT = nowS }
+        if (NET_DEBUG && netRef.current) netRef.current.textContent = `ping ${Math.round((f.rtt ?? 0) * 1000)} ms · jitter ${Math.round(jitter * 1000)} ms · gap ${Math.round(gapMax * 1000)} ms · delay ${Math.round(delay * 1000)} ms · ${fps} fps · server ${latest.lg ?? '?'} ms`
         // eu mesmo: a posição PREVISTA (anda na hora, sem esperar a internet)
         if (!spectating && meId) {
           const me = s.players.find((p) => p.id === meId)
@@ -180,7 +234,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
           if (pr && me) { me.x = pr.x; me.y = pr.y; me.facing = pr.facing; me.flip = pr.flip; me.moving = pr.moving; me.walkT = pr.walkT }
         }
         s.events = f.events
-        if (import.meta.env.DEV) window.__pvpDraw = { t: nowS, me: s.players.find((p) => p.id === meId), rtt: f.rtt } // só no desenvolvimento: pros testes
+        if (import.meta.env.DEV) window.__pvpDraw = { t: nowS, me: s.players.find((p) => p.id === meId), rtt: f.rtt, others: s.players.filter((p) => p.id !== meId).map((p) => ({ x: p.x, y: p.y, m: p.moving, a: p.alive })), delay } // só no desenvolvimento: pros testes
         drawMatch(ctx, s, view, PX_TILE, spectating ? null : meId)
         sfx(view)
         FX.consumeEvents(view) // (esvazia a lista de avisos, que é a mesma do feed)
@@ -211,6 +265,7 @@ export default function OnlineMatch({ feedRef, meId, spectating = false, send, t
       <div className="pl-stage" ref={wrapRef}>
         <canvas ref={canvasRef} className="pl-canvas" />
         <MatchBanners hud={hud} overNote={note} />
+        {NET_DEBUG && <div className="pl-netdbg" ref={netRef} />}
         {chat && <ChatBox chat={chat} myPlayerId={meId} phase="playing" variant={TOUCH ? 'compact' : 'arena'} />}
         {iAmOut && <div className="pl-banner pl-out">You're out<small>Watching the rest of your room</small></div>}
       </div>

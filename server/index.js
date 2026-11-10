@@ -151,7 +151,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'access-control-allow-origin': '*' })
   const e = entropy.state
   const ent = !e.enabled ? 'off' : e.ready ? `on (${e.chain.name}, contract ${e.contract})` : e.error ? `error: ${e.error}` : 'starting'
-  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent}\n`)
+  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent} · loop lag ${lagShown} ms\n`)
 })
 
 const wss = new WebSocketServer({
@@ -206,10 +206,15 @@ function roomFor(ws, t) {
 
 // ---- o laço do jogo: passo fixo, igual em qualquer máquina
 let stepCount = 0
+let lagNow = 0, lagShown = 0, lagAt = performance.now()
 let last = performance.now()
 let acc = 0
 setInterval(() => {
   const t0 = performance.now()
+  // engasgo do servidor: quanto este laco atrasou alem dos 4 ms (o maior do ultimo segundo vai no medidor ?net=1)
+  const late = t0 - last - 4
+  if (late > lagNow) lagNow = late
+  if (t0 - lagAt > 1000) { lagShown = Math.round(lagNow); lagNow = 0; lagAt = t0 }
   acc += Math.min(0.25, (t0 - last) / 1000)
   last = t0
   while (acc >= STEP) {
@@ -236,7 +241,7 @@ function broadcastSnaps() {
         ws.pv.initRoom = room.id
         send(ws, { t: 'init', ...matchInit(room.match, room.id) })
       }
-      if (!cache.has(room.id)) cache.set(room.id, JSON.stringify({ t: 'snap', room: room.id, ...matchSnap(room.match) }))
+      if (!cache.has(room.id)) cache.set(room.id, JSON.stringify({ t: 'snap', room: room.id, lg: lagShown, ...matchSnap(room.match) }))
       send(ws, cache.get(room.id))
     }
     for (const room of t.rooms.values()) if (room.match) room.match.events = [] // os avisos já foram com o snap

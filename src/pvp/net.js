@@ -10,8 +10,21 @@ export const PVP_URL = import.meta.env.VITE_PVP_SERVER ||
 
 // getToken(): devolve o crachá do Supabase (login anônimo) na hora de conectar
 // TESTE (só no computador): ?lag=250 atrasa cada mensagem 125 ms pra ir e 125 ms pra voltar, como uma internet longe
-const LAG = import.meta.env.DEV ? Math.max(0, Number(new URLSearchParams(window.location.search).get('lag')) || 0) / 2 : 0
-const later = (fn) => (LAG ? setTimeout(fn, LAG) : fn())
+const QS = new URLSearchParams(window.location.search)
+const LAG = import.meta.env.DEV ? Math.max(0, Number(QS.get('lag')) || 0) / 2 : 0
+// ?jitter=120: cada mensagem atrasa mais 0 a 120 ms (sem trocar a ordem, como na internet de verdade)
+// ?spike=1: de vez em quando (2%) a internet "trava" 400 ms e depois solta tudo de uma vez
+const JIT = import.meta.env.DEV ? Math.max(0, Number(QS.get('jitter')) || 0) : 0
+const SPIKE = import.meta.env.DEV && QS.get('spike') === '1'
+let releaseIn = 0, releaseOut = 0
+const delayFor = (dir) => {
+  if (!LAG && !JIT && !SPIKE) return 0
+  const now = performance.now()
+  let at = now + LAG + Math.random() * JIT + (SPIKE && Math.random() < 0.02 ? 400 : 0)
+  if (dir === 'in') { at = Math.max(at, releaseIn); releaseIn = at } else { at = Math.max(at, releaseOut); releaseOut = at }
+  return at - now
+}
+const later = (fn, dir = 'in') => { const d = delayFor(dir); return d ? setTimeout(fn, d) : fn() }
 
 export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
   let ws = null
@@ -49,7 +62,7 @@ export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
   open()
 
   return {
-    send(obj) { const str = JSON.stringify(obj); later(() => { if (ws?.readyState === 1) ws.send(str) }) },
+    send(obj) { const str = JSON.stringify(obj); later(() => { if (ws?.readyState === 1) ws.send(str) }, 'out') },
     close() { closed = true; clearTimeout(timer); ws?.close() },
   }
 }

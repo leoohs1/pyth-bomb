@@ -335,7 +335,7 @@ export function WaitPanel({ tour, meId, onWatch, onLeave }) {
 // PÓDIO do campeão (arte em pixel), centralizado: 1º no meio com a coroa, 2º e 3º da final dos lados.
 // (o troféu public/pvp/trophy.png ficou guardado; a Halls preferiu sem ele)
 // Medidas do desenho do pódio (public/pvp/podium.png, 178x111 pixels): centro e topo de cada degrau.
-const PODIUM = { w: 178, h: 111, steps: { 1: { x: 0.5, top: 6 }, 2: { x: 0.16, top: 30 }, 3: { x: 0.84, top: 42 } } }
+const PODIUM = { w: 178, h: 111, steps: { 1: { x: 0.5, top: 6 }, 2: { x: 0.1, top: 30 }, 3: { x: 0.9, top: 42 } } }
 function Podium({ tour, champ }) {
   const finalRoom = tour.rounds.at(-1)?.rooms?.[0]
   const places = finalRoom?.places ?? []
@@ -345,7 +345,7 @@ function Podium({ tour, champ }) {
   const third = others[1] ? byId(others[1]) : null
   // tamanho de 1 pixel do desenho: --pu (no computador 0.13cqw, o pódio fica com ~23cqw; no celular em pé, px; ver pvp.css)
   const u = (n) => `calc(${n} * var(--pu))`
-  const hu = (n) => `calc(${n * 1.35} * var(--pu))` // heróis um pouco maiores que o desenho do pódio
+  const hu = (n) => `calc(${n * 2.6} * var(--pu))` // heróis bem maiores que os degraus (a Halls achou o pódio grande demais)
   const stand = (p, place) => {
     if (!p) return null
     const art = heroById(p.hero), st = PODIUM.steps[place]

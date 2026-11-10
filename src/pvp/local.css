@@ -311,3 +311,6 @@
 @media (orientation: landscape) {
   .pl-page.is-touch .ct-fab.ct-compact { top: calc(10px + env(safe-area-inset-top)); bottom: auto; left: 10px; }
 }
+
+/* medidor de internet (?net=1) */
+.pl-netdbg { position: absolute; left: 8px; top: 8px; z-index: 40; padding: 4px 8px; font: 11px/1.3 ui-monospace, Consolas, monospace; color: #9ff; background: rgba(0, 0, 0, 0.7); border-radius: 4px; pointer-events: none; }

@@ -356,19 +356,20 @@
 }
 
 /* pódio do campeão (arte em pixel) */
-.pv-podium-wrap { --pu: 0.125cqw; display: flex; align-items: flex-end; justify-content: center; margin: 12.5cqw auto 0.2cqw; }
+.pv-podium-wrap { --pu: 0.066cqw; display: flex; align-items: flex-end; justify-content: center; margin: 12.5cqw auto 0.2cqw; }
 .pv-podium { position: relative; flex: none; }
 .pv-podium-img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .pv-podium-hero { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 1; }
 .pv-podium-hero img { image-rendering: pixelated; filter: drop-shadow(0 0.2cqw 0 rgba(0, 0, 0, 0.4)); animation: pv-breathe 1.2s steps(2) infinite; }
+.pv-podium-hero.is-1 { z-index: 2; }
 .pv-podium-hero.is-1 img { filter: drop-shadow(0 0 0.8cqw rgba(255, 214, 110, 0.9)); }
 .pv-podium-hero .pv-crown { position: static; margin-bottom: -0.3cqw; }
 .pv-podium-name {
-  position: absolute; bottom: -1.6cqw; white-space: nowrap; font: max(8px, 0.6cqw)/1 'Press Start 2P', monospace; color: #fff;
+  order: -1; margin-bottom: 0.3cqw; white-space: nowrap; font: max(8px, 0.6cqw)/1 'Press Start 2P', monospace; color: #fff; /* nome em cima da cabeça */
   padding: 0.25cqw 0.4cqw; background: rgba(20, 10, 30, 0.85); border: 2px solid #c9a24a;
 }
 .pv-trophy { image-rendering: pixelated; animation: pv-shine 2.4s ease-in-out infinite; }
 @keyframes pv-shine { 50% { filter: drop-shadow(0 0 0.9cqw rgba(255, 214, 110, 0.9)) brightness(1.08); } }
-.mb-panel .pv-podium-wrap { --pu: 1.3px; margin-top: 118px; }
+.mb-panel .pv-podium-wrap { --pu: 0.72px; margin-top: 118px; }
 
 .pv-scene-hero.is-back { bottom: 13%; z-index: -1; scale: 0.85; filter: brightness(0.85); }
