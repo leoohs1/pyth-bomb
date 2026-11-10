@@ -61,14 +61,15 @@
 .pv-host { position: absolute; top: -0.35cqw; right: -0.2cqw; font-size: max(10px, 1cqw); line-height: 1; }
 
 /* escolha do herói */
-.pv-picker { display: flex; justify-content: center; gap: 0.6cqw; }
+/* todos numa fileira só, dividindo a largura (com 8 heróis não cabe mais 6cqw cada; no celular vira 2 fileiras de 4) */
+.pv-picker { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.5cqw; }
 .pv-hero {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 6.4cqw;
-  min-width: 6cqw;
-  padding: 0.3cqw 0.6cqw;
+  height: 5.6cqw;
+  min-width: 0;
+  padding: 0.3cqw 0.2cqw;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.7);
   border: 2px solid rgba(46, 31, 99, 0.18);
@@ -249,8 +250,8 @@
 .mb-panel .pv-chip { gap: 2px; padding: 4px 2px 3px; }
 .mb-panel .pv-chip-art { height: 46px; }
 .mb-panel .pv-host { top: -4px; right: -2px; font-size: 13px; }
-.mb-panel .pv-picker { gap: 8px; }
-.mb-panel .pv-hero { height: 66px; min-width: 56px; padding: 4px 6px; }
+.mb-panel .pv-picker { gap: 8px; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mb-panel .pv-hero { height: 66px; min-width: 0; padding: 4px 2px; }
 .mb-panel .pv-bracket { margin-top: 4px; }
 .mb-panel .pv-round { gap: 3px; }
 .mb-panel .pv-round + .pv-round { margin-left: 26px; }
