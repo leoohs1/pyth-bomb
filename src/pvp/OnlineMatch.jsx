@@ -30,7 +30,7 @@ export const TOUCH = (() => {
 
 const DELAY_MIN = 0.1, DELAY_MAX = 0.4 // folga pra deslizar os outros jogadores: cresce sozinha quando a internet oscila
 const EXTRAP = 0.15 // se as mensagens atrasarem, os outros continuam andando na mesma direção por até 0,15 s
-const NET_DEBUG = new URLSearchParams(window.location.search).get('net') === '1' // ?net=1: medidor de internet
+const NET_DEBUG = new URLSearchParams(window.location.search).has('net') // ?net=1 (aceita qualquer valor, ex. "net=1.") // ?net=1: medidor de internet
 const FIX = 0.3     // quanto da diferença pra posição oficial corrige a cada mensagem do servidor
 
 const KEYS = {
