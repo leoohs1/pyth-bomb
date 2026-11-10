@@ -15,9 +15,9 @@ const PERSON_OPEN = true
 let personUrl = false
 try { personUrl = new URLSearchParams(window.location.search).get('person') === '1' } catch { /* tudo bem */ }
 
-// Pyth Poker (Texas Hold'em, fichas de brincadeira): só aparece com ?poker=1 no endereço, até o SQL
-// supabase/poker/K01 estar rodado e o modo testado. Pra abrir pra todo mundo: POKER_OPEN = true.
-const POKER_OPEN = false
+// Pyth Poker (Texas Hold'em, fichas de brincadeira): aberto pra todo mundo desde 2026-11-10.
+// Pra esconder de novo (só com ?poker=1 no endereço): POKER_OPEN = false.
+const POKER_OPEN = true
 let pokerUrl = false
 try { pokerUrl = new URLSearchParams(window.location.search).get('poker') === '1' } catch { /* tudo bem */ }
 
