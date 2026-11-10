@@ -10,7 +10,7 @@ export const HEROES = [
   { id: 'ricardinho', label: 'Ricardinho', img: '/solo/pixel/ricardinho.png', w: 36, h: 58 },
   { id: 'deepi', label: 'Deepi', img: '/solo/pixel/deepi.png', w: 27, h: 58 },
   { id: 'icey', label: 'Icey', img: '/solo/pixel/icey.png', w: 31, h: 58 },
-  { id: 'shark', label: 'Shark', img: '/solo/pixel/shark.png', w: 27, h: 58 }, // nome provisório: a Halls ainda vai dizer o nome dele
+  { id: 'chopaa', label: 'Chopaa', img: '/solo/pixel/chopaa.png', w: 27, h: 58 },
 ]
 
 export const heroById = (id) => HEROES.find((h) => h.id === id) ?? HEROES[0]

@@ -84,20 +84,20 @@ const CHARACTERS = {
     },
     noFlip: true,
   },
-  // Homem do moletom de tubarão (nome provisório "shark"): só em pixel; a esquerda tem arte própria (a nadadeira e o bolso são assimétricos).
-  shark: {
-    idle: '/solo/shark.webp',
+  // Chopaa (homem do moletom de tubarão): só em pixel; a esquerda tem arte própria (a nadadeira e o bolso são assimétricos).
+  chopaa: {
+    idle: '/solo/chopaa.webp',
     walk: {
-      down: ['/solo/shark-down1.webp', '/solo/shark-down2.webp'],
-      right: ['/solo/shark-right1.webp', '/solo/shark-right2.webp'],
-      left: ['/solo/shark-left1.webp', '/solo/shark-left2.webp'],
-      up: ['/solo/shark-up1.webp', '/solo/shark-up2.webp'],
+      down: ['/solo/chopaa-down1.webp', '/solo/chopaa-down2.webp'],
+      right: ['/solo/chopaa-right1.webp', '/solo/chopaa-right2.webp'],
+      left: ['/solo/chopaa-left1.webp', '/solo/chopaa-left2.webp'],
+      up: ['/solo/chopaa-up1.webp', '/solo/chopaa-up2.webp'],
     },
     noFlip: true,
   },
 }
 // quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu, ?hero=boryso ou ?hero=plancky usa esse personagem (ainda não existe seletor de personagem)
-const TEST_HEROES = ['derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'shark']
+const TEST_HEROES = ['derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'chopaa']
 const PLAYER = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get('hero')

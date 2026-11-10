@@ -25,7 +25,7 @@ const ownToken = (pu) => !!OWN_TOKENS[pu.kind] && !!tokenImg(pu.kind)
 const LOOK = { tavern: LEVELS[0], hull: LEVELS[1], chop: LEVELS[2] }
 
 // ---- imagens dos heróis (pixel): parado + 2 passos por direção
-const HERO_IDS = ['pirb', 'derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'shark']
+const HERO_IDS = ['pirb', 'derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'chopaa']
 const heroImgs = {}
 function img(src) { const i = new Image(); i.src = src; return i }
 export function loadHeroes() {
