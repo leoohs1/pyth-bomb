@@ -9,7 +9,7 @@ import useModeTheme from '../modes/useModeTheme'
 import { play } from '../sound'
 import PokerTable from './PokerTable'
 import PokerHowTo from './PokerHowTo'
-import { fmt } from './cards'
+import { fmt, DECK_ART } from './cards'
 import './poker.css'
 
 // Pyth Poker: torneio de Texas Hold'em (Sit & Go) de 2 a 9 pessoas por sala, só com fichas de brincadeira.
@@ -44,6 +44,10 @@ export default function PokerApp() {
   const { room, me, players, error, setError, serverNow } = R
   const chat = useChat(room?.id)
   useModeTheme('poker')
+  // já carrega a arte do baralho, a mesa e o fundo enquanto a pessoa está no lobby (assim nada pisca na 1ª mão)
+  useEffect(() => {
+    for (const src of [...DECK_ART, '/poker/table.webp', '/poker/bg.webp']) { const im = new Image(); im.src = src }
+  }, [])
   const [myCards, setMyCards] = useState(null)
   const [busy, setBusy] = useState(false)
 

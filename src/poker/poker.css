@@ -14,9 +14,11 @@
   overflow: hidden;
   color: var(--pk-text);
   font-family: Inter, system-ui, sans-serif;
+  /* fundo: o salão do templo da Pyth, um pouco escurecido pra mesa e os textos aparecerem */
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(120, 70, 220, 0.35), transparent 60%),
-    radial-gradient(ellipse at 50% 110%, rgba(201, 162, 74, 0.18), transparent 55%),
+    radial-gradient(ellipse at 50% 45%, rgba(18, 8, 40, 0.15), rgba(18, 8, 40, 0.6) 75%),
+    linear-gradient(rgba(14, 6, 32, 0.25), rgba(14, 6, 32, 0.45)),
+    url('/poker/bg.webp') center / cover no-repeat,
     #120a26;
 }
 
@@ -81,6 +83,18 @@
   color: rgba(233, 196, 106, 0.22);
   white-space: nowrap;
 }
+
+/* mesa da Pyth (imagem com fundo transparente, mesmo formato 1,7 da mesa) — só na tela deitada;
+   no celular em pé continua o feltro desenhado */
+.pk-root:not(.is-tall) .pk-felt {
+  inset: 0;
+  border-radius: 0;
+  background: url('/poker/table.webp') center / 100% 100% no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 1.6cqw 2.4cqw rgba(0, 0, 0, 0.55));
+}
+.pk-root:not(.is-tall) .pk-felt::after, .pk-root:not(.is-tall) .pk-felt-mark { display: none; }
+.pk-root:not(.is-tall) .pk-slot { background: rgba(18, 8, 40, 0.35); border-color: rgba(233, 196, 106, 0.4); }
 
 /* centro: pote, cartas da mesa, resultado */
 .pk-center {
@@ -173,7 +187,18 @@
   background: linear-gradient(155deg, #7a4fd8 0%, #4f2a9e 55%, #34186f 100%);
   border-color: #c9a24a;
 }
-.pk-back-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pk-back-art, .pk-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* figuras com arte: o número e o naipe ficam num selinho creme no canto livre, pra ler bem em cima do desenho */
+.pk-card.has-art .pk-corner {
+  z-index: 1;
+  left: 5%;
+  top: 3.5%;
+  padding: 0.12em 0.14em 0.06em;
+  background: rgba(255, 251, 240, 0.93);
+  border-radius: 0.28em;
+  box-shadow: 0 0 0.18em rgba(40, 20, 70, 0.35);
+}
+.pk-card.has-art.is-red .pk-corner { color: var(--pk-red); }
 .pk-card.is-dealt { animation: pk-deal 0.38s cubic-bezier(0.25, 1.2, 0.5, 1) both; }
 .pk-card.is-dim { filter: grayscale(0.5) brightness(0.75); }
 

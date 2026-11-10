@@ -177,7 +177,12 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
   const posOf = (p, k = 1) => {
     const idx = (seated.indexOf(p) - myIdx + n) % n
     const a = ((90 + (idx * 360) / n) * Math.PI) / 180
-    return { x: 50 + rx * k * Math.cos(a), y: 50 + ry * k * Math.sin(a), a }
+    // tela deitada: a mesa da Pyth tem formato de pílula, então as cadeiras seguem uma elipse "quadradinha"
+    // (superelipse); no celular em pé, elipse normal
+    const e = tall ? 1 : 0.72
+    const sx = Math.sign(Math.cos(a)) * Math.abs(Math.cos(a)) ** e
+    const sy = Math.sign(Math.sin(a)) * Math.abs(Math.sin(a)) ** e
+    return { x: 50 + rx * k * sx, y: 50 + ry * k * sy, a }
   }
 
   const turnEnds = room.poker_turn_ends_at ? Date.parse(room.poker_turn_ends_at) : null
