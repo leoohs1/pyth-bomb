@@ -190,7 +190,7 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
 
   // minhas cartas só valem se forem desta mão
   const mine = myCards && myCards.hand_no === room.poker_hand_no && me?.poker_in_hand ? myCards.cards : null
-  const myHand = mine && board.length >= 3 ? handName([...mine, ...board]) : mine && (mine[0] >> 2) === (mine[1] >> 2) ? 'Pocket pair' : null
+  const myHand = mine && board.length >= 3 ? handName(mine, board) : mine && (mine[0] >> 2) === (mine[1] >> 2) ? 'Pocket pair' : null
   const myRes = result?.players?.find((x) => x.player_id === me?.id)
 
   return (
@@ -254,32 +254,42 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
         </div>
       </div>
 
-      {/* as minhas cartas, grandes, embaixo */}
-      <div className="pk-mine">
-        {mine ? (
-          <div className={`pk-mycards${me?.poker_folded ? ' is-folded' : ''}`}>
-            {mine.map((c) => <Card key={c} c={c} size="lg" />)}
-          </div>
-        ) : null}
-        {mine && !me?.poker_folded && (myRes?.hand || myHand) && <p className="pk-myhand">You have: <b>{myRes?.hand ?? myHand}</b></p>}
-        {me?.poker_folded && betting && !me.poker_out && <p className="pk-myhand">You folded</p>}
-      </div>
-
-      {me && myTurn && !me.poker_away && (
-        <ActionBar room={room} me={me} players={players} onAct={onAct} busy={busy} msLeft={turnLeft} total={turnTotal} />
-      )}
-      {me && !myTurn && !me.poker_out && !me.poker_away && betting && room.poker_turn && (
-        <p className="pk-waiting">Waiting for <b>{players.find((p) => p.id === room.poker_turn)?.nickname ?? '…'}</b></p>
-      )}
-      {me?.poker_away && !me.poker_out && (
-        <div className="pk-away" role="alert">
-          <p>You are <b>away</b>: the game checks or folds for you.</p>
-          <button type="button" className="pk-btn is-call" onClick={onBack}>I&apos;m back</button>
+      {/* parte de baixo com altura FIXA (cartas + jogadas): assim a mesa não cresce nem encolhe quando a
+          barra de jogadas aparece ou some */}
+      <div className="pk-foot">
+        <div className="pk-mine">
+          {mine ? (
+            <div className={`pk-mycards${me?.poker_folded ? ' is-folded' : ''}`}>
+              {mine.map((c) => <Card key={c} c={c} size="lg" />)}
+            </div>
+          ) : (
+            <div className="pk-mycards is-empty" aria-hidden="true"><span className="pk-card pk-lg" /><span className="pk-card pk-lg" /></div>
+          )}
+          <p className="pk-myhand">
+            {mine && !me?.poker_folded && (myHand || myRes?.hand)
+              ? <>You have: <b>{myHand ?? myRes?.hand}</b></>
+              : me?.poker_folded && betting && !me.poker_out ? 'You folded' : ' '}
+          </p>
         </div>
-      )}
-      {me?.poker_out && (
-        <p className="pk-waiting is-out">You are out{me.place ? ` · #${me.place}` : ''}. Watching the rest of the game.</p>
-      )}
+
+        <div className="pk-act">
+          {me && myTurn && !me.poker_away && (
+            <ActionBar room={room} me={me} players={players} onAct={onAct} busy={busy} msLeft={turnLeft} total={turnTotal} />
+          )}
+          {me && !myTurn && !me.poker_out && !me.poker_away && betting && room.poker_turn && (
+            <p className="pk-waiting">Waiting for <b>{players.find((p) => p.id === room.poker_turn)?.nickname ?? '…'}</b></p>
+          )}
+          {me?.poker_away && !me.poker_out && (
+            <div className="pk-away" role="alert">
+              <p>You are <b>away</b>: the game checks or folds for you.</p>
+              <button type="button" className="pk-btn is-call" onClick={onBack}>I&apos;m back</button>
+            </div>
+          )}
+          {me?.poker_out && (
+            <p className="pk-waiting is-out">You are out{me.place ? ` · #${me.place}` : ''}. Watching the rest of the game.</p>
+          )}
+        </div>
+      </div>
       {error && <p className="pk-error" role="alert">{error}</p>}
 
       {chat && <ChatBox chat={chat} myPlayerId={myPlayerId} phase="playing" variant="compact" />}
