@@ -7,6 +7,10 @@ export const HEROES = [
   { id: 'derrpu', label: 'Derrpu', img: '/solo/pixel/derrpu.png', w: 28, h: 61 },
   { id: 'boryso', label: 'Boryso', img: '/solo/pixel/boryso.png', w: 32, h: 60 },
   { id: 'plancky', label: 'Plancky', img: '/solo/pixel/plancky.png', w: 30, h: 57 },
+  { id: 'ricardinho', label: 'Ricardinho', img: '/solo/pixel/ricardinho.png', w: 36, h: 58 },
+  { id: 'deepi', label: 'Deepi', img: '/solo/pixel/deepi.png', w: 27, h: 58 },
+  { id: 'icey', label: 'Icey', img: '/solo/pixel/icey.png', w: 31, h: 58 },
+  { id: 'shark', label: 'Shark', img: '/solo/pixel/shark.png', w: 27, h: 58 }, // nome provisório: a Halls ainda vai dizer o nome dele
 ]
 
 export const heroById = (id) => HEROES.find((h) => h.id === id) ?? HEROES[0]

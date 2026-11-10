@@ -20,7 +20,7 @@ import { RECONNECT_GRACE } from '../src/pvp/engine/constants.js'
 export const MAX_PLAYERS = 20
 export const DRAW_FIRST = 6 // segundos mostrando o sorteio antes da 1ª rodada
 export const DRAW_NEXT = 4  // segundos mostrando "sua sala" antes das salas seguintes
-const HEROES = ['pirb', 'derrpu', 'boryso', 'plancky']
+const HEROES = ['pirb', 'derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'shark']
 
 export const DRAW_TIMEOUT = 25 // segundos esperando o Pyth Entropy; depois disso vale o plano B (sorteio do servidor)
 

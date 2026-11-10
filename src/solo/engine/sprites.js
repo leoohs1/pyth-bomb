@@ -51,9 +51,53 @@ const CHARACTERS = {
     },
     noFlip: true,
   },
+  // Ricardinho (fotógrafo): só em pixel; a esquerda tem arte própria (o P do capacete não pode ficar ao contrário).
+  ricardinho: {
+    idle: '/solo/ricardinho.webp',
+    walk: {
+      down: ['/solo/ricardinho-down1.webp', '/solo/ricardinho-down2.webp'],
+      right: ['/solo/ricardinho-right1.webp', '/solo/ricardinho-right2.webp'],
+      left: ['/solo/ricardinho-left1.webp', '/solo/ricardinho-left2.webp'],
+      up: ['/solo/ricardinho-up1.webp', '/solo/ricardinho-up2.webp'],
+    },
+    noFlip: true,
+  },
+  // Deepi (mensageiro de mármore, jaqueta Nehru): só em pixel; a esquerda tem arte própria (o monóculo muda de lado).
+  deepi: {
+    idle: '/solo/deepi.webp',
+    walk: {
+      down: ['/solo/deepi-down1.webp', '/solo/deepi-down2.webp'],
+      right: ['/solo/deepi-right1.webp', '/solo/deepi-right2.webp'],
+      left: ['/solo/deepi-left1.webp', '/solo/deepi-left2.webp'],
+      up: ['/solo/deepi-up1.webp', '/solo/deepi-up2.webp'],
+    },
+    noFlip: true,
+  },
+  // Icey (chapéu preto com o P da Pyth): só em pixel; a esquerda tem arte própria (o P do chapéu não pode ficar ao contrário).
+  icey: {
+    idle: '/solo/icey.webp',
+    walk: {
+      down: ['/solo/icey-down1.webp', '/solo/icey-down2.webp'],
+      right: ['/solo/icey-right1.webp', '/solo/icey-right2.webp'],
+      left: ['/solo/icey-left1.webp', '/solo/icey-left2.webp'],
+      up: ['/solo/icey-up1.webp', '/solo/icey-up2.webp'],
+    },
+    noFlip: true,
+  },
+  // Homem do moletom de tubarão (nome provisório "shark"): só em pixel; a esquerda tem arte própria (a nadadeira e o bolso são assimétricos).
+  shark: {
+    idle: '/solo/shark.webp',
+    walk: {
+      down: ['/solo/shark-down1.webp', '/solo/shark-down2.webp'],
+      right: ['/solo/shark-right1.webp', '/solo/shark-right2.webp'],
+      left: ['/solo/shark-left1.webp', '/solo/shark-left2.webp'],
+      up: ['/solo/shark-up1.webp', '/solo/shark-up2.webp'],
+    },
+    noFlip: true,
+  },
 }
 // quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu, ?hero=boryso ou ?hero=plancky usa esse personagem (ainda não existe seletor de personagem)
-const TEST_HEROES = ['derrpu', 'boryso', 'plancky']
+const TEST_HEROES = ['derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'shark']
 const PLAYER = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get('hero')
