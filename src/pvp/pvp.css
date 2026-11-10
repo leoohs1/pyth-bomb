@@ -356,7 +356,7 @@
 }
 
 /* pódio do campeão (arte em pixel) */
-.pv-podium-wrap { --pu: 0.066cqw; display: flex; align-items: flex-end; justify-content: center; margin: 12.5cqw auto 0.2cqw; }
+.pv-podium-wrap { --pu: 0.105cqw; display: flex; align-items: flex-end; justify-content: center; margin: 14cqw auto 0.2cqw; }
 .pv-podium { position: relative; flex: none; }
 .pv-podium-img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .pv-podium-hero { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -370,6 +370,6 @@
 }
 .pv-trophy { image-rendering: pixelated; animation: pv-shine 2.4s ease-in-out infinite; }
 @keyframes pv-shine { 50% { filter: drop-shadow(0 0 0.9cqw rgba(255, 214, 110, 0.9)) brightness(1.08); } }
-.mb-panel .pv-podium-wrap { --pu: 0.72px; margin-top: 118px; }
+.mb-panel .pv-podium-wrap { --pu: 1.05px; margin-top: 150px; }
 
 .pv-scene-hero.is-back { bottom: 13%; z-index: -1; scale: 0.85; filter: brightness(0.85); }
