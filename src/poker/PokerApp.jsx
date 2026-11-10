@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import Home from '../Home'
 import GameArenaV2 from '../GameArenaV2'
@@ -7,9 +7,11 @@ import useChat from '../useChat'
 import useModeRoom from '../modes/useModeRoom'
 import useModeTheme from '../modes/useModeTheme'
 import { play } from '../sound'
+import { setMusicSilenced } from '../music'
 import PokerTable from './PokerTable'
 import PokerHowTo from './PokerHowTo'
 import { fmt, DECK_ART } from './cards'
+import { emoOf, emoCode, REACTION_MS } from './reactions'
 import './poker.css'
 
 // Pyth Poker: torneio de Texas Hold'em (Sit & Go) de 2 a 9 pessoas por sala, só com fichas de brincadeira.
@@ -44,12 +46,59 @@ export default function PokerApp() {
   const { room, me, players, error, setError, serverNow } = R
   const chat = useChat(room?.id)
   useModeTheme('poker')
+  // o poker não tem música de fundo (pedido da Halls): só os sons do jogo
+  useEffect(() => { setMusicSilenced(true); return () => setMusicSilenced(false) }, [])
   // já carrega a arte do baralho, a mesa e o fundo enquanto a pessoa está no lobby (assim nada pisca na 1ª mão)
   useEffect(() => {
     for (const src of [...DECK_ART, '/poker/table.webp', '/poker/bg.webp']) { const im = new Image(); im.src = src }
   }, [])
   const [myCards, setMyCards] = useState(null)
   const [busy, setBusy] = useState(false)
+
+  // ---- reações com emoji (vêm pelo chat como "[emo:fire]"; ver reactions.js)
+  // o chat da tela não mostra esses códigos
+  const chatView = useMemo(() => ({ ...chat, messages: chat.messages.filter((m) => !emoOf(m.body)) }), [chat])
+  const [reactions, setReactions] = useState({}) // id do jogador -> { e, key, until }
+  const seenEmoRef = useRef(null)
+  useEffect(() => {
+    const emos = chat.messages.filter((m) => emoOf(m.body))
+    if (seenEmoRef.current === null) { // primeira leitura: as antigas não aparecem
+      if (!chat.available) return
+      seenEmoRef.current = new Set(emos.map((m) => m.id))
+      return
+    }
+    const fresh = emos.filter((m) => !seenEmoRef.current.has(m.id))
+    if (!fresh.length) return
+    const now = Date.now()
+    setReactions((old) => {
+      const next = { ...old }
+      for (const m of fresh) {
+        seenEmoRef.current.add(m.id)
+        // a rede de segurança do chat (a cada 8 s) pode trazer uma velha: só mostra se é recente
+        if (m.created_at && Date.parse(m.created_at) < serverNow - 6000) continue
+        next[m.player_id] = { e: emoOf(m.body), key: m.id, until: now + REACTION_MS }
+      }
+      return next
+    })
+  }, [chat.messages, chat.available]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { seenEmoRef.current = null; setReactions({}) }, [room?.id])
+  // tira da mesa as que já passaram
+  useEffect(() => {
+    const ids = Object.keys(reactions)
+    if (!ids.length) return
+    const next = Math.min(...ids.map((k) => reactions[k].until)) - Date.now()
+    const t = setTimeout(() => setReactions((old) => {
+      const now = Date.now()
+      return Object.fromEntries(Object.entries(old).filter(([, r]) => r.until > now))
+    }), Math.max(50, next))
+    return () => clearTimeout(t)
+  }, [reactions])
+  const lastEmoRef = useRef(0)
+  const sendEmoji = useCallback(async (id) => {
+    if (Date.now() - lastEmoRef.current < 1300) return // o servidor também segura quem manda rápido demais
+    lastEmoRef.current = Date.now()
+    await chat.send(emoCode(id))
+  }, [chat])
 
   const playing = room?.status === 'playing'
   const handNo = room?.poker_hand_no ?? 0
@@ -140,7 +189,7 @@ export default function PokerApp() {
     )
   }
 
-  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat, maxPlayers: room.poker_cfg?.max_players ?? 9 }
+  const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: me?.id, onLeave: R.leaveRoom, chat: chatView, maxPlayers: room.poker_cfg?.max_players ?? 9 }
 
   if (room.status === 'lobby') {
     return (
@@ -157,7 +206,8 @@ export default function PokerApp() {
   if (playing) {
     return (
       <PokerTable room={room} players={players} myPlayerId={me?.id} myCards={myCards} serverNow={serverNow}
-        onAct={act} onBack={back} onLeave={R.leaveRoom} chat={chat} busy={busy} error={error} />
+        onAct={act} onBack={back} onLeave={R.leaveRoom} chat={chatView} busy={busy} error={error}
+        reactions={reactions} onEmoji={chat.available ? sendEmoji : null} />
     )
   }
 

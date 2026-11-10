@@ -5,6 +5,7 @@ import PokerTable from './PokerTable'
 import PokerHowTo from './PokerHowTo'
 import { PlacesList } from './PokerApp'
 import { sha256, deckFromSeed, bytesToHex } from './fair'
+import { EMOJIS, REACTION_MS } from './reactions'
 import './poker.css'
 
 // Prévia do Pyth Poker com dados de mentira (sem servidor), só pra ver o visual. Não faz parte do jogo.
@@ -35,6 +36,18 @@ export default function PokerPreview() {
   useEffect(() => { document.documentElement.dataset.mode = 'poker' }, [])
   const [t0] = useState(() => Date.now())
   const [demo, setDemo] = useState(null)
+  // reações: tocar no 😀 manda pro "Halls"; com &emo=1 os outros também reagem sozinhos
+  const [reactions, setReactions] = useState({})
+  const react = (pid, id) => setReactions((old) => ({ ...old, [pid]: { e: EMOJIS.find((x) => x.id === id).e, key: Math.random(), until: Date.now() + REACTION_MS } }))
+  useEffect(() => {
+    if (qs.get('emo') !== '1') return
+    const t = setInterval(() => react('p' + Math.floor(Math.random() * n), EMOJIS[Math.floor(Math.random() * EMOJIS.length)].id), 1100)
+    return () => clearInterval(t)
+  }, [n]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const t = setInterval(() => setReactions((old) => Object.fromEntries(Object.entries(old).filter(([, r]) => r.until > Date.now()))), 300)
+    return () => clearInterval(t)
+  }, [])
   useEffect(() => {
     if (phase !== 'verify') return
     ;(async () => {
@@ -103,6 +116,7 @@ export default function PokerPreview() {
   }
   return (
     <PokerTable room={room} players={players} myPlayerId="p0" myCards={myCards} serverNow={now}
-      onAct={(a, to) => alert(`${a}${to ? ' ' + to : ''}`)} onBack={() => setPhase('flop')} onLeave={() => {}} chat={null} busy={false} error={null} />
+      onAct={(a, to) => alert(`${a}${to ? ' ' + to : ''}`)} onBack={() => setPhase('flop')} onLeave={() => {}} chat={null} busy={false} error={null}
+      reactions={reactions} onEmoji={(id) => react('p0', id)} />
   )
 }

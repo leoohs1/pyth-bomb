@@ -6,6 +6,7 @@ import ChatBox from '../ChatBox'
 import { Card, CardBack, Chips, fmt } from './cards'
 import { handName } from './handEval'
 import VerifyPanel from './VerifyPanel'
+import { EMOJIS } from './reactions'
 
 // A mesa do Pyth Poker durante o torneio: feltro roxo com borda dourada, até 9 cadeiras em volta (eu sempre
 // embaixo, no meio), as cartas da mesa e o pote no centro, e a barra de jogadas embaixo quando é a minha vez.
@@ -37,7 +38,7 @@ function Face({ player, players, className = '' }) {
   return <span className={`pk-face ${className}`} style={{ backgroundImage: `url(${src})` }} aria-hidden="true" />
 }
 
-function Seat({ p, players, pos, room, isMe, turnLeft, turnTotal, result, showCards }) {
+function Seat({ p, players, pos, room, isMe, turnLeft, turnTotal, result, showCards, reaction }) {
   const isTurn = room.poker_turn === p.id
   const res = result?.players?.find((x) => x.player_id === p.id)
   const won = res?.won ?? 0
@@ -61,6 +62,7 @@ function Seat({ p, players, pos, room, isMe, turnLeft, turnTotal, result, showCa
         <Face player={p} players={players} />
         {bubble && <span className={`pk-bubble is-${bubble.kind}`}>{bubble.text}</span>}
         {p.poker_away && !p.poker_out && <span className="pk-tag">Away</span>}
+        {reaction && <span key={reaction.key} className="pk-emo" aria-label={`${p.nickname} reacts ${reaction.e}`}>{reaction.e}</span>}
       </div>
       {/* cartas: as minhas ficam grandes embaixo; dos outros, viradas (ou abertas no showdown) */}
       {/* quem caiu nesta mão ainda mostra as cartas do showdown */}
@@ -75,6 +77,30 @@ function Seat({ p, players, pos, room, isMe, turnLeft, turnTotal, result, showCa
         <span className="pk-nick">{p.nickname}</span>
         <span className="pk-stack">{p.poker_out ? (p.place ? `Out · #${p.place}` : 'Out') : p.poker_allin && !result ? 'ALL-IN' : fmt(p.poker_stack)}</span>
       </div>
+    </div>
+  )
+}
+
+// botão de reações: abre a barrinha com os emojis; tocou, manda e fecha
+function EmojiBar({ onEmoji }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+  return (
+    <div className="pk-emowrap">
+      <button type="button" className={`pk-emobtn${open ? ' is-open' : ''}`} onClick={() => setOpen((v) => !v)}
+        aria-label="Send a reaction" aria-expanded={open} title="Reactions">😀</button>
+      {open && (
+        <div className="pk-emopal" role="menu" aria-label="Reactions">
+          {EMOJIS.map((x) => (
+            <button key={x.id} type="button" role="menuitem" onClick={() => { onEmoji(x.id); setOpen(false) }} aria-label={`React ${x.e}`}>{x.e}</button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -160,7 +186,7 @@ function ResultText({ result, players }) {
   )
 }
 
-export default function PokerTable({ room, players, myPlayerId, myCards, serverNow, onAct, onBack, onLeave, chat, busy, error }) {
+export default function PokerTable({ room, players, myPlayerId, myCards, serverNow, onAct, onBack, onLeave, chat, busy, error, reactions = {}, onEmoji = null }) {
   const tall = useTall()
   const seated = useMemo(() => players.filter((p) => p.poker_seat != null).sort((a, b) => a.poker_seat - b.poker_seat), [players])
   const me = players.find((p) => p.id === myPlayerId) ?? null
@@ -255,7 +281,7 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
             return (
               <div key={p.id} className="pk-seatgroup">
                 <Seat p={p} players={players} pos={pos} room={room} isMe={p.id === myPlayerId}
-                  turnLeft={turnLeft} turnTotal={turnTotal} result={result} showCards={betting || !!result} />
+                  turnLeft={turnLeft} turnTotal={turnTotal} result={result} showCards={betting || !!result} reaction={reactions[p.id]} />
                 {betting && p.poker_bet > 0 && (
                   <span className="pk-betpos" style={{ left: `${bpos.x}%`, top: `${bpos.y}%` }}>
                     <Chips amount={p.poker_bet} bb={bb} />
@@ -313,6 +339,7 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
 
       {verifying && <VerifyPanel key={verifying.result.hand_no} hand={verifying} onClose={() => setVerifying(null)} />}
 
+      {onEmoji && me && <EmojiBar onEmoji={onEmoji} />}
       {chat && <ChatBox chat={chat} myPlayerId={myPlayerId} phase="playing" variant="compact" />}
     </main>
   )
