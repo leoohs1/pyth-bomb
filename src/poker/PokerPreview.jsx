@@ -4,10 +4,12 @@ import { LobbyPanel, FinishedPanel } from '../ArenaPanels'
 import PokerTable from './PokerTable'
 import PokerHowTo from './PokerHowTo'
 import { PlacesList } from './PokerApp'
+import { sha256, deckFromSeed, bytesToHex } from './fair'
 import './poker.css'
 
 // Prévia do Pyth Poker com dados de mentira (sem servidor), só pra ver o visual. Não faz parte do jogo.
-// /poker-preview?phase=lobby|ready|preflop|flop|wait|river|result|split|away|out|finished  &n=2..9 (jogadores)
+// /poker-preview?phase=lobby|ready|preflop|flop|wait|river|result|split|away|out|finished|verify  &n=2..9 (jogadores)
+// verify = fim de mão com prova do embaralhamento (de mentira, mas com as contas certas) pra testar a tela Verify
 const NAMES = ['Halls', 'Gio', 'Ricardo', 'Samurai', 'Cakky', 'Kirito', 'Luna', 'Pedro', 'Nina']
 const C = (s) => s.split(' ').map((x) => '23456789TJQKA'.indexOf(x[0]) * 4 + 'cdhs'.indexOf(x[1]))
 
@@ -32,11 +34,24 @@ export default function PokerPreview() {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(id) }, [])
   useEffect(() => { document.documentElement.dataset.mode = 'poker' }, [])
   const [t0] = useState(() => Date.now())
+  const [demo, setDemo] = useState(null)
+  useEffect(() => {
+    if (phase !== 'verify') return
+    ;(async () => {
+      const enc = new TextEncoder()
+      const secret = await sha256(enc.encode('pyth-preview-secret')), random = await sha256(enc.encode('pyth-preview-random'))
+      const seed = await sha256(secret, random)
+      const deck = await deckFromSeed(seed)
+      setDemo({ deck, fair: { via: 'entropy', chain: 'preview', chain_name: 'Base Sepolia (preview)', contract: '0x025AFFF135525B0566d09e9C5F810DDC0cB3eE5c',
+        explorer: 'https://sepolia.basescan.org', sequence: '4242', tx: '0x' + 'ab'.repeat(32), commit: bytesToHex(await sha256(secret)),
+        random: bytesToHex(random), secret: bytesToHex(secret), seed: bytesToHex(seed), dealt: n } })
+    })()
+  }, [phase, n])
 
-  const players = makePlayers(n, phase === 'result' || phase === 'split' ? 'river' : phase === 'away' || phase === 'out' ? 'flop' : phase)
+  const players = makePlayers(n, phase === 'result' || phase === 'split' || phase === 'verify' ? 'river' : phase === 'away' || phase === 'out' ? 'flop' : phase)
   if (phase === 'away') players[0].poker_away = true
   if (phase === 'out') { players[0].poker_out = true; players[0].poker_in_hand = false; players[0].place = n - 1; players[0].poker_stack = 0 }
-  const street = { ready: 'ready', preflop: 'preflop', flop: 'flop', wait: 'turn', river: 'river', result: 'result', split: 'result', away: 'flop', out: 'flop' }[phase] ?? 'preflop'
+  const street = { verify: 'result', ready: 'ready', preflop: 'preflop', flop: 'flop', wait: 'turn', river: 'river', result: 'result', split: 'result', away: 'flop', out: 'flop' }[phase] ?? 'preflop'
   const board = { preflop: [], flop: C('Ah Kd 7c'), wait: C('Ah Kd 7c Qs'), river: C('Ah Kd 7c Qs 2h'), result: C('Ah Kd 7c Qs 2h'), split: C('Ah Kh Qh Jh Th'), away: C('Ah Kd 7c'), out: C('Ah Kd 7c') }[phase] ?? []
   const loop = 20000 - ((now - t0) % 20000)
   const turn = { preflop: 'p0', flop: 'p0', wait: 'p2', river: 'p0', away: 'p3', out: 'p3' }[phase] ?? null
@@ -55,6 +70,13 @@ export default function PokerPreview() {
       { player_id: 'p0', seat: 0, committed: 150, won: 163, folded: false, cards: C('2c 3d'), hand: 'Royal flush' },
       { player_id: 'p3', seat: 3, committed: 150, won: 162, folded: false, cards: C('4s 5d'), hand: 'Royal flush' },
     ],
+  } : phase === 'verify' && demo ? {
+    hand_no: 13, showdown: true, board: demo.deck.slice(2 * n, 2 * n + 5), fair: demo.fair,
+    pots: [{ amount: 900, winners: ['p2'], eligible: ['p0', 'p2'], returned: false }],
+    players: [
+      { player_id: 'p0', seat: 0, committed: 450, won: 0, folded: false, cards: [demo.deck[0], demo.deck[n]], hand: 'High card' },
+      { player_id: 'p2', seat: 2, committed: 450, won: 900, folded: false, cards: [demo.deck[2], demo.deck[2 + n]], hand: 'Pair' },
+    ],
   } : null
   const room = {
     id: 'r', code: 'PYTHK7', status: phase === 'finished' ? 'finished' : phase === 'lobby' ? 'lobby' : 'playing', mode: 'poker',
@@ -65,7 +87,7 @@ export default function PokerPreview() {
     poker_full_bet: { preflop: 150, flop: 450, wait: 300 }[phase] ?? 0, poker_cfg: { act_seconds: 20 },
     poker_next_at: new Date(t0 + 3000 - ((now - t0) % 3000)).toISOString(), poker_result: result,
   }
-  const myCards = { hand_no: 14, cards: phase === 'split' ? C('2c 3d') : C('Ac 7d') }
+  const myCards = phase === 'verify' && demo ? { hand_no: 13, cards: [demo.deck[0], demo.deck[n]] } : { hand_no: 14, cards: phase === 'split' ? C('2c 3d') : C('Ac 7d') }
   const common = { room, players, alive: players, danger: 1, questionMs: 0, myPlayerId: 'p0', onLeave: () => {}, maxPlayers: 9 }
 
   if (phase === 'lobby') {

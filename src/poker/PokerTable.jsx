@@ -5,6 +5,7 @@ import SoundToggle from '../SoundToggle'
 import ChatBox from '../ChatBox'
 import { Card, CardBack, Chips, fmt } from './cards'
 import { handName } from './handEval'
+import VerifyPanel from './VerifyPanel'
 
 // A mesa do Pyth Poker durante o torneio: feltro roxo com borda dourada, até 9 cadeiras em volta (eu sempre
 // embaixo, no meio), as cartas da mesa e o pote no centro, e a barra de jogadas embaixo quando é a minha vez.
@@ -193,6 +194,13 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
   const myHand = mine && board.length >= 3 ? handName(mine, board) : mine && (mine[0] >> 2) === (mine[1] >> 2) ? 'Pocket pair' : null
   const myRes = result?.players?.find((x) => x.player_id === me?.id)
 
+  // prova do embaralhamento da última mão que acabou (fica disponível durante a mão seguinte também)
+  const [lastHand, setLastHand] = useState(null)
+  const [verifying, setVerifying] = useState(null) // a mão aberta na tela Verify (fica parada mesmo se outra mão acabar)
+  useEffect(() => {
+    if (result?.fair) setLastHand({ result, myCards: myCards && myCards.hand_no === result.hand_no ? myCards : null })
+  }, [result?.hand_no, !!result?.fair, myCards?.hand_no])
+
   return (
     <main className={`pk-root${tall ? ' is-tall' : ''}`}>
       <div className="pk-hud">
@@ -200,6 +208,12 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
           <span className="ga-chip">Hand #{room.poker_hand_no || 1}</span>
           <span className="ga-chip">Blinds {fmt(room.poker_sb)}/{fmt(room.poker_bb)}</span>
           {levelLeft != null && levelLeft > 0 && <span className="ga-chip pk-level">Up in {clockText(levelLeft)}</span>}
+          {lastHand && (
+            <button type="button" className={`ga-chip pk-fairchip${lastHand.result.fair.via === 'entropy' ? ' is-entropy' : ''}`}
+              onClick={() => setVerifying(lastHand)} title="Check that the last hand was shuffled fairly">
+              {lastHand.result.fair.via === 'entropy' ? '🔒' : '⚙'} Verify #{lastHand.result.hand_no}
+            </button>
+          )}
         </div>
         <div className="pk-hud-right">
           <LeaveButton onLeave={onLeave} inGame={!me?.poker_out} short={tall} />
@@ -291,6 +305,8 @@ export default function PokerTable({ room, players, myPlayerId, myCards, serverN
         </div>
       </div>
       {error && <p className="pk-error" role="alert">{error}</p>}
+
+      {verifying && <VerifyPanel key={verifying.result.hand_no} hand={verifying} onClose={() => setVerifying(null)} />}
 
       {chat && <ChatBox chat={chat} myPlayerId={myPlayerId} phase="playing" variant="compact" />}
     </main>
