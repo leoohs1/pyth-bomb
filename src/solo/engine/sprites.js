@@ -95,9 +95,31 @@ const CHARACTERS = {
     },
     noFlip: true,
   },
+  // Hinko (skatista, boné roxo de trás pra frente com o P): só em pixel; a esquerda tem arte própria (o P do boné não pode ficar ao contrário).
+  hinko: {
+    idle: '/solo/hinko.webp',
+    walk: {
+      down: ['/solo/hinko-down1.webp', '/solo/hinko-down2.webp'],
+      right: ['/solo/hinko-right1.webp', '/solo/hinko-right2.webp'],
+      left: ['/solo/hinko-left1.webp', '/solo/hinko-left2.webp'],
+      up: ['/solo/hinko-up1.webp', '/solo/hinko-up2.webp'],
+    },
+    noFlip: true,
+  },
+  // YesName (visor com olhos de estrela, coroa com chifres, orbe rosa na mão): só em pixel; a esquerda tem arte própria (a orbe fica na mão de perto).
+  yesname: {
+    idle: '/solo/yesname.webp',
+    walk: {
+      down: ['/solo/yesname-down1.webp', '/solo/yesname-down2.webp'],
+      right: ['/solo/yesname-right1.webp', '/solo/yesname-right2.webp'],
+      left: ['/solo/yesname-left1.webp', '/solo/yesname-left2.webp'],
+      up: ['/solo/yesname-up1.webp', '/solo/yesname-up2.webp'],
+    },
+    noFlip: true,
+  },
 }
 // quem o jogador controla: o Pirb. TESTE: /solo?hero=derrpu, ?hero=boryso ou ?hero=plancky usa esse personagem (ainda não existe seletor de personagem)
-const TEST_HEROES = ['derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'chopaa']
+const TEST_HEROES = ['derrpu', 'boryso', 'plancky', 'ricardinho', 'deepi', 'icey', 'chopaa', 'hinko', 'yesname']
 const PLAYER = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get('hero')
