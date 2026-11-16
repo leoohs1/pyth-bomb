@@ -46,6 +46,7 @@ export class Tournament {
     this.lastActive = now
     this.roomSeq = 0
     this.botSeq = 0
+    this.practice = false // começou com 1 pessoa só (treino contra bots)
     this.fillBots = false // opção do lobby: completar as salas com bots (menos a final)
     this.chat = []        // chat do torneio (as últimas mensagens; só na memória)
     this.chatSeq = 0
@@ -135,7 +136,9 @@ export class Tournament {
     if (byId !== this.hostId) return { ok: false, error: 'Only the host can start' }
     if (this.status !== 'lobby') return { ok: false, error: 'Already started' }
     const ids = [...this.players.values()].filter((p) => p.status === 'lobby' && p.connected).map((p) => p.id)
-    if (ids.length < 2) return { ok: false, error: 'You need at least 2 fighters' }
+    // com 'Fill rooms with bots' ligado dá pra começar sozinho: treino contra 3 bots (a Halls pediu pra poder testar)
+    if (ids.length < (this.fillBots ? 1 : 2)) return { ok: false, error: 'You need at least 2 fighters (or turn on Fill rooms with bots)' }
+    this.practice = ids.length === 1
     // quem estava no lobby mas caiu da internet fica de fora
     for (const p of [...this.players.values()]) if (p.status === 'lobby' && !p.connected) this.players.delete(p.id)
     // sorteio: guarda o segredo, manda a impressão digital pro Pyth Entropy e espera o número (status 'drawing')
@@ -166,7 +169,7 @@ export class Tournament {
     }
     this.seed = seedOf(this.secret, random)
     const ids = this.drawIds.filter((id) => this.players.has(id))
-    const plan = planRounds(ids.length)
+    const plan = ids.length === 1 ? [{ rooms: [1], final: true }] : planRounds(ids.length) // treino: uma sala só
     this.rounds = plan.map((p) => ({ final: p.final, sizes: [...p.rooms], formed: 0, waiting: [], rooms: [] }))
     const order = shuffle([...ids], makeRng(seedNumber(this.seed, 'draw')))
     let at = 0
@@ -180,7 +183,8 @@ export class Tournament {
   formRoom(roundIdx, ids, now) {
     const R = this.rounds[roundIdx]
     // opção 'Fill rooms with bots': salas normais vão até 4 com bots (a final fica só com quem ganhou)
-    if (this.fillBots && !R.final) { ids = [...ids]; while (ids.length < 4) ids.push(this.makeFillBot(ids)) }
+    // (no treino sozinho a única sala é a final, e ela tem bots)
+    if (this.fillBots && (!R.final || this.practice)) { ids = [...ids]; while (ids.length < 4) ids.push(this.makeFillBot(ids)) }
     const seed = seedNumber(this.seed, `room:${this.roomSeq + 1}`) // cada sala tem a sua parte da semente do torneio
     const rng = makeRng(seed ^ 0xa5a5a5a5)
     const order = shuffle([...ids], rng) // quem fica em cada canto
@@ -282,7 +286,7 @@ export class Tournament {
     room.places = res.places
     let winner = res.winner
     // bot nunca passa de fase: vai o humano que ficou mais tempo vivo
-    if (this.players.get(winner)?.bot) {
+    if (!this.practice && this.players.get(winner)?.bot) { // no treino, se o bot ganha, o bot é o campeão
       const human = res.places.find((id) => !this.players.get(id)?.bot)
       if (human) winner = human
     }

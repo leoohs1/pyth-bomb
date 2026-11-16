@@ -169,16 +169,16 @@ export function LobbyPanel({ tour, meId, onHero, onStart, onBot, onFill, testBot
 
       <p className="pv-label">Tournament</p>
       <Bracket n={n} fill={tour.fill} />
-      <p className="pv-summary">{n >= 2 ? summary(n) : 'Waiting for at least 2 fighters…'}</p>
+      <p className="pv-summary">{n >= 2 ? summary(n) : tour.fill && n === 1 ? 'Practice · you vs 3 bots (or wait for friends)' : 'Waiting for at least 2 fighters… (or turn on bots to practice)'}</p>
       {isHost ? (
         <label className="pv-fill">
           <input type="checkbox" checked={!!tour.fill} onChange={(e) => onFill(e.target.checked)} />
-          <span>Fill rooms with bots <small>(4 per room · never in the final)</small></span>
+          <span>Fill rooms with bots <small>(4 per room · never in the final · alone = practice)</small></span>
         </label>
       ) : tour.fill && <p className="pv-fill-note">🤖 Rooms are filled with bots (never in the final)</p>}
 
       {isHost
-        ? <button type="button" className="ga-send ga-bigbtn" disabled={n < 2} onClick={onStart}>Start tournament</button>
+        ? <button type="button" className="ga-send ga-bigbtn" disabled={n < (tour.fill ? 1 : 2)} onClick={onStart}>{tour.fill && n === 1 ? 'Start practice' : 'Start tournament'}</button>
         : <p className="ga-wait">Waiting for the host to start<span className="ga-dots" aria-hidden="true" /></p>}
       {isHost && testBots && n < tour.max && <button type="button" className="ga-copy pv-testbot" onClick={onBot}>+ Add test bot</button>}
       {error && <p className="ga-error" role="alert">{error}</p>}
