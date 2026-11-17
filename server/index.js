@@ -111,6 +111,8 @@ async function onMessage(ws, msg) {
       tournaments.set(code, nt)
       attach(ws, nt)
       send(ws, { t: 'joined', code })
+      // botão Practice: já começa sozinho contra 3 bots, sem Pyth Entropy (treino não precisa de sorteio na blockchain)
+      if (msg.practice) { nt.setFill(pv.user, true); nt.start(pv.user, now, null) }
       return
     }
     case 'join': {

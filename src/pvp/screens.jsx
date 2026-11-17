@@ -110,7 +110,7 @@ export function Bracket({ n, rounds = null, fill = false }) {
 }
 
 // ---- entrar: apelido, herói, criar torneio ou entrar com código
-export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCreate, onJoin, busy, error, status }) {
+export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCreate, onPractice, onJoin, busy, error, status }) {
   return (
     <>
       <PvpLogo />
@@ -120,6 +120,7 @@ export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCrea
       <p className="pv-label">Your fighter</p>
       <HeroPicker hero={hero} onPick={setHero} />
       <button type="button" className="ga-send ga-bigbtn" disabled={busy || name.trim().length < 2} onClick={onCreate}>Create tournament</button>
+      <button type="button" className="ga-copy pv-practice-btn" disabled={busy || name.trim().length < 2} onClick={onPractice}>🤖 Practice vs bots</button>
       <p className="pv-label">Or join with a code</p>
       <div className="pv-join-row">
         <input className="pv-input pv-code-input" value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase())} />
@@ -368,7 +369,7 @@ function Podium({ tour, champ }) {
 }
 
 // ---- campeão
-export function ChampionPanel({ tour, meId, onNew, onLeave }) {
+export function ChampionPanel({ tour, meId, onNew, onAgain, onLeave }) {
   const champ = tour.players.find((p) => p.id === tour.champion)
   const wins = tour.rounds.length
   const mine = tour.champion === meId
@@ -378,10 +379,22 @@ export function ChampionPanel({ tour, meId, onNew, onLeave }) {
       <p className="ga-mode-name">🏆 Champion</p>
       <Podium tour={tour} champ={champ} />
       <span className="pv-champ-name">{champ?.name ?? '?'}</span>
-      {mine && <p className="ga-me is-win">🎉 You won the tournament!</p>}
-      <p className="ga-hint">{wins > 1 ? `Won ${wins} rooms in a row` : 'Won the only room'} · last one standing in Shark Tank</p>
-      <VerifyBox proof={tour.proof} />
-      <button type="button" className="ga-send ga-bigbtn" onClick={onNew}>New tournament</button>
+      {tour.practice ? (
+        // treino contra bots: sem sorteio pra conferir, e o botão principal é jogar de novo
+        <>
+          <p className={`ga-me${mine ? ' is-win' : ''}`}>{mine ? '🎉 You beat the bots!' : '💥 The bots got you this time'}</p>
+          <p className="ga-hint">Practice match · you vs 3 bots</p>
+          <button type="button" className="ga-send ga-bigbtn" onClick={onAgain}>Practice again</button>
+          <button type="button" className="ga-copy pv-practice-btn" onClick={onNew}>Create a real tournament</button>
+        </>
+      ) : (
+        <>
+          {mine && <p className="ga-me is-win">🎉 You won the tournament!</p>}
+          <p className="ga-hint">{wins > 1 ? `Won ${wins} rooms in a row` : 'Won the only room'} · last one standing in Shark Tank</p>
+          <VerifyBox proof={tour.proof} />
+          <button type="button" className="ga-send ga-bigbtn" onClick={onNew}>New tournament</button>
+        </>
+      )}
       <button type="button" className="ga-leave" onClick={onLeave}>Leave</button>
     </>
   )

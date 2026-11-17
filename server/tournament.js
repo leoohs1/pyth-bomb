@@ -318,6 +318,7 @@ export class Tournament {
       status: this.status,
       host: this.hostId,
       fill: this.fillBots,
+      practice: this.practice,
       // prova do sorteio: o segredo só aparece quando o torneio acaba
       proof: this.proof ? { ...this.proof, secret: this.status === 'done' ? hex(this.secret) : null } : null,
       champion: this.champion,

@@ -250,7 +250,7 @@
 .mb-panel .pv-chip { gap: 2px; padding: 4px 2px 3px; }
 .mb-panel .pv-chip-art { height: 46px; }
 .mb-panel .pv-host { top: -4px; right: -2px; font-size: 13px; }
-.mb-panel .pv-picker { gap: 8px; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mb-panel .pv-picker { gap: 8px; grid-auto-flow: row; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .mb-panel .pv-hero { height: 66px; min-width: 0; padding: 4px 2px; }
 .mb-panel .pv-bracket { margin-top: 4px; }
 .mb-panel .pv-round { gap: 3px; }
@@ -374,3 +374,7 @@
 .mb-panel .pv-podium-wrap { --pu: 1.05px; margin-top: 150px; }
 
 .pv-scene-hero.is-back { bottom: 13%; z-index: -1; scale: 0.85; filter: brightness(0.85); }
+
+/* botão Practice (treino sozinho contra bots), embaixo do Create tournament */
+.pv-practice-btn { display: block; width: 100%; margin-top: 0.6cqw; padding: 0.7cqw 1cqw; font-size: max(13px, 1.1cqw); }
+.mb-panel .pv-practice-btn { margin-top: 8px; padding: 10px 12px; font-size: 15px; }
