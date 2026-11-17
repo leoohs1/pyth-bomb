@@ -20,6 +20,7 @@ import PvpLocal from './pvp/PvpLocal.jsx'
 import PvpApp from './pvp/PvpApp.jsx'
 import PokerApp from './poker/PokerApp.jsx'
 import PokerPreview from './poker/PokerPreview.jsx'
+import DashApp from './dash/DashApp.jsx'
 
 const path = window.location.pathname
 // rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
@@ -41,6 +42,7 @@ const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/pvp') ? <PlayGate><PvpApp /></PlayGate> // Pyth Bomb PVP online (precisa do servidor de jogo, server/)
   : path.startsWith('/poker-preview') ? <PokerPreview /> // prévia do visual do Pyth Poker (dados de mentira)
   : path.startsWith('/poker') ? <PlayGate><PokerApp /></PlayGate> // Pyth Poker (fechado como o /play)
+  : path.startsWith('/dash') ? <PlayGate><DashApp /></PlayGate> // Pyth Dash: plataforma com os heróis (PVE, fase de teste; fora do menu por enquanto)
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing href="/play" /> // página inicial: o "Play now" leva pro /play
 
