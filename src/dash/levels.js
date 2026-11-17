@@ -49,7 +49,7 @@ function level1() {
   // primeiro buraco
   b.coins(40, FLOOR - 4, 4, 1)
   b.row(48, FLOOR - 4, 'bbbb')
-  b.row(52, FLOOR - 8, 'b??b')
+  b.row(49, FLOOR - 8, 'b??b') // em cima dos blocos de baixo: dá pra bater pulando de cima deles
   b.coins(48, FLOOR - 5, 4)
   b.enemy(55); b.enemy(57)
   b.candle(62, 3, true); b.candle(68, 2, false)
@@ -61,9 +61,9 @@ function level1() {
   b.coins(79, FLOOR - 5, 4)
   b.row(88, FLOOR - 4, '?b?')
   b.enemy(92); b.enemy(97)
-  b.row(96, FLOOR - 7, 'bbbbbb')
-  b.coins(96, FLOOR - 8, 6)
-  b.enemy(99, FLOOR - 8)
+  b.row(93, FLOOR - 6, 'bbbbbb') // plataforma bônus: sobe pelos blocos ?b?
+  b.coins(93, FLOOR - 7, 6)
+  b.enemy(96, FLOOR - 7)
   b.candle(104, 2, true); b.candle(108, 3, true); b.candle(112, 3, false)
   b.coins(108, FLOOR - 5, 2)
   // último buraco e o fim

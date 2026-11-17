@@ -5,7 +5,7 @@ import { ROWS } from './levels.js'
 // ---- física (o "gosto" do pulo mora aqui)
 export const P = {
   accGround: 42, accAir: 30, decel: 48, maxRun: 7.5,
-  gravity: 70, fallMult: 1.45, jumpV: 22, jumpCut: 0.5, maxFall: 22,
+  gravity: 70, fallMult: 1.45, jumpV: 24.5, jumpCut: 0.45, maxFall: 22, // pulo cheio ~4,3 casas (3,4 não passava direito na vela de 3)
   coyote: 0.1,     // ainda dá pra pular um tiquinho depois de sair da beirada
   buffer: 0.12,    // apertou pular um tiquinho antes de encostar no chão: pula assim que encostar
   stompV: 13, stompHoldV: 18,
