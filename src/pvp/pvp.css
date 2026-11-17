@@ -377,4 +377,6 @@
 
 /* botão Practice (treino sozinho contra bots), embaixo do Create tournament */
 .pv-practice-btn { display: block; width: 100%; margin-top: 0.6cqw; padding: 0.7cqw 1cqw; font-size: max(13px, 1.1cqw); }
+.pv-practice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6cqw; width: 100%; }
+.mb-panel .pv-practice-row { gap: 8px; }
 .mb-panel .pv-practice-btn { margin-top: 8px; padding: 10px 12px; font-size: 15px; }

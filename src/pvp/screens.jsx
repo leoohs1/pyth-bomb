@@ -120,7 +120,10 @@ export function EntryPanel({ name, setName, hero, setHero, code, setCode, onCrea
       <p className="pv-label">Your fighter</p>
       <HeroPicker hero={hero} onPick={setHero} />
       <button type="button" className="ga-send ga-bigbtn" disabled={busy || name.trim().length < 2} onClick={onCreate}>Create tournament</button>
-      <button type="button" className="ga-copy pv-practice-btn" disabled={busy || name.trim().length < 2} onClick={onPractice}>🤖 Practice vs bots</button>
+      <div className="pv-practice-row">
+        <button type="button" className="ga-copy pv-practice-btn" disabled={busy || name.trim().length < 2} onClick={() => onPractice('quick')} title="You vs 3 bots, one room">🤖 Quick practice</button>
+        <button type="button" className="ga-copy pv-practice-btn" disabled={busy || name.trim().length < 2} onClick={() => onPractice('cup')} title="2 rooms of 4 at the same time, then a final of 2">🏆 Practice cup</button>
+      </div>
       <p className="pv-label">Or join with a code</p>
       <div className="pv-join-row">
         <input className="pv-input pv-code-input" value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase())} />
@@ -382,8 +385,8 @@ export function ChampionPanel({ tour, meId, onNew, onAgain, onLeave }) {
       {tour.practice ? (
         // treino contra bots: sem sorteio pra conferir, e o botão principal é jogar de novo
         <>
-          <p className={`ga-me${mine ? ' is-win' : ''}`}>{mine ? '🎉 You beat the bots!' : '💥 The bots got you this time'}</p>
-          <p className="ga-hint">Practice match · you vs 3 bots</p>
+          <p className={`ga-me${mine ? ' is-win' : ''}`}>{mine ? (tour.practice === 'cup' ? '🎉 You won the practice cup!' : '🎉 You beat the bots!') : '💥 The bots got you this time'}</p>
+          <p className="ga-hint">{tour.practice === 'cup' ? 'Practice cup · 2 rooms + final' : 'Practice match · you vs 3 bots'}</p>
           <button type="button" className="ga-send ga-bigbtn" onClick={onAgain}>Practice again</button>
           <button type="button" className="ga-copy pv-practice-btn" onClick={onNew}>Create a real tournament</button>
         </>

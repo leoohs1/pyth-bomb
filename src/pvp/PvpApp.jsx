@@ -138,7 +138,8 @@ export default function PvpApp() {
     return nm
   }
   const onCreate = () => { const nm = remember(); setError(''); send({ t: 'create', name: nm, hero }) }
-  const onPractice = () => { const nm = remember(); setError(''); send({ t: 'create', name: nm, hero, practice: true }) } // sozinho contra 3 bots
+  // treino contra bots: 'quick' = uma sala (você + 3 bots) · 'cup' = 2 salas de 4 rodando juntas e a final de 2
+  const onPractice = (mode = 'quick') => { const nm = remember(); setError(''); send({ t: 'create', name: nm, hero, practice: mode }) }
   const onJoin = () => { const nm = remember(); setError(''); wantRef.current.code = code; send({ t: 'join', code, name: nm, hero }) }
   const onLeave = () => {
     send({ t: 'leave' })
@@ -195,7 +196,7 @@ export default function PvpApp() {
     chip = 'Champion · Pyth Bomb PVP'
     confetti = true
     panel = <ChampionPanel tour={tour} meId={meId} onNew={() => { onLeave(); setTimeout(() => send({ t: 'create', name: name.trim() || 'Host', hero }), 50) }}
-      onAgain={() => { onLeave(); setTimeout(() => send({ t: 'create', name: name.trim() || 'Host', hero, practice: true }), 50) }} onLeave={onLeave} />
+      onAgain={() => { const mode = tour.practice || 'quick'; onLeave(); setTimeout(() => send({ t: 'create', name: name.trim() || 'Host', hero, practice: mode }), 50) }} onLeave={onLeave} />
   } else if (me?.st === 'playing' && myRoom) {
     chip = 'Your room · Pyth Bomb PVP'
     panel = <DrawPanel tour={tour} meId={meId} room={myRoom} />
