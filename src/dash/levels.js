@@ -6,6 +6,7 @@
 //   'u' oráculo já usado  'g'/'G' vela verde (corpo/topo)  'r'/'R' vela vermelha (corpo/topo)
 //   '1'..'9' bloco APAGADO do grupo N: só vira chão quando alguém liga o Price Relay daquele grupo
 //   'f' parede FALSA (parece bloco, mas dá pra atravessar: esconde segredos)  'x' portão do chefe (abre quando ele cai)
+//   'c' ponte que DESABA (treme quando você pisa, cai e volta depois de uns segundos)
 // Coisas soltas (fora da grade): moedas (price updates), inimigos (lag bugs), Price Relays, os 3 Publishers,
 // Confidence Gems, baús (sorteio do Pyth Entropy), checkpoint e o Oracle Beacon do fim (a "bandeira").
 
@@ -16,7 +17,7 @@ function makeBuilder(cols) {
   const grid = Array.from({ length: ROWS }, () => Array(cols).fill('.'))
   const L = {
     cols, grid, coins: [], enemies: [], relays: [], publishers: [], gems: [], chests: [], movers: [], winds: [],
-    echoes: [], torches: [], dark: false, boss: null,
+    echoes: [], torches: [], dark: false, boss: null, portals: [], jets: [], chaser: null, signs: [], checkpoints: null,
     start: { x: 2, y: FLOOR - 2 }, checkpoint: null, flag: cols - 8, restoreStart: 8,
   }
   const set = (x, y, c) => { if (x >= 0 && x < cols && y >= 0 && y < ROWS) grid[y][x] = c }
@@ -54,6 +55,33 @@ function makeBuilder(cols) {
     fill(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c) },
     // chefe Talos: começa em x, briga entre ax0 e ax1 (acorda quando o herói passa de ax0)
     boss(x, ax0, ax1) { L.boss = { x, ax0, ax1, floor: FLOOR } },
+    // chefe final: Kronos flutua; a vitória é acender os altares (em ordem). altars = [{ x, y }] (y = chão do altar)
+    kronos(x, ax0, ax1, altars) { L.boss = { type: 'kronos', x, ax0, ax1, floor: FLOOR, altars } },
+    // portal (redemoinho): entra em (x,y) e sai em (tx,ty)
+    portal(x, y, tx, ty) { L.portals.push({ x, y, tx, ty }) },
+    // jato de fogo saindo do chão em y, h casas de altura; liga a cada period s (phase desloca o ritmo)
+    jet(x, y = FLOOR, h = 3, { period = 3, phase = 0 } = {}) { L.jets.push({ x, y, h, period, phase }) },
+    // tempestade/lava que persegue o herói de x0 até x1 (lead = quantas casas atrás ela nasce)
+    chaser(x0, x1, speed, kind, lead = 12) { L.chaser = { x0, x1, speed, kind, lead } },
+    cp(x, y = FLOOR) { (L.checkpoints ??= []).push({ x, y }) },
+    sign(x, y, text) { L.signs.push({ x, y, text }) },
+    // Chart Ride: cada dia vira uma vela de "w" casas saindo da lava (verde subiu, vermelha caiu). A altura segue o
+    // fechamento do dia (entre lo e hi casas), mas nunca sobe mais que 3 de uma vela pra outra (dá pra pular sempre).
+    // A cada gapEvery velas fica 1 casa de lava no meio. Devolve onde o gráfico acabou.
+    chart(x0, closes, { w = 2, lo = 2, hi = 9, gapEvery = 4, startH = ROWS - FLOOR } = {}) {
+      const mn = Math.min(...closes), mx = Math.max(...closes)
+      let x = x0, prevH = startH // começa na altura do chão de antes (a 1ª vela também só sobe até 3)
+      closes.forEach((c, i) => {
+        let h = Math.round(lo + ((c - mn) / (mx - mn || 1)) * (hi - lo))
+        h = Math.min(h, prevH + 3)
+        const up = i === 0 || c >= closes[i - 1]
+        for (let dx = 0; dx < w; dx++) for (let y = ROWS - h; y < ROWS; y++) set(x + dx, y, y === ROWS - h ? (up ? 'G' : 'R') : (up ? 'g' : 'r'))
+        prevH = h
+        x += w
+        if (gapEvery && (i + 1) % gapEvery === 0 && i < closes.length - 1) x += 1
+      })
+      return x
+    },
     gem(x, y) { L.gems.push({ x, y }) },
     chest(x, y = FLOOR) { L.chests.push({ x, y }) },
   }
@@ -221,7 +249,7 @@ function level3() {
   // 3) checkpoint, 2º Publisher, a 2ª sombra (mais rápida) numa subida, e um nicho escondido com o 2º baú
   b.ground(65, 83)
   b.torch(66); b.torch(80)
-  b.L.checkpoint = { x: 68 }
+  b.cp(68)
   b.publisher(72)
   b.echo(76, 108, 1.6)
   b.stairs(79, 4)
@@ -247,6 +275,7 @@ function level3() {
   b.ground(142, 199)
   b.torch(144)
   b.publisher(146)
+  b.cp(148) // checkpoint logo antes da arena: quem morre pro Talos tenta de novo daqui
   // 5) a arena do TALOS (portão fechado até ele cair) e a GEM 3 num degrau alto da arena
   for (const x of [152, 168, 183]) b.torch(x)
   b.row(153, F - 4, 'b')
@@ -260,4 +289,161 @@ function level3() {
   return { id: 'styx', name: 'Echoes of the Styx', par: 160, theme: 'styx', ...b.L }
 }
 
-export const LEVELS = [level1(), level2(), level3()]
+// Formato da queda do BTC de agosto de 2024 (fechamentos diários APROXIMADOS, em mil dólares, 22/jul a 25/ago).
+// Não são dados da Pyth: a API de histórico da Pyth agora pede chave (Pyth Pro). Dá pra trocar pelos reais depois.
+const BTC_AUG_2024 = [67.6, 65.9, 65.4, 65.8, 68.0, 67.9, 68.2, 66.8, 66.2, 64.6, 65.3, 61.4, 60.7, 58.1, 54.0, 56.0, 55.1, 61.7,
+  60.9, 60.9, 58.7, 59.3, 60.6, 58.7, 57.5, 58.9, 59.4, 58.5, 59.5, 59.0, 61.2, 60.4, 64.1, 64.2, 64.2]
+
+// Fase 4: "Aegean Crossing". Ilhas no mar roxo: pontes que desabam, redemoinhos (portais) e, no fim, a tempestade
+// vem atrás de você.
+function level4() {
+  const F = FLOOR
+  const b = makeBuilder(210)
+  // 1) a 1ª ilha e a 1ª ponte que desaba
+  b.ground(0, 22)
+  b.publisher(7)
+  b.coins(3, F - 1, 3)
+  b.row(12, F - 4, 'b?b')
+  b.enemy(17)
+  b.row(23, F, 'ccccccccc')
+  b.coins(24, F - 2, 7)
+  // 2) ilha 2: o poder, a harpia, o baú e o redemoinho que leva por cima do mar largo
+  b.ground(32, 50)
+  b.row(36, F - 4, '!')
+  b.harpy(42, F - 6, 3)
+  b.chest(46)
+  b.portal(49, F - 2, 62, F - 2)
+  // 3) ilha 3: checkpoint, 2º Publisher, a GEM 1 num degrau alto e pedrinhas que desabam
+  b.ground(60, 86)
+  b.cp(66)
+  b.publisher(71)
+  b.row(75, F - 3, 'b'); b.row(77, F - 6, 'bb')
+  b.gem(78, F - 8)
+  b.enemy(82)
+  b.row(88, F - 2, 'c'); b.row(91, F - 3, 'c'); b.row(94, F - 2, 'c')
+  b.coins(88, F - 3, 1); b.coins(91, F - 4, 1); b.coins(94, F - 3, 1)
+  // 4) ilha 4: harpias; um redemoinho secreto num degrau alto leva pra uma ilhota no céu (GEM 2 + baú)
+  b.ground(97, 125)
+  b.harpy(108, F - 6, 3); b.harpy(118, F - 7, 3)
+  b.row(100, F - 3, 'b') // degrau pra chegar no degrau alto do redemoinho secreto
+  b.row(103, F - 5, 'bbb')
+  b.portal(104, F - 6, 141, F - 10)
+  b.row(140, F - 8, 'bbb')
+  b.gem(142, F - 10)
+  b.chest(140, F - 8)
+  b.portal(123, F - 2, 136, F - 2)
+  // 5) ilha 5: checkpoint e 3º Publisher
+  b.ground(134, 156)
+  b.cp(137)
+  b.publisher(147)
+  b.coins(150, F - 1, 4)
+  // 6) a tempestade vem atrás: corre pelas pontes que desabam até o Oracle Beacon
+  b.chaser(152, 200, 5.2, 'storm')
+  b.row(157, F, 'cccccccc')
+  b.gem(161, F - 4) // GEM 3: no ar, em cima da ponte (pula sem parar)
+  b.ground(165, 169)
+  b.row(171, F - 2, 'c'); b.row(174, F - 3, 'c'); b.row(177, F - 2, 'c')
+  b.ground(180, 209)
+  b.enemy(188)
+  b.coins(182, F - 1, 4)
+  b.L.flag = 200
+  return { id: 'aegean', name: 'Aegean Crossing', par: 150, theme: 'aegean', ...b.L }
+}
+
+// Fase 5: "Hephaestus Forge". A forja do vulcão: jatos de fogo, pistões sobre a lava, o Chart Ride (as plataformas são as
+// velas de um gráfico de preço) e, no fim, a lava da liquidação vem atrás de você.
+function level5() {
+  const F = FLOOR
+  const b = makeBuilder(232)
+  // 1) entrada: os primeiros jatos (avisam com fumaça antes de soltar fogo) e pistões sobre a lava
+  b.ground(0, 25)
+  b.publisher(7)
+  b.enemy(10)
+  b.jet(14, F, 3, { period: 3 }); b.jet(20, F, 3, { period: 3, phase: 1.5 })
+  b.mover(27, F - 1, 2, { dy: -3, period: 3 })
+  b.mover(31, F - 4, 2, { dy: 3, period: 3 })
+  b.mover(36, F - 2, 2, { dx: 2, period: 2.5 })
+  b.gem(31, F - 9) // GEM 1: em cima do 2º pistão quando ele está no alto
+  b.coins(27, F - 5, 2); b.coins(36, F - 4, 2); b.coins(44, F - 1, 3)
+  b.ground(41, 60)
+  b.cp(44)
+  b.row(47, F - 4, 'b!b')
+  b.jet(50, F, 3, { period: 2.6 }); b.jet(55, F, 3, { period: 2.6, phase: 1.3 })
+  b.chest(52)
+  b.publisher(58)
+  // 2) o Chart Ride: as velas do gráfico saindo da lava
+  b.sign(61, F - 4, 'BTC/USD · Aug 2024 crash (shape)')
+  const xe = b.chart(62, BTC_AUG_2024)
+  for (const x of [66, 72, 80, 88, 96, 106, 114, 122, 130, 136]) { let y = 0; while (y < ROWS && b.L.grid[y][x] === '.') y++; if (y < ROWS) b.coin(x, y - 2) } // moedas em cima das velas
+  b.gem(62 + 2 * 17 + 4, F - 9) // GEM 2: no alto, logo depois do fundo do tombo
+  // 3) a forja: checkpoint, 3º Publisher, jatos e um degrau alto com o 2º baú
+  const xc = xe + 1
+  b.ground(xc, xc + 30)
+  b.cp(xc + 3)
+  b.publisher(xc + 8)
+  b.jet(xc + 13, F, 3, { period: 2.4 }); b.jet(xc + 21, F, 4, { period: 2.4, phase: 1.2 })
+  b.row(xc + 16, F - 3, 'b'); b.row(xc + 17, F - 6, 'bbb')
+  b.chest(xc + 18, F - 6)
+  b.enemy(xc + 26)
+  // 4) a lava da liquidação vem atrás: ilhas e pistões até o Oracle Beacon
+  const x5 = xc + 31
+  b.chaser(x5, x5 + 46, 5.4, 'lava')
+  b.mover(x5 + 1, F - 1, 2, { dx: 2, period: 2 })
+  b.ground(x5 + 6, x5 + 10)
+  b.mover(x5 + 12, F - 2, 2, { dy: -2, period: 2 })
+  b.ground(x5 + 16, x5 + 19, F - 2)
+  b.gem(x5 + 17, F - 6) // GEM 3: no meio da fuga
+  b.ground(x5 + 23, x5 + 26, F - 1)
+  b.ground(x5 + 29, 231)
+  b.coins(x5 + 30, F - 1, 4)
+  b.L.flag = x5 + 40
+  return { id: 'forge', name: 'Hephaestus Forge', par: 170, theme: 'forge', ...b.L }
+}
+
+// Fase 6: "Tartarus: The Stale Fortress". A fortaleza do Kronos: um pouco de tudo (sombra, pontes que desabam, polias,
+// parede falsa) e a luta final: acender os 3 altares enquanto o Kronos ataca. Aí a Genesis Flame volta.
+function level6() {
+  const F = FLOOR
+  const b = makeBuilder(200)
+  // 1) o portão da fortaleza: sombra e uma ponte que desaba
+  b.ground(0, 30)
+  b.publisher(7)
+  b.echo(12, 40, 1.8)
+  b.coins(14, F - 1, 6)
+  b.row(31, F, 'cccccc')
+  b.gem(33, F - 5) // GEM 1: no ar em cima da ponte
+  b.ground(37, 58)
+  b.enemy(46); b.enemy(52)
+  // 2) checkpoint e o abismo das polias (com uma harpia)
+  b.cp(60)
+  b.ground(59, 70)
+  b.publisher(64)
+  b.mover(72, F - 2, 3, { dx: 5, period: 4 })
+  b.coins(73, F - 4, 3); b.coins(83, F - 6, 3); b.coins(89, F - 4, 3)
+  b.mover(82, F - 4, 3, { dy: 3, period: 3.5 })
+  b.mover(88, F - 2, 3, { dx: 4, period: 4 })
+  b.harpy(84, F - 9, 4)
+  b.ground(96, 125)
+  // 3) a parede com segredo (igual a do Estige): GEM 2 e o baú lá dentro; o caminho passa por cima
+  b.stairs(102, 3)
+  b.fill(107, F - 5, 112, F - 5, '#')
+  b.fill(112, F - 4, 112, F - 1, '#')
+  b.fill(107, F - 4, 111, F - 1, 'f')
+  b.chest(108)
+  b.gem(110, F - 2)
+  b.enemy(118); b.enemy(122)
+  // 4) a arena do Kronos: 3 altares (o do meio fica num degrau alto), o portão e a Genesis Flame
+  b.ground(126, 199)
+  b.publisher(128)
+  b.cp(131)
+  b.row(156, F - 3, 'b')
+  b.row(159, F - 5, 'bbb')
+  b.gem(150, F - 6) // GEM 3: no ar, no começo da arena
+  b.coins(98, F - 1, 4); b.coins(132, F - 1, 4)
+  b.kronos(170, 138, 185, [{ x: 142, y: F }, { x: 160, y: F - 5 }, { x: 180, y: F }])
+  b.fill(186, F - 6, 187, F - 1, 'x')
+  b.L.flag = 194
+  return { id: 'tartarus', name: 'Tartarus: The Stale Fortress', par: 180, theme: 'tartarus', final: true, ...b.L }
+}
+
+export const LEVELS = [level1(), level2(), level3(), level4(), level5(), level6()]

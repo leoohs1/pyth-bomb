@@ -28,6 +28,7 @@ const SFX = {
   win: 'solo_clear', checkpoint: 'solo_door', relay: 'solo_door', stale: 'solo_hit', publisher: 'solo_shield', gem: 'solo_chest_win',
   chest: 'solo_chest_open', power: 'solo_pickup', item: 'solo_jet', shieldbreak: 'solo_hurt',
   bosswake: 'solo_chop_intro', slam: 'solo_boom', bosshit: 'solo_chop_hurt', bossdown: 'solo_chop_die',
+  crumble: 'solo_hit', portal: 'solo_jet', chaser: 'solo_roar', freeze: 'solo_shield', sweep: 'solo_kick', altar: 'solo_clear',
 }
 const HERO_KEY = 'pb_dash_hero'
 const DEV_LEVEL = (() => {
@@ -39,7 +40,7 @@ const CHEST_MIN_MS = 700 // o dado gira pelo menos isso (o sorteio pode chegar a
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
 export default function DashApp() {
-  const [screen, setScreen] = useState('menu') // 'menu' | 'story' | 'play'
+  const [screen, setScreen] = useState('menu') // 'menu' | 'story' | 'play' | 'ending'
   const [hero, setHero] = useState(() => { try { return localStorage.getItem(HERO_KEY) || 'pirb' } catch { return 'pirb' } })
   const [run, setRun] = useState(0) // muda a cada partida nova (recomeça o jogo)
   useSoloAudio('/music/solo.mp3') // efeitos e música do Solo ("Pixel Adventure")
@@ -61,8 +62,9 @@ export default function DashApp() {
       {screen === 'menu' && <DashMenu hero={hero} onPick={pick} onStart={play} onStory={() => { unlock(); setScreen('story') }}
         levelIdx={levelIdx} onLevel={setLevelIdx} cleared={cleared} />}
       {screen === 'story' && <DashStory onDone={storyDone} />}
+      {screen === 'ending' && <DashStory panels={ENDING} onDone={() => setScreen('menu')} />}
       {screen === 'play' && <DashPlay key={run} hero={hero} levelIdx={levelIdx} onMenu={() => setScreen('menu')} onAgain={() => start(levelIdx)}
-        onNext={levelIdx + 1 < LEVELS.length ? () => start(levelIdx + 1) : null} onCleared={onCleared} />}
+        onNext={levelIdx + 1 < LEVELS.length ? () => start(levelIdx + 1) : null} onCleared={onCleared} onEnding={() => setScreen('ending')} />}
     </div>
   )
 }
@@ -110,7 +112,7 @@ function DashMenu({ hero, onPick, onStart, onStory, levelIdx, onLevel, cleared }
   )
 }
 
-function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared }) {
+function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEnding }) {
   const wrapRef = useRef(null)
   const canvasRef = useRef(null)
   const input = useRef({ left: false, right: false, jump: false })
@@ -224,7 +226,7 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared }) {
           <h2>{level.name}</h2>
           <span>The price must flow.</span>
         </div>
-        {hud?.done && <DashResult hud={hud} level={level} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} onNext={onNext} />}
+        {hud?.done && <DashResult hud={hud} level={level} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} onNext={onNext} onEnding={onEnding} />}
         {hud?.status === 'gameover' && <DashResult hud={hud} level={level} chests={chests} runInfo={runInfo} onAgain={onAgain} onMenu={onMenu} />}
       </div>
       {TOUCH && (
@@ -254,7 +256,7 @@ function useCommitCheck(reveal) {
   return ok
 }
 
-function DashResult({ hud, level, won, chests, runInfo, reveal, onAgain, onMenu, onNext }) {
+function DashResult({ hud, level, won, chests, runInfo, reveal, onAgain, onMenu, onNext, onEnding }) {
   const s = hud.stars
   const got = won ? [s.finished, s.allGems, s.fast].filter(Boolean).length : 0
   const via = runInfo?.via
@@ -262,10 +264,10 @@ function DashResult({ hud, level, won, chests, runInfo, reveal, onAgain, onMenu,
   const check = useCommitCheck(reveal)
   return (
     <div className="dash-result" role="dialog" aria-label={won ? 'Price delivered' : 'Game over'}>
-      <h2>{won ? 'Price delivered!' : 'Out of lives'}</h2>
+      <h2>{won ? (level.final ? 'The Genesis Flame is back!' : 'Price delivered!') : 'Out of lives'}</h2>
       {won && (
         <>
-          <p className="dash-sub">The Oracle Beacon is back online. {level.name} is purple again.</p>
+          <p className="dash-sub">{level.final ? 'Kronos is defeated and the whole Purple Realm is flowing again. The price must flow!' : `The Oracle Beacon is back online. ${level.name} is purple again.`}</p>
           <p className="dash-stars" aria-label={`${got} of 3 stars`}>{[0, 1, 2].map((i) => <span key={i} className={i < got ? 'is-on' : ''}>★</span>)}</p>
           <ul className="dash-goals">
             <li className={s.finished ? 'is-on' : ''}>Deliver the price to the Oracle Beacon</li>
@@ -297,7 +299,8 @@ function DashResult({ hud, level, won, chests, runInfo, reveal, onAgain, onMenu,
       )}
       <div className="dash-result-btns">
         {won && onNext && <button type="button" className="dash-btn dash-btn-go" onClick={onNext}>Next level ▶</button>}
-        <button type="button" className={`dash-btn${won && onNext ? '' : ' dash-btn-go'}`} onClick={onAgain}>{won ? 'Play again' : 'Try again'}</button>
+        {won && level.final && onEnding && <button type="button" className="dash-btn dash-btn-go" onClick={onEnding}>Watch the ending ▶</button>}
+        <button type="button" className={`dash-btn${won && (onNext || level.final) ? '' : ' dash-btn-go'}`} onClick={onAgain}>{won ? 'Play again' : 'Try again'}</button>
         <button type="button" className="dash-btn" onClick={onMenu}>Menu</button>
       </div>
     </div>
@@ -316,14 +319,21 @@ const STORY_KEY = 'pb_dash_story'
 function storySeen() { try { return localStorage.getItem(STORY_KEY) === '1' } catch { return false } }
 function markStorySeen() { try { localStorage.setItem(STORY_KEY, '1') } catch { /* sem localStorage */ } }
 
-function DashStory({ onDone }) {
+// fim do jogo (depois do Kronos): os quadros finais
+const ENDING = [
+  { img: '/dash/story/end-1.webp', text: 'The altars blazed, and Kronos crumbled back into the past.' },
+  { img: '/dash/story/end-2.webp', text: 'The Genesis Flame returned to Delphi. The price flows again. Thank you, Data Runner!' },
+]
+
+function DashStory({ onDone, panels = STORY }) {
+  const STORY_PANELS = panels
   const [i, setI] = useState(0)
   const doneRef = useRef(onDone)
   useEffect(() => { doneRef.current = onDone }, [onDone])
-  useEffect(() => { for (const s of STORY) { const im = new Image(); im.src = s.img } }, [])
+  useEffect(() => { for (const s of STORY_PANELS) { const im = new Image(); im.src = s.img } }, [])
   const iRef = useRef(0)
   const next = () => {
-    if (iRef.current + 1 >= STORY.length) { doneRef.current(); return }
+    if (iRef.current + 1 >= STORY_PANELS.length) { doneRef.current(); return }
     iRef.current += 1; setI(iRef.current)
   }
   useEffect(() => {
@@ -334,14 +344,14 @@ function DashStory({ onDone }) {
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
   }, [])
-  const s = STORY[i]
+  const s = STORY_PANELS[i]
   return (
     <div className="dash-story" onClick={next} role="dialog" aria-label="Story">
       <img key={s.img} className="dash-story-img" src={s.img} alt="" />
       <div className="dash-story-bar">
         <p key={s.text} className="dash-story-text">{s.text}</p>
-        <div className="dash-story-dots" aria-hidden="true">{STORY.map((_, k) => <span key={k} className={k === i ? 'is-on' : ''} />)}</div>
-        <span className="dash-story-hint">{i + 1 < STORY.length ? 'Tap or press Space ▶' : 'Tap or press Space to play ▶'}</span>
+        <div className="dash-story-dots" aria-hidden="true">{STORY_PANELS.map((_, k) => <span key={k} className={k === i ? 'is-on' : ''} />)}</div>
+        <span className="dash-story-hint">{i + 1 < STORY_PANELS.length ? 'Tap or press Space ▶' : 'Tap or press Space to play ▶'}</span>
       </div>
       <button type="button" className="dash-story-skip" onClick={(e) => { e.stopPropagation(); onDone() }}>Skip ⏭</button>
     </div>

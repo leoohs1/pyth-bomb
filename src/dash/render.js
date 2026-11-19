@@ -1,7 +1,7 @@
 // Desenho do Pyth Dash no <canvas>. Blocos, moedas, bugs e bandeira são desenhados por código em pixel art
 // (provisório: depois a arte de verdade entra no lugar). Os heróis são os pixels do Solo/PVP (vista de lado).
 import { ROWS, FLOOR } from './levels.js'
-import { P, ENEMY_SIZE, freshLeft, staleWarn, windState, BOSS } from './engine.js'
+import { P, ENEMY_SIZE, freshLeft, staleWarn, windState, BOSS, KRONOS, jetState, JET } from './engine.js'
 
 export const ART = 32 // pixels de arte por casa (o herói tem ~53 px de altura: ~1,65 casa)
 
@@ -88,7 +88,9 @@ const ready = (i) => i && i.complete && i.naturalWidth > 0
 const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
   'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
   'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near', 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'harpy-dead', 'lift',
-  'bg3-far', 'bg3-near', 'talos-walk1', 'talos-walk2', 'talos-windup', 'talos-slam', 'talos-down', 'torch-1', 'torch-2']
+  'bg3-far', 'bg3-near', 'talos-walk1', 'talos-walk2', 'talos-windup', 'talos-slam', 'talos-down', 'torch-1', 'torch-2',
+  'bg4-far', 'bg4-near', 'bg5-far', 'bg5-near', 'bg6-far', 'bg6-near', 'tile-crumble', 'portal-1', 'portal-2', 'jet-1', 'jet-2',
+  'kronos-float', 'kronos-cast', 'kronos-sweep', 'kronos-hurt', 'kronos-down', 'altar-off', 'altar-on']
 const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
 const APX = 64 // pixels de arte por casa
 const art = {}
@@ -111,8 +113,10 @@ function sprite(ctx, im, cx, by, ppt, flip = false) {
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
 function drawBackground(ctx, w, h, camX, ppt, theme) {
   // Grécia: céu bem longe + morros mais perto. Cada fase tem o seu par (fase 2 = bg2-*); sem ele, usa o de Delfos
-  const pre = theme === 'parnassus' && A('bg2-far') ? 'bg2' : theme === 'styx' && A('bg3-far') ? 'bg3' : 'bg'
-  const far = A(`${pre}-far`), near = A(`${pre}-near`)
+  const pre = { parnassus: 'bg2', styx: 'bg3', aegean: 'bg4', forge: 'bg5', tartarus: 'bg6' }[theme]
+  const prefix = pre && A(`${pre}-far`) ? pre : 'bg'
+  const pre2 = prefix
+  const far = A(`${pre2}-far`), near = A(`${pre2}-near`)
   if (far) {
     const fw = far.naturalWidth * (h / far.naturalHeight)
     const off = (camX * ppt * 0.08) % fw
@@ -546,16 +550,151 @@ function drawDarkness(ctx, g, w, h, ppt, camX) {
 function drawBossBar(ctx, g, w, ppt) {
   const b = g.boss
   if (!b || !b.alive || b.state === 'sleep') return
+  const kron = b.type === 'kronos'
+  const name = kron ? 'KRONOS' : 'TALOS'
+  const total = kron ? b.altars.length : BOSS.hp, left = kron ? b.altars.filter((a) => !a.lit).length : b.hp
   const size = Math.max(10, Math.round(ppt * 0.38))
   ctx.font = `${size}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   const y = ppt * 0.7
-  ctx.fillStyle = '#140a26'; ctx.fillText('TALOS', w / 2 + 2, y + 2)
-  ctx.fillStyle = '#f6c453'; ctx.fillText('TALOS', w / 2, y)
-  for (let i = 0; i < BOSS.hp; i++) {
+  ctx.fillStyle = '#140a26'; ctx.fillText(name, w / 2 + 2, y + 2)
+  ctx.fillStyle = '#f6c453'; ctx.fillText(name, w / 2, y)
+  if (kron) { ctx.font = `${Math.round(size * 0.7)}px "Press Start 2P", monospace`; ctx.fillStyle = '#c4a6ff'; ctx.fillText('Light the 3 altars!', w / 2, y + size * 2.4) }
+  for (let i = 0; i < total; i++) {
     const x = w / 2 + (i - 1) * size * 1.6
     ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - size * 0.55), Math.round(y + size), Math.round(size * 1.1), Math.round(size * 0.7))
-    ctx.fillStyle = i < b.hp ? '#f14ceb' : '#3e3350'; ctx.fillRect(Math.round(x - size * 0.45), Math.round(y + size * 1.1), Math.round(size * 0.9), Math.round(size * 0.5))
+    ctx.fillStyle = i < left ? '#f14ceb' : '#3e3350'; ctx.fillRect(Math.round(x - size * 0.45), Math.round(y + size * 1.1), Math.round(size * 0.9), Math.round(size * 0.5))
   }
+}
+
+// ---- fases 4, 5 e 6: ponte que desaba, redemoinho, jato de fogo, a tempestade/lava que persegue, placas, Kronos
+
+function drawCrumble(ctx, g, tx, ty, ppt) {
+  const c = g.crumbles.find((q) => q.x === tx && q.y === ty)
+  const shake = c && c.state === 'shake' ? Math.sin(g.time * 70) * ppt * 0.06 : 0
+  const x = Math.floor(tx * ppt + shake), y = Math.floor(ty * ppt), sz = Math.ceil(ppt)
+  const art = A('tile-crumble')
+  if (art) { ctx.drawImage(art, x, y, sz, sz); return }
+  ctx.fillStyle = '#140a26'; ctx.fillRect(x, y, sz, Math.ceil(sz * 0.55))
+  ctx.fillStyle = '#c4a6ff'; ctx.fillRect(x + 2, y + 2, sz - 4, Math.ceil(sz * 0.42))
+  ctx.fillStyle = '#8b5cf6'; ctx.fillRect(x + 2, Math.round(y + sz * 0.32), sz - 4, Math.ceil(sz * 0.12))
+  ctx.strokeStyle = '#4c1d95'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + sz * 0.3, y + 3); ctx.lineTo(x + sz * 0.45, y + sz * 0.4); ctx.lineTo(x + sz * 0.6, y + sz * 0.2); ctx.stroke()
+}
+
+function drawPortal(ctx, pt, t, ppt) {
+  const art = A(Math.sin(t * 6) > 0 ? 'portal-1' : 'portal-2')
+  for (const [px, py] of [[pt.x, pt.y], [pt.tx, pt.ty]]) {
+    const cx = (px + 0.5) * ppt, cy = (py + 0.5) * ppt
+    if (px === pt.tx && py === pt.ty) { ctx.fillStyle = 'rgba(196,166,255,0.18)'; ctx.beginPath(); ctx.arc(cx, cy, ppt * 0.5, 0, Math.PI * 2); ctx.fill(); continue }
+    if (art) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 2); ctx.imageSmoothingEnabled = false; const w = ppt * 1.6; ctx.drawImage(art, -w / 2, -w / 2, w, w); ctx.restore(); continue }
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = ['#7c3aed', '#a78bfa', '#22d3ee', '#f5f3ff'][i]; ctx.lineWidth = Math.max(2, ppt * 0.09)
+      ctx.beginPath(); ctx.arc(cx, cy, ppt * (0.75 - i * 0.16), t * (3 + i) , t * (3 + i) + Math.PI * 1.4); ctx.stroke()
+    }
+  }
+}
+
+function drawJet(ctx, g, j, ppt) {
+  const st = jetState(g, j)
+  const x = j.x * ppt, by = j.y * ppt
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x + ppt * 0.15), Math.round(by - ppt * 0.3), Math.round(ppt * 0.7), Math.round(ppt * 0.3))
+  ctx.fillStyle = '#6b6380'; ctx.fillRect(Math.round(x + ppt * 0.2), Math.round(by - ppt * 0.26), Math.round(ppt * 0.6), Math.round(ppt * 0.22))
+  if (st === 'warn') {
+    ctx.fillStyle = 'rgba(200,190,220,0.6)'
+    for (let i = 0; i < 3; i++) { const yy = by - ppt * (0.5 + ((g.time * 2 + i / 3) % 1) * 1.2); ctx.beginPath(); ctx.arc(x + ppt * (0.35 + i * 0.15), yy, ppt * 0.14, 0, Math.PI * 2); ctx.fill() }
+  } else if (st === 'on') {
+    const art = A(Math.sin(g.time * 30) > 0 ? 'jet-1' : 'jet-2')
+    if (art) { ctx.imageSmoothingEnabled = false; ctx.drawImage(art, Math.round(x - ppt * 0.1), Math.round(by - ppt * (j.h + 0.2)), Math.round(ppt * 1.2), Math.round(ppt * j.h)); return }
+    const f = 1 + Math.sin(g.time * 40) * 0.08
+    for (const [w, c] of [[0.8, '#7c3aed'], [0.55, '#f14ceb'], [0.3, '#ffd6fb']]) {
+      ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x + ppt * (0.5 - w / 2), by - ppt * 0.3)
+      ctx.quadraticCurveTo(x + ppt * 0.5, by - ppt * j.h * f * 1.1, x + ppt * (0.5 + w / 2), by - ppt * 0.3); ctx.fill()
+    }
+  }
+}
+
+// a tempestade (fase 4) ou a lava da liquidação (fase 5) vindo atrás: uma parede que avança
+function drawChaser(ctx, g, ppt, h) {
+  const ch = g.chaser
+  if (!ch) return
+  const x = ch.x * ppt
+  const lava = ch.kind === 'lava'
+  const gr = ctx.createLinearGradient(x - ppt * 6, 0, x + ppt * 0.8, 0)
+  gr.addColorStop(0, lava ? 'rgba(120,10,60,0.95)' : 'rgba(20,10,50,0.95)')
+  gr.addColorStop(0.75, lava ? 'rgba(241,76,235,0.85)' : 'rgba(76,29,149,0.85)')
+  gr.addColorStop(1, lava ? 'rgba(255,214,251,0)' : 'rgba(196,166,255,0)')
+  ctx.fillStyle = gr; ctx.fillRect(x - ppt * 40, 0, ppt * 40.8, h)
+  ctx.strokeStyle = lava ? 'rgba(255,214,251,0.8)' : 'rgba(196,166,255,0.7)'; ctx.lineWidth = Math.max(2, ppt * 0.08)
+  for (let i = 0; i < 9; i++) {
+    const yy = (i + 0.5) * (h / 9) + Math.sin(g.time * 6 + i) * ppt * 0.3
+    ctx.beginPath(); ctx.moveTo(x - ppt * 1.2, yy); ctx.quadraticCurveTo(x - ppt * 0.2, yy - ppt * 0.4, x + ppt * 0.4, yy); ctx.stroke()
+  }
+  if (!lava && Math.sin(g.time * 9) > 0.92) { ctx.strokeStyle = '#f5f3ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - ppt * 2, 0); ctx.lineTo(x - ppt * 1.4, h * 0.3); ctx.lineTo(x - ppt * 2.2, h * 0.45); ctx.lineTo(x - ppt * 1.2, h * 0.75); ctx.stroke() }
+}
+
+// água (Egeu) e lava (forja) no fundo dos buracos
+function drawLiquid(ctx, g, ppt, camX, viewW, h) {
+  const th = g.level.theme
+  if (th !== 'aegean' && th !== 'forge') return
+  const top = (ROWS - 0.7) * ppt
+  ctx.fillStyle = th === 'forge' ? 'rgba(241,76,235,0.85)' : 'rgba(76,29,149,0.85)'
+  ctx.fillRect(Math.floor(camX * ppt) - 2, top, Math.ceil(viewW * ppt) + 4, h - top)
+  ctx.fillStyle = th === 'forge' ? 'rgba(255,214,251,0.9)' : 'rgba(196,166,255,0.7)'
+  for (let x = Math.floor(camX); x < camX + viewW + 1; x++) {
+    const wave = Math.sin(g.time * 3 + x * 0.9) * ppt * 0.08
+    ctx.fillRect(Math.round(x * ppt), Math.round(top + wave), Math.round(ppt * 0.6), Math.max(2, Math.round(ppt * 0.07)))
+  }
+}
+
+function drawSign(ctx, sg, ppt) {
+  const size = Math.max(9, Math.round(ppt * 0.28))
+  ctx.font = `${size}px "Press Start 2P", monospace`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+  const w = ctx.measureText(sg.text).width + size
+  const x = sg.x * ppt, y = sg.y * ppt
+  ctx.fillStyle = 'rgba(20,10,38,0.85)'; ctx.fillRect(Math.round(x), Math.round(y - size), Math.round(w), Math.round(size * 2))
+  ctx.strokeStyle = '#f4c542'; ctx.lineWidth = 2; ctx.strokeRect(Math.round(x), Math.round(y - size), Math.round(w), Math.round(size * 2))
+  ctx.fillStyle = '#f4c542'; ctx.fillText(sg.text, Math.round(x + size / 2), Math.round(y))
+}
+
+// Kronos: titã de pedra cinza com rachaduras magenta, ampulheta e foice, flutuando; pilares de gelo e a foice no chão
+function drawKronos(ctx, g, k, t, ppt) {
+  for (const a of k.altars) {
+    const next = k.altars.find((q) => !q.lit) === a
+    const art = A(a.lit ? 'altar-on' : 'altar-off')
+    if (art) sprite(ctx, art, a.x + 0.5, a.y, ppt)
+    else drawTorch(ctx, { x: a.x, y: a.y }, a.lit ? t : 0, ppt)
+    if (!a.lit) {
+      if (!art) { ctx.fillStyle = 'rgba(40,40,50,0.65)'; ctx.fillRect(Math.round(a.x * ppt), Math.round((a.y - 2) * ppt), Math.ceil(ppt), Math.ceil(ppt * 2)) }
+      if (next && k.state !== 'sleep' && Math.sin(t * 6) > 0) { ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.45)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.fillText('\u25BC', (a.x + 0.5) * ppt, (a.y - 2.4) * ppt) }
+    }
+  }
+  for (const pl of k.pillars) {
+    const x = pl.x * ppt, by = pl.y * ppt
+    if (pl.t < 0.8) { ctx.strokeStyle = `rgba(165,243,252,${0.5 + Math.sin(pl.t * 30) * 0.4})`; ctx.lineWidth = Math.max(2, ppt * 0.08); ctx.beginPath(); ctx.ellipse(x + ppt / 2, by - 2, ppt * 0.6, ppt * 0.18, 0, 0, Math.PI * 2); ctx.stroke(); continue }
+    if (pl.t > 1.4) continue
+    const hh = ppt * 2.5 * Math.min(1, (pl.t - 0.8) * 8)
+    ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x + ppt * 0.05), Math.round(by - hh - 2), Math.round(ppt * 0.9), Math.round(hh + 2))
+    ctx.fillStyle = '#a5f3fc'; ctx.fillRect(Math.round(x + ppt * 0.12), Math.round(by - hh), Math.round(ppt * 0.76), Math.round(hh))
+    ctx.fillStyle = '#ecfeff'; ctx.fillRect(Math.round(x + ppt * 0.2), Math.round(by - hh), Math.round(ppt * 0.15), Math.round(hh))
+  }
+  for (const sw of k.sweeps) {
+    const x = sw.x * ppt, y = sw.y * ppt
+    ctx.save(); ctx.translate(x, y - ppt * 0.45); ctx.rotate(g.time * 14 * sw.dir)
+    ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.arc(0, 0, ppt * 0.6, 0, Math.PI * 1.3); ctx.lineTo(0, 0); ctx.fill()
+    ctx.fillStyle = '#e5e7eb'; ctx.beginPath(); ctx.arc(0, 0, ppt * 0.5, 0, Math.PI * 1.2); ctx.lineTo(0, 0); ctx.fill()
+    ctx.restore()
+  }
+  if (!k.alive && k.deadT > 2.5) return
+  const art = A(!k.alive ? 'kronos-down' : k.stun > 0 ? 'kronos-hurt' : k.sweeps.length ? 'kronos-sweep' : k.pillars.some((pl) => pl.t < 0.8) ? 'kronos-cast' : 'kronos-float')
+  ctx.save()
+  if (!k.alive) ctx.globalAlpha = Math.max(0, 1 - k.deadT / 2.5)
+  if (k.stun > 0 && Math.sin(k.stun * 30) > 0) ctx.globalAlpha = 0.5
+  if (art) { sprite(ctx, art, k.x + KRONOS.w / 2, k.y + KRONOS.h, ppt, k.facing > 0); ctx.restore(); return }
+  const x = k.x * ppt, y = k.y * ppt, W = KRONOS.w * ppt, H = KRONOS.h * ppt
+  ctx.fillStyle = '#140a26'; ctx.fillRect(x - 2, y - 2, W + 4, H + 4)
+  ctx.fillStyle = '#6b7280'; ctx.fillRect(x, y, W, H)
+  ctx.strokeStyle = '#f14ceb'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x + W * 0.2, y + H * 0.3); ctx.lineTo(x + W * 0.5, y + H * 0.55); ctx.lineTo(x + W * 0.35, y + H * 0.85); ctx.stroke()
+  ctx.fillStyle = '#f14ceb'; ctx.fillRect(x + W * 0.3, y + H * 0.15, W * 0.12, H * 0.05); ctx.fillRect(x + W * 0.58, y + H * 0.15, W * 0.12, H * 0.05)
+  ctx.restore()
 }
 
 // bloco apagado de um grupo (contorno tracejado cinza)
@@ -778,7 +917,8 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   const near = (x, m = 3) => x >= x0 - m && x <= x1 + m
 
   // atrás dos blocos: checkpoint, publishers, beacon
-  if (g.level.checkpoint) drawCheckpoint(ctx, g.level.checkpoint, !!g.checkpoint, g.time, ppt)
+  g.cpList.forEach((cp, i) => { if (near(cp.x)) drawCheckpoint(ctx, cp, i <= g.cpIdx, g.time, ppt) })
+  for (const sg of g.level.signs ?? []) if (near(sg.x, 12)) drawSign(ctx, sg, ppt)
   for (const pb of g.publishers) if (near(pb.x)) drawPublisher(ctx, pb, g.time, ppt)
   drawBeacon(ctx, g.level.flag, g.time, ppt, g.status === 'won', g.statusT)
 
@@ -789,6 +929,7 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
       let k = g.tiles[ty][tx]
       if (k === '.' || k === 'f') continue
       if (k === 'x') { drawGate(ctx, tx, ty, ppt, g.time); continue }
+      if (k === 'c') { drawCrumble(ctx, g, tx, ty, ppt); continue }
       if (k >= '1' && k <= '9') {
         // bloco de grupo: aceso (roxo) ou apagado (contorno); piscando quando o sinal está envelhecendo
         if (!g.groupOn[k]) { drawGhost(ctx, tx, ty, ppt, g.time); continue }
@@ -819,6 +960,10 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   for (const r of g.relays) if (near(r.x)) drawRelay(ctx, g, r, g.time, ppt)
   for (const m of g.movers ?? []) if (near(m.x, m.w + 6)) drawMover(ctx, g, m, g.time, ppt)
   for (const tc of g.level.torches ?? []) if (near(tc.x)) drawTorch(ctx, tc, g.time, ppt)
+  for (const j of g.level.jets ?? []) if (near(j.x)) drawJet(ctx, g, j, ppt)
+  for (const pt of g.level.portals ?? []) if (near(pt.x, 4) || near(pt.tx, 4)) drawPortal(ctx, pt, g.time, ppt)
+  for (const d of g.debris) { ctx.fillStyle = '#8b5cf6'; ctx.fillRect(Math.round(d.x * ppt), Math.round(d.y * ppt), Math.ceil(ppt * 0.45), Math.ceil(ppt * 0.3)); ctx.fillRect(Math.round((d.x + 0.5) * ppt), Math.round((d.y + 0.2) * ppt), Math.ceil(ppt * 0.4), Math.ceil(ppt * 0.28)) }
+  drawLiquid(ctx, g, ppt, camX, viewW, h)
 
   // o que ainda está "stale" fica cinza (moedas, gems, baús, inimigos e o herói ficam por cima, coloridos)
   drawStale(ctx, g, ppt, camX, viewW, h)
@@ -834,7 +979,8 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   }
   for (const it of g.items) if (near(it.x)) drawItem(ctx, it, g.time, ppt)
   for (const e of g.enemies) if (near(e.x, 2)) (e.type === 'harpy' ? drawHarpy : drawEnemy)(ctx, e, g.time, ppt)
-  if (g.boss) drawBoss(ctx, g.boss, g.time, ppt)
+  if (g.boss) (g.boss.type === 'kronos' ? (b, t) => drawKronos(ctx, g, b, t, ppt) : (b, t) => drawBoss(ctx, b, t, ppt))(g.boss, g.time)
+  drawChaser(ctx, g, ppt, h)
   drawHero(ctx, g, heroId, ppt)
   for (const w of g.level.winds ?? []) drawWind(ctx, g, w, ppt, camX, viewW, h)
   // paredes falsas: desenhadas por cima do herói (escondem a salinha); ficam meio transparentes com ele lá dentro

@@ -21,7 +21,7 @@ export const P = {
   lazerTime: 10, lazerRun: 1.45, // Lazer Boots: corre 45% mais rápido por 10 s
 }
 const ENEMY = { w: 0.9, h: 0.9, speed: 1.8, wake: 17 }
-const SOLID = new Set(['#', 'b', '?', '!', 'u', 'g', 'G', 'r', 'R', 'x'])
+const SOLID = new Set(['#', 'b', '?', '!', 'u', 'g', 'G', 'r', 'R', 'x', 'c'])
 const EPS = 1e-4
 const RESTORE_SPEED = 26 // casas por segundo da onda de cor
 const STALE_WARN = 1.5   // segundos antes de apagar: o bloco pisca
@@ -68,6 +68,11 @@ export function createGame(level, { lives = 3 } = {}) {
     status: 'playing', // 'playing' | 'dying' | 'won' | 'gameover'
     statusT: 0,
     checkpoint: null,
+    cpList: level.checkpoints ?? (level.checkpoint ? [level.checkpoint] : []), // vários checkpoints (o mais longe vale)
+    cpIdx: -1,
+    crumbles: [],   // pontes que estão tremendo/caídas: { x, y, t, state: 'shake' | 'gone' }
+    debris: [],     // pedaços caindo (só enfeite)
+    chaser: null,   // a tempestade/lava que persegue: { x, speed, kind } depois que o herói passa de x0
     // sons e efeitos deste passo: 'jump' 'coin' 'stomp' 'bump' 'die' 'win' 'gameover' 'checkpoint'
     //   'relay' 'stale' 'publisher' 'gem' 'chest' 'power' 'shieldbreak' 'item'
     events: [],
@@ -76,7 +81,7 @@ export function createGame(level, { lives = 3 } = {}) {
 }
 
 function spawnPlayer(at) {
-  return { x: at.x, y: at.y, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, buffer: 0, jumping: false, walkT: 0, shield: false, invuln: 0, lazer: 0 }
+  return { x: at.x, y: at.y, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, buffer: 0, jumping: false, walkT: 0, shield: false, invuln: 0, lazer: 0, portalCD: 0 }
 }
 
 export const solidAt = (g, tx, ty) => {
@@ -172,6 +177,24 @@ export function step(g, input, dt) {
   moveX(g, p, dt)
   moveY(g, p, dt)
   if (p.onGround && Math.abs(p.vx) > 0.2) p.walkT += dt * (Math.abs(p.vx) / P.maxRun)
+  // pisou numa ponte que desaba: ela começa a tremer
+  if (p.onGround && !p.mover) {
+    const fy = Math.floor(p.y + P.h + 0.05)
+    for (const fx of [Math.floor(p.x + 0.05), Math.floor(p.x + P.w - 0.05)]) {
+      if (g.tiles[fy]?.[fx] === 'c' && !g.crumbles.some((c) => c.x === fx && c.y === fy)) { g.crumbles.push({ x: fx, y: fy, t: 0, state: 'shake' }); g.events.push('crumble') }
+    }
+  }
+  // portais (redemoinho de Caríbdis): entrou, sai do outro lado
+  if (p.portalCD > 0) p.portalCD -= dt
+  for (const pt of g.level.portals ?? []) {
+    if (p.portalCD > 0) break
+    const cx = p.x + P.w / 2, cy = p.y + P.h / 2
+    if (Math.hypot(cx - (pt.x + 0.5), cy - (pt.y + 0.5)) < 0.75) {
+      p.x = pt.tx + 0.5 - P.w / 2; p.y = pt.ty + 0.5 - P.h / 2; p.vy = Math.min(p.vy, 0); p.portalCD = 0.8
+      g.events.push('portal')
+      break
+    }
+  }
 
   // moedas
   for (const c of g.coins) {
@@ -213,9 +236,13 @@ export function step(g, input, dt) {
   stepEchoes(g)
   stepBoss(g, dt)
 
-  // checkpoint
-  const cp = g.level.checkpoint
-  if (cp && !g.checkpoint && p.x >= cp.x) { g.checkpoint = { x: cp.x, y: (cp.y ?? g.level.start.y + 2) - 2 }; g.events.push('checkpoint') }
+  // checkpoints (o mais longe que você passou)
+  for (let i = g.cpIdx + 1; i < g.cpList.length; i++) {
+    const cp = g.cpList[i]
+    if (p.x < cp.x) break
+    g.cpIdx = i; g.checkpoint = { x: cp.x, y: (cp.y ?? g.level.start.y + 2) - 2 }; g.events.push('checkpoint')
+  }
+  stepHazards(g, dt)
 
   // caiu no buraco
   if (p.y > ROWS + 1) die(g)
@@ -228,6 +255,47 @@ export function step(g, input, dt) {
     g.events.push('win')
   }
   return g
+}
+
+// ---- perigos das fases 4 e 5: pontes que desabam, jatos de fogo e a tempestade/lava que persegue
+const CRUMBLE = { shake: 0.45, back: 4 }
+export const JET = { warn: 0.5, on: 1.0 }
+export function jetState(g, j) {
+  const period = j.period ?? 3, ph = (g.time + (j.phase ?? 0)) % period
+  if (ph >= period - JET.on) return 'on'
+  if (ph >= period - JET.on - JET.warn) return 'warn'
+  return null
+}
+function stepHazards(g, dt) {
+  const p = g.player
+  for (const c of g.crumbles) {
+    c.t += dt
+    if (c.state === 'shake' && c.t >= CRUMBLE.shake) {
+      c.state = 'gone'; c.t = 0; g.tiles[c.y][c.x] = '.'
+      g.debris.push({ x: c.x, y: c.y, vy: 0, t: 0 })
+    } else if (c.state === 'gone' && c.t >= CRUMBLE.back) {
+      const inside = p.x < c.x + 1 && p.x + P.w > c.x && p.y < c.y + 1 && p.y + P.h > c.y
+      if (!inside) { g.tiles[c.y][c.x] = 'c'; c.state = 'done' }
+    }
+  }
+  g.crumbles = g.crumbles.filter((c) => c.state !== 'done')
+  for (const d of g.debris) { d.t += dt; d.vy += P.gravity * 0.5 * dt; d.y += d.vy * dt }
+  g.debris = g.debris.filter((d) => d.y < ROWS + 2)
+  if (g.status !== 'playing') return
+  // jatos de fogo: avisam (fumacinha) e depois sobem "h" casas
+  for (const j of g.level.jets ?? []) {
+    if (jetState(g, j) !== 'on' || p.invuln > 0) continue
+    if (p.x < j.x + 0.85 && p.x + P.w > j.x + 0.15 && p.y < j.y && p.y + P.h > j.y - j.h) hurt(g, { x: j.x + 0.5 - ENEMY.w / 2 })
+  }
+  // tempestade (fase 4) / lava da liquidação (fase 5): acorda quando o herói passa de x0 e vem atrás dele
+  const ch = g.level.chaser
+  if (ch) {
+    if (!g.chaser && p.x >= ch.x0) { g.chaser = { x: ch.x0 - (ch.lead ?? 10), speed: ch.speed, kind: ch.kind }; g.events.push('chaser') }
+    if (g.chaser && p.x < ch.x1) {
+      g.chaser.x += g.chaser.speed * dt
+      if (p.x + P.w * 0.5 < g.chaser.x) die(g)
+    }
+  }
 }
 
 function stepMovers(g, dt) {
@@ -447,11 +515,13 @@ function stepEchoes(g) {
 // Quando ele cai, o portão ('x') abre.
 export const BOSS = { w: 1.8, h: 2.6, hp: 3, walk: 1.6, wave: 6.5 }
 function freshBoss(b) {
+  if (b.type === 'kronos') return freshKronos(b)
   return { ...b, x: b.x, y: (b.floor ?? 12) - BOSS.h, hp: BOSS.hp, state: 'sleep', t: 0, vx: 0, inv: 0, alive: true, deadT: 0, facing: -1, waves: [] }
 }
 function stepBoss(g, dt) {
   const b = g.boss
   if (!b) return
+  if (b.type === 'kronos') { stepKronos(g, dt); return }
   const p = g.player
   if (!b.alive) { b.deadT += dt; return }
   for (const w of b.waves) w.x += w.dir * BOSS.wave * dt
@@ -500,6 +570,79 @@ function stepBoss(g, dt) {
   }
 }
 
+// ---- KRONOS, the Stale Titan (chefe final). Ele flutua alto (não dá pra pisar nele): pra vencer, acenda os 3 altares
+// da arena, um de cada vez (o próximo brilha). A cada altar aceso ele cambaleia e fica mais bravo:
+//   fase 1: pilares de gelo (aviso no chão, depois sobem)   fase 2: + a foice varre o chão e chama 2 Laglings
+//   fase 3: tudo mais rápido. Com os 3 acesos ele cai, a Genesis Flame volta e o portão abre.
+export const KRONOS = { w: 3, h: 4, flyY: 1.2 }
+function freshKronos(b) {
+  return { ...b, x: b.x, y: KRONOS.flyY, phase: 0, state: 'sleep', t: 0, atk: 0, swp: 0, stun: 0, alive: true, deadT: 0, facing: -1,
+    altars: b.altars.map((a) => ({ ...a, lit: false })), pillars: [], sweeps: [] }
+}
+function stepKronos(g, dt) {
+  const k = g.boss, p = g.player
+  if (!k.alive) { k.deadT += dt; return }
+  for (const pl of k.pillars) pl.t += dt
+  k.pillars = k.pillars.filter((pl) => pl.t < 1.5)
+  for (const sw of k.sweeps) sw.x += sw.dir * 7.5 * dt
+  k.sweeps = k.sweeps.filter((sw) => sw.x > k.ax0 - 2 && sw.x < k.ax1 + 2)
+  if (k.state === 'sleep') { if (p.x >= k.ax0) { k.state = 'fight'; k.t = 0; g.events.push('bosswake') } return }
+  k.t += dt
+  if (k.stun > 0) k.stun -= dt
+  const pc = p.x + P.w / 2, kc = k.x + KRONOS.w / 2
+  // flutua atrás do herói (devagar), sempre no alto
+  if (k.stun <= 0) {
+    k.facing = pc < kc ? -1 : 1
+    k.x = Math.max(k.ax0, Math.min(k.ax1 - KRONOS.w, k.x + Math.sign(pc - kc) * Math.min(Math.abs(pc - kc), (1.4 + k.phase * 0.5) * dt)))
+  }
+  k.y = KRONOS.flyY + Math.sin(k.t * 1.6) * 0.4
+  if (k.stun <= 0) {
+    k.atk += dt
+    if (k.atk > 2.8 - k.phase * 0.6) {
+      k.atk = 0
+      const floor = k.floor ?? 12
+      k.pillars.push({ x: Math.max(k.ax0, Math.min(k.ax1 - 1, Math.floor(pc))), y: floor, t: 0 })
+      g.events.push('freeze')
+    }
+    if (k.phase >= 1) {
+      k.swp += dt
+      if (k.swp > 4.6 - k.phase * 0.9) {
+        k.swp = 0
+        const fromLeft = pc > (k.ax0 + k.ax1) / 2
+        k.sweeps.push({ x: fromLeft ? k.ax0 - 1 : k.ax1 + 1, dir: fromLeft ? 1 : -1, y: k.floor ?? 12 })
+        g.events.push('sweep')
+      }
+    }
+  }
+  if (g.status !== 'playing') return
+  // pilar de gelo: 0,8 s de aviso, depois sobe 2,5 casas por 0,6 s
+  for (const pl of k.pillars) {
+    if (pl.t < 0.8 || pl.t > 1.4 || p.invuln > 0) continue
+    if (p.x < pl.x + 0.9 && p.x + P.w > pl.x + 0.1 && p.y + P.h > pl.y - 2.5) hurt(g, { x: pl.x + 0.5 - ENEMY.w / 2 })
+  }
+  // a foice: varre o chão (pula por cima)
+  for (const sw of k.sweeps) {
+    if (p.invuln > 0) continue
+    if (Math.abs(pc - sw.x) < 0.7 && p.y + P.h > sw.y - 0.9) hurt(g, { x: sw.x - ENEMY.w / 2 })
+  }
+  // encostar nele (pulando alto) também machuca
+  if (p.invuln <= 0 && p.x < k.x + KRONOS.w && p.x + P.w > k.x && p.y < k.y + KRONOS.h && p.y + P.h > k.y + 0.5) hurt(g, { x: kc - ENEMY.w / 2 })
+  // altares: só o próximo da fila acende
+  const next = k.altars.find((a) => !a.lit)
+  if (next && p.x < next.x + 1 && p.x + P.w > next.x && p.y < next.y && p.y + P.h > next.y - 2) {
+    next.lit = true; k.phase++; k.stun = 1.2; k.atk = 0; k.swp = 0; k.pillars = []
+    g.events.push('altar')
+    if (k.phase === 1) {
+      for (const ex of [k.ax0 + 2, k.ax1 - 3]) g.enemies.push({ x: ex, y: (k.floor ?? 12) - 1 + 0.1, vx: -ENEMY.speed, vy: 0, alive: true, awake: true, squashT: 0 })
+    }
+    if (k.phase >= k.altars.length) {
+      k.alive = false; k.deadT = 0; k.sweeps = []; k.pillars = []
+      for (const row of g.tiles) for (let i = 0; i < row.length; i++) if (row[i] === 'x') row[i] = '.'
+      g.events.push('bossdown')
+    }
+  }
+}
+
 function hurt(g, e) {
   const p = g.player
   if (p.shield) {
@@ -533,6 +676,9 @@ function respawn(g) {
   g.enemies = freshEnemies(g.level) // inimigos voltam pro lugar
   g.trail = []
   for (const z of g.echoes ?? []) { z.active = false; z.visible = false }
+  g.chaser = null
+  for (const c of g.crumbles) if (c.state === 'gone') g.tiles[c.y][c.x] = 'c'
+  g.crumbles = []
   if (g.boss?.alive) g.boss = freshBoss(g.level.boss) // o chefe volta com a vida cheia
   // relays "fresh" apagam de novo (os normais continuam acesos: a ponte que você ligou fica)
   for (const r of g.relays) if (r.fresh && r.on) { r.on = false; r.t = 0; g.groupOn[r.group] = false }
