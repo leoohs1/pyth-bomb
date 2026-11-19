@@ -1,4 +1,4 @@
-// PYTH DASH — jogo de plataforma com os heróis do Pyth Bomb (modo PVE).
+// PYTH ODYSSEY (antes "Pyth Dash"; nome escolhido pela Halls em 2026-11-19) — jogo de plataforma com os heróis do Pyth Bomb.
 // Endereço: /dash (ainda fora do menu de modos, até a Halls aprovar).
 // Teclado: ← → ou A D pra correr, Espaço / ↑ / W / Z pra pular (segurar = pulo mais alto). Esc volta pro menu.
 // Celular: botões ◀ ▶ embaixo à esquerda e o botão de pulo à direita.
@@ -38,6 +38,7 @@ export default function DashApp() {
   const [run, setRun] = useState(0) // muda a cada partida nova (recomeça o jogo)
   useSoloAudio('/music/solo.mp3') // efeitos e música do Solo ("Pixel Adventure")
   useEffect(() => { for (const h of HEROES) loadHero(h.id); loadArt() }, [])
+  useEffect(() => { const old = document.title; document.title = 'Pyth Odyssey · Pyth Bomb'; return () => { document.title = old } }, [])
   const pick = (id) => { setHero(id); try { localStorage.setItem(HERO_KEY, id) } catch { /* sem localStorage */ } }
   const [levelIdx, setLevelIdx] = useState(() => Math.min(clearedCount(), LEVELS.length - 1))
   const [cleared, setCleared] = useState(clearedCount)
@@ -66,8 +67,8 @@ function DashMenu({ hero, onPick, onStart, onStory, levelIdx, onLevel, cleared }
       <a className="dash-back" href="/play">← Back to Pyth Bomb</a>
       {/* tela de título: o templo de Delfos ao fundo (public/dash/title.webp); o título fica no céu e os botões embaixo */}
       <div className="dash-menu-top">
-        <h1 className="dash-title">PYTH <span>DASH</span></h1>
-        <p className="dash-tagline">The Oracle's Run</p>
+        <h1 className="dash-title">PYTH <span>ODYSSEY</span></h1>
+        <p className="dash-tagline">The price must flow.</p>
         <p className="dash-sub dash-menu-sub">Kronos, the Stale Titan, froze the Purple Realm. Wake the shrines, deliver the price and bring the color back.</p>
       </div>
       <div className="dash-menu-card">
