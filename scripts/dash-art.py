@@ -8,6 +8,7 @@ Folhas esperadas na pasta (nomes de Downloads/pyth-dash-arte):
   grecia/greek-01-far.png  grecia/greek-02-near.png  grecia/greek-comic-1..5.png
   grecia/greek2-far.png  grecia/greek2-near.png  grecia/greek2-sprites.png  (fase 2)
   grecia/greek3-far.png  grecia/greek3-near.png  grecia/greek3-sprites.png  (fase 3)
+  grecia/greek4..6-far/near.png  grecia/greek-objects456.png  grecia/greek-kronos.png  grecia/greek-end-1..2.png  (fases 4-6 e final)
 
 O que faz: tira o verde (e a "franja" verde das bordas), acha cada desenho pelos espaços verdes entre eles,
 recorta e reduz pra escala do jogo (64 px por bloco), com as bordas duras de pixel art.
@@ -257,6 +258,52 @@ def main():
         for name, f in zip(['torch-1', 'torch-2'], frames_strip([scaled(sheet, b, k) for b in cb])):
             save(f, out, name + '.png')
 
+    # 9) fases 4, 5 e 6: fundos (longe/perto), objetos (ponte, redemoinho, jato, altares), Kronos e os quadros do final
+    for n in (4, 5, 6):
+        if not (g / f'greek{n}-far.png').exists():
+            continue
+        far = Image.open(g / f'greek{n}-far.png').convert('RGBA')
+        far = far.resize((round(far.width * 512 / far.height), 512), Image.BOX)
+        save(seamless(far, hard_alpha=False), out, f'bg{n}-far.png')
+        near = key_green(Image.open(g / f'greek{n}-near.png'))
+        a = np.asarray(near)[..., 3] > 0
+        ys, xs = np.where(a.any(1))[0], np.where(a.any(0))[0]
+        near = near.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
+        near = near.resize((round(near.width * 256 / near.height), 256), Image.BOX)
+        save(seamless(near), out, f'bg{n}-near.png')
+    if (g / 'greek-objects456.png').exists():
+        sheet = key_green(Image.open(g / 'greek-objects456.png'))
+        boxes = blobs(sheet, 7)
+        mid = sheet.height / 2
+        top = sorted([b for b in boxes if (b[1] + b[3]) / 2 < mid], key=lambda b: b[0])
+        bot = sorted([b for b in boxes if (b[1] + b[3]) / 2 >= mid], key=lambda b: b[0])
+        if len(top) != 5 or len(bot) != 2:
+            print('  ! objetos: achei', len(top), 'em cima e', len(bot), 'embaixo (esperava 5 e 2)')
+        save(hard_resize(sheet.crop(top[0]), PX, PX), out, 'tile-crumble.png')
+        k = (1.6 * PX) / (top[1][3] - top[1][1])
+        for name, f in zip(['portal-1', 'portal-2'], frames_strip([scaled(sheet, b, k) for b in top[1:3]])):
+            save(f, out, name + '.png')
+        k = (3 * PX) / (top[3][3] - top[3][1])
+        for name, f in zip(['jet-1', 'jet-2'], frames_strip([scaled(sheet, b, k) for b in top[3:5]])):
+            save(f, out, name + '.png')
+        k = (2.1 * PX) / (bot[0][3] - bot[0][1])
+        for name, f in zip(['altar-off', 'altar-on'], frames_strip([scaled(sheet, b, k) for b in bot[:2]])):
+            save(f, out, name + '.png')
+    if (g / 'greek-kronos.png').exists():
+        sheet = key_green(Image.open(g / 'greek-kronos.png'))
+        kb = sorted(blobs(sheet, 5), key=lambda b: b[0])  # por manchas: a foice de um quadro invade a coluna do vizinho
+        k = (4.2 * PX) / (kb[0][3] - kb[0][1])
+        imgs = [scaled(sheet, b, k) for b in kb]
+        for name, f in zip(['kronos-float', 'kronos-cast', 'kronos-sweep', 'kronos-hurt', 'kronos-down'], frames_strip(imgs, [torso_center(i) for i in imgs])):
+            save(f, out, name + '.png')
+    story = out.parent / 'story'
+    for i in (1, 2):
+        f = g / f'greek-end-{i}.png'
+        if f.exists():
+            im = Image.open(f).convert('RGB')
+            im = im.resize((1280, round(im.height * 1280 / im.width)), Image.LANCZOS)
+            im.save(story / f'end-{i}.webp', quality=86, method=6)
+            print(f'  story/end-{i}.webp  {im.width}x{im.height}')
 
 def split_to(img, boxes, n):
     """se vieram menos desenhos que o esperado, corta o mais largo na coluna mais vazia do meio dele"""
@@ -274,6 +321,41 @@ def split_to(img, boxes, n):
         boxes[i:i + 1] = [tight(x0, cut), tight(cut, x1)]
         print('  (cortei um quadro grudado em x =', cut, ')')
     return boxes[:n]
+
+
+def blobs(img, n):
+    """acha os n desenhos maiores (manchas separadas por fundo); manchinhas pequenas (brilhos) juntam no vizinho"""
+    al = np.asarray(img)[..., 3] > 0
+    f = 4
+    sm = al[::f, ::f]
+    h, w = sm.shape
+    lab = np.zeros((h, w), np.int32)
+    comps = []
+    for y0 in range(h):
+        for x0 in range(w):
+            if not sm[y0, x0] or lab[y0, x0]:
+                continue
+            cid = len(comps) + 1
+            stack = [(y0, x0)]; lab[y0, x0] = cid
+            minx = maxx = x0; miny = maxy = y0; area = 0
+            while stack:
+                y, x = stack.pop(); area += 1
+                minx = min(minx, x); maxx = max(maxx, x); miny = min(miny, y); maxy = max(maxy, y)
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        yy, xx = y + dy, x + dx
+                        if 0 <= yy < h and 0 <= xx < w and sm[yy, xx] and not lab[yy, xx]:
+                            lab[yy, xx] = cid; stack.append((yy, xx))
+            comps.append([minx * f, miny * f, (maxx + 1) * f, (maxy + 1) * f, area])
+    comps.sort(key=lambda c: -c[4])
+    big, small = comps[:n], comps[n:]
+    for c in small:
+        cx, cy = (c[0] + c[2]) / 2, (c[1] + c[3]) / 2
+        j = min(range(len(big)), key=lambda i: abs((big[i][0] + big[i][2]) / 2 - cx) + abs((big[i][1] + big[i][3]) / 2 - cy))
+        b = big[j]
+        if abs((b[0] + b[2]) / 2 - cx) + abs((b[1] + b[3]) / 2 - cy) < (b[2] - b[0] + b[3] - b[1]):
+            big[j] = [min(b[0], c[0]), min(b[1], c[1]), max(b[2], c[2]), max(b[3], c[3]), b[4]]
+    return [tuple(min(v, lim) for v, lim in zip(b[:4], (img.width, img.height, img.width, img.height))) for b in big]
 
 
 def torso_center(img):
