@@ -7,6 +7,7 @@ Folhas esperadas na pasta (nomes de Downloads/pyth-dash-arte):
   01-blocos.png  02-lag-bug.png  03-objetos.png  04-itens.png  05-pirb-lado.png
   grecia/greek-01-far.png  grecia/greek-02-near.png  grecia/greek-comic-1..5.png
   grecia/greek2-far.png  grecia/greek2-near.png  grecia/greek2-sprites.png  (fase 2)
+  grecia/greek3-far.png  grecia/greek3-near.png  grecia/greek3-sprites.png  (fase 3)
 
 O que faz: tira o verde (e a "franja" verde das bordas), acha cada desenho pelos espaços verdes entre eles,
 recorta e reduz pra escala do jogo (64 px por bloco), com as bordas duras de pixel art.
@@ -231,6 +232,56 @@ def main():
         wide = np.where(al.sum(1) > al.shape[1] * 0.6)[0]  # linhas da laje (as cordas são finas)
         slab = crop.crop((0, wide[0], crop.width, wide[-1] + 1))
         save(hard_resize(slab, 3 * PX, round(slab.height * 3 * PX / slab.width)), out, 'lift.png')
+
+    # 8) fase 3 (Echoes of the Styx): caverna longe/perto, TALOS (5 quadros) e a tocha (2 quadros)
+    if (g / 'greek3-far.png').exists():
+        far = Image.open(g / 'greek3-far.png').convert('RGBA')
+        far = far.resize((round(far.width * 512 / far.height), 512), Image.BOX)
+        save(seamless(far, hard_alpha=False), out, 'bg3-far.png')
+        near = key_green(Image.open(g / 'greek3-near.png'))
+        a = np.asarray(near)[..., 3] > 0
+        ys, xs = np.where(a.any(1))[0], np.where(a.any(0))[0]
+        near = near.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
+        near = near.resize((round(near.width * 256 / near.height), 256), Image.BOX)
+        save(seamless(near), out, 'bg3-near.png')
+        sheet = key_green(Image.open(g / 'greek3-sprites.png'))
+        rows = split_sheet(sheet, 14, 18)
+        tb = split_to(sheet, rows[0], 5)  # dois quadros às vezes vêm grudados (a onda do martelo encosta no vizinho)
+        k = (2.75 * PX) / (tb[0][3] - tb[0][1])
+        imgs = [scaled(sheet, b, k) for b in tb]
+        names = ['talos-walk1', 'talos-walk2', 'talos-windup', 'talos-slam', 'talos-down']
+        for name, f in zip(names, frames_strip(imgs, [torso_center(i) for i in imgs])):
+            save(f, out, name + '.png')
+        cb = rows[1][:2]
+        k = (1.4 * PX) / (cb[0][3] - cb[0][1])
+        for name, f in zip(['torch-1', 'torch-2'], frames_strip([scaled(sheet, b, k) for b in cb])):
+            save(f, out, name + '.png')
+
+
+def split_to(img, boxes, n):
+    """se vieram menos desenhos que o esperado, corta o mais largo na coluna mais vazia do meio dele"""
+    boxes = list(boxes)
+    al = np.asarray(img)[..., 3] > 0
+    while len(boxes) < n:
+        i = max(range(len(boxes)), key=lambda k: boxes[k][2] - boxes[k][0])
+        x0, y0, x1, y1 = boxes[i]
+        cols = al[y0:y1, x0:x1].sum(0)
+        lo, hi = int(len(cols) * 0.3), int(len(cols) * 0.7)
+        cut = x0 + lo + int(np.argmin(cols[lo:hi]))
+        def tight(a, b):
+            ys = np.where(al[y0:y1, a:b].any(1))[0]
+            return (a, y0 + ys[0], b, y0 + ys[-1] + 1)
+        boxes[i:i + 1] = [tight(x0, cut), tight(cut, x1)]
+        print('  (cortei um quadro grudado em x =', cut, ')')
+    return boxes[:n]
+
+
+def torso_center(img):
+    """meio do corpo (faixa do meio da altura), pra o boneco não pular quando o martelo/onda muda o tamanho do quadro"""
+    a = np.asarray(img)[..., 3] > 0
+    band = a[int(img.height * 0.35): int(img.height * 0.75)]
+    ys, xs = np.nonzero(band)
+    return float(np.median(xs)) if len(xs) else img.width / 2
 
 
 def seamless(img, hard_alpha=True):

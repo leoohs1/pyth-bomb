@@ -87,7 +87,8 @@ const ready = (i) => i && i.complete && i.naturalWidth > 0
 // Enquanto uma imagem não carrega (ou se não existir), o jogo usa o desenho por código de antes.
 const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
   'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
-  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near', 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'harpy-dead', 'lift']
+  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near', 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'harpy-dead', 'lift',
+  'bg3-far', 'bg3-near', 'talos-walk1', 'talos-walk2', 'talos-windup', 'talos-slam', 'talos-down', 'torch-1', 'torch-2']
 const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
 const APX = 64 // pixels de arte por casa
 const art = {}
