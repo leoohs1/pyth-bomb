@@ -6,6 +6,7 @@ Uso:  python scripts/dash-art.py <pasta com as folhas> [pasta de saída]
 Folhas esperadas na pasta (nomes de Downloads/pyth-dash-arte):
   01-blocos.png  02-lag-bug.png  03-objetos.png  04-itens.png  05-pirb-lado.png
   grecia/greek-01-far.png  grecia/greek-02-near.png  grecia/greek-comic-1..5.png
+  grecia/greek2-far.png  grecia/greek2-near.png  grecia/greek2-sprites.png  (fase 2)
 
 O que faz: tira o verde (e a "franja" verde das bordas), acha cada desenho pelos espaços verdes entre eles,
 recorta e reduz pra escala do jogo (64 px por bloco), com as bordas duras de pixel art.
@@ -206,6 +207,30 @@ def main():
             im = im.resize((1280, round(im.height * 1280 / im.width)), Image.LANCZOS)
             im.save(story / f'{i}.webp', quality=86, method=6)
             print(f'  story/{i}.webp  {im.width}x{im.height}')
+
+    # 7) fase 2 (Mount Parnassus): fundo longe/perto, harpia (3 quadros) e a polia de mármore (só a laje, sem as cordas)
+    if (g / 'greek2-far.png').exists():
+        far = Image.open(g / 'greek2-far.png').convert('RGBA')
+        far = far.resize((round(far.width * 512 / far.height), 512), Image.BOX)
+        save(seamless(far, hard_alpha=False), out, 'bg2-far.png')
+        near = key_green(Image.open(g / 'greek2-near.png'))
+        a = np.asarray(near)[..., 3] > 0
+        ys, xs = np.where(a.any(1))[0], np.where(a.any(0))[0]
+        near = near.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
+        near = near.resize((round(near.width * 256 / near.height), 256), Image.BOX)
+        save(seamless(near), out, 'bg2-near.png')
+        sheet = key_green(Image.open(g / 'greek2-sprites.png'))
+        rows = split_sheet(sheet, 14, 20)
+        hb = rows[0][:3]
+        k = (1.15 * PX) / max(b[3] - b[1] for b in hb[:2])
+        for name, f in zip(['harpy-1', 'harpy-2', 'harpy-dead'], frames_strip([scaled(sheet, b, k) for b in hb])):
+            save(f, out, name + '.png')
+        lb = rows[1][0]
+        crop = sheet.crop(lb)
+        al = np.asarray(crop)[..., 3] > 0
+        wide = np.where(al.sum(1) > al.shape[1] * 0.6)[0]  # linhas da laje (as cordas são finas)
+        slab = crop.crop((0, wide[0], crop.width, wide[-1] + 1))
+        save(hard_resize(slab, 3 * PX, round(slab.height * 3 * PX / slab.width)), out, 'lift.png')
 
 
 def seamless(img, hard_alpha=True):

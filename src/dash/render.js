@@ -87,7 +87,7 @@ const ready = (i) => i && i.complete && i.naturalWidth > 0
 // Enquanto uma imagem não carrega (ou se não existir), o jogo usa o desenho por código de antes.
 const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
   'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
-  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near']  // (fase 2: 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'lift' entram aqui quando a arte existir)
+  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near', 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'harpy-dead', 'lift']
 const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
 const APX = 64 // pixels de arte por casa
 const art = {}
@@ -359,7 +359,7 @@ function drawMover(ctx, g, m, t, ppt) {
     for (const cx of [x + ppt * 0.35, x + w - ppt * 0.35]) { ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, y); ctx.stroke() }
   }
   const art = A('lift')
-  if (art) { ctx.imageSmoothingEnabled = false; ctx.drawImage(art, Math.round(x), Math.round(y), Math.round(w), Math.round(h * 1.4)) }
+  if (art) { ctx.imageSmoothingEnabled = false; ctx.drawImage(art, Math.round(x), Math.round(y - ppt * 0.04), Math.round(w), Math.round(w * art.naturalHeight / art.naturalWidth)); if (idle) { ctx.fillStyle = 'rgba(60,50,80,0.45)'; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(w * art.naturalHeight / art.naturalWidth)) } }
   else {
     ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - 2), Math.round(y - 2), Math.round(w + 4), Math.round(h + 4))
     ctx.fillStyle = idle ? '#8a8299' : '#d9cdf2'; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
@@ -374,8 +374,8 @@ function drawHarpy(ctx, e, t, ppt) {
   const { w, h } = ENEMY_SIZE
   if (!e.alive && e.squashT > 0.5) return
   const flap = Math.sin(t * 16 + e.x) > 0
-  const art = A(flap ? 'harpy-1' : 'harpy-2')
-  if (art) { if (!e.alive) ctx.globalAlpha = Math.max(0, 1 - e.squashT * 2); sprite(ctx, art, e.x + w / 2, e.y + h + 0.1, ppt, e.vx > 0); ctx.globalAlpha = 1; return }
+  const art = A(!e.alive ? 'harpy-dead' : flap ? 'harpy-1' : 'harpy-2')
+  if (art) { if (!e.alive) ctx.globalAlpha = Math.max(0, 1 - e.squashT * 2); sprite(ctx, art, e.x + w / 2, e.y + h + 0.15, ppt, e.vx > 0); ctx.globalAlpha = 1; return } // a arte olha pra esquerda
   const cx = (e.x + w / 2) * ppt, cy = (e.y + h / 2) * ppt, dir = e.vx > 0 ? 1 : -1
   ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1)
   if (!e.alive) { ctx.globalAlpha = Math.max(0, 1 - e.squashT * 2); ctx.rotate(e.squashT * 6) }
