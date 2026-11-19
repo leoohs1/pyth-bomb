@@ -83,6 +83,29 @@ export function loadHero(id) {
 }
 const ready = (i) => i && i.complete && i.naturalWidth > 0
 
+// ---- arte de verdade (public/dash/art, recortada por scripts/dash-art.py das folhas do ChatGPT).
+// Enquanto uma imagem não carrega (ou se não existir), o jogo usa o desenho por código de antes.
+const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
+  'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
+  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far']
+const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
+const APX = 64 // pixels de arte por casa
+const art = {}
+export function loadArt() {
+  for (const n of ART_NAMES) if (!art[n]) art[n] = img(`/dash/art/${n}.png`)
+  for (const id of HERO_SHEETS) if (!art[`hero-${id}`]) art[`hero-${id}`] = img(`/dash/art/hero-${id}.png`)
+}
+const A = (n) => (ready(art[n]) ? art[n] : null)
+const TILE_ART = { '^': 'tile-grass', '#': 'tile-soil', b: 'tile-brick', '?': 'tile-oracle', u: 'tile-used', p: 'tile-powered' }
+// desenha a imagem com o meio de baixo em (cx, by) (em casas)
+function sprite(ctx, im, cx, by, ppt, flip = false) {
+  const w = (im.naturalWidth / APX) * ppt, h = (im.naturalHeight / APX) * ppt
+  ctx.imageSmoothingEnabled = false
+  if (!flip) { ctx.drawImage(im, Math.round(cx * ppt - w / 2), Math.round(by * ppt - h), Math.round(w), Math.round(h)); return }
+  ctx.save(); ctx.translate(Math.round(cx * ppt), 0); ctx.scale(-1, 1)
+  ctx.drawImage(im, Math.round(-w / 2), Math.round(by * ppt - h), Math.round(w), Math.round(h)); ctx.restore()
+}
+
 // ---- fundo: céu roxo + gráfico de velas ao longe (parallax) + linha de preço brilhando
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
 function drawBackground(ctx, w, h, camX, ppt) {
@@ -94,6 +117,16 @@ function drawBackground(ctx, w, h, camX, ppt) {
   for (let i = 0; i < 70; i++) {
     const sx = ((hash(i) * 2000 - camX * ppt * 0.05) % w + w) % w, sy = hash(i + 99) * h * 0.55
     ctx.fillRect(Math.round(sx), Math.round(sy), hash(i + 7) > 0.8 ? 2 : 1, hash(i + 7) > 0.8 ? 2 : 1)
+  }
+  const far = A('bg-far')
+  if (far) {
+    // torres de oráculo e velas ao longe (repete na horizontal, anda devagar)
+    const fh = ppt * 6, fw = far.naturalWidth * (fh / far.naturalHeight)
+    const off = (camX * ppt * 0.2) % fw
+    ctx.globalAlpha = 0.4 // bem apagado: os cristais do fundo não podem parecer as Confidence Gems
+    for (let x = -off; x < w; x += fw) ctx.drawImage(far, Math.round(x), Math.round(FLOOR * ppt - fh + ppt * 0.4), Math.ceil(fw) + 1, Math.round(fh))
+    ctx.globalAlpha = 1
+    return
   }
   // duas camadas de velas
   for (const [par, alpha, scale] of [[0.15, 0.22, 0.8], [0.35, 0.35, 1.1]]) {
@@ -117,6 +150,8 @@ function drawBackground(ctx, w, h, camX, ppt) {
 }
 
 function drawCoin(ctx, x, y, t, ppt, phase = 0) {
+  const fr = A(`coin-${(Math.floor(t * 8 + phase * 3) % 4 + 4) % 4 + 1}`)
+  if (fr) { sprite(ctx, fr, x + 0.5, y + 0.81 + Math.sin(t * 4 + phase) * 0.05, ppt); return }
   const s = Math.abs(Math.cos(t * 3 + phase)) // gira como moeda
   const cx = (x + 0.5) * ppt, cy = (y + 0.5 + Math.sin(t * 4 + phase) * 0.05) * ppt
   const r = ppt * 0.3
@@ -133,6 +168,11 @@ function drawCoin(ctx, x, y, t, ppt, phase = 0) {
 // lag bug: bolinha escura com ampulheta, olhos brancos (achatado quando pisam)
 function drawEnemy(ctx, e, t, ppt) {
   const { w, h } = ENEMY_SIZE
+  if (A('bug-walk1')) {
+    if (!e.alive && e.squashT > 0.5) return
+    const fr = !e.alive ? A('bug-squash') : A(Math.sin(t * 12 + e.x) > 0 ? 'bug-walk1' : 'bug-walk2')
+    if (fr) { sprite(ctx, fr, e.x + w / 2, e.y + h + 0.04, ppt, e.vx > 0); return } // a arte olha pra esquerda
+  }
   const squash = !e.alive ? Math.min(1, e.squashT * 6) : 0
   if (!e.alive && e.squashT > 0.5) return
   const cx = (e.x + w / 2) * ppt, by = (e.y + h) * ppt
@@ -174,6 +214,21 @@ function drawEnemy(ctx, e, t, ppt) {
 // ---- Oracle Beacon (o fim da fase): torre com o cristal roxo. Acende quando o preço é entregue.
 function drawBeacon(ctx, fx, t, ppt, won, wonT) {
   const x = (fx + 0.5) * ppt, baseY = FLOOR * ppt, topY = (FLOOR - 8) * ppt
+  const bOff = A('beacon-off'), bOn = A('beacon-on')
+  if (bOff && bOn) {
+    const lit = won ? Math.min(1, wonT * 1.5) : 0
+    const cy = (FLOOR - 8.6 + 0.9) * ppt
+    if (lit > 0) {
+      for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = `rgba(196,166,255,${0.7 * lit})`; ctx.lineWidth = Math.max(2, ppt * 0.12)
+        ctx.beginPath(); ctx.moveTo(x - ppt * (14 - i * 4), (1 + i * 1.5) * ppt); ctx.lineTo(x, cy); ctx.stroke()
+      }
+      ctx.strokeStyle = `rgba(167,123,255,${Math.max(0, 0.8 - wonT * 0.35)})`; ctx.lineWidth = ppt * 0.3
+      ctx.beginPath(); ctx.arc(x, cy, wonT * ppt * 9, 0, Math.PI * 2); ctx.stroke()
+    }
+    sprite(ctx, lit > 0.5 ? bOn : bOff, fx + 0.5, FLOOR, ppt)
+    return
+  }
   // torre
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.42), topY + ppt, Math.round(ppt * 0.84), baseY - topY - ppt)
   ctx.fillStyle = '#3b1a6e'; ctx.fillRect(Math.round(x - ppt * 0.32), topY + ppt, Math.round(ppt * 0.64), baseY - topY - ppt)
@@ -212,6 +267,17 @@ function drawBeacon(ctx, fx, t, ppt, won, wonT) {
 function drawPublisher(ctx, pb, t, ppt) {
   const x = (pb.x + 0.5) * ppt, baseY = FLOOR * ppt, h = ppt * 4.2
   const on = pb.on
+  const pa = A(on ? 'publisher-on' : 'publisher-off')
+  if (pa) {
+    sprite(ctx, pa, pb.x + 0.5, FLOOR, ppt)
+    if (on && pb.t < 2.2) {
+      ctx.globalAlpha = Math.max(0, 1 - pb.t / 2.2)
+      ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.32)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'
+      ctx.fillText('PUBLISHER ONLINE', x, baseY - ppt * (5.8 + pb.t * 0.5))
+      ctx.globalAlpha = 1
+    }
+    return
+  }
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.16), baseY - h, Math.round(ppt * 0.32), h)
   ctx.fillStyle = on ? '#a78bfa' : '#5e5670'; ctx.fillRect(Math.round(x - ppt * 0.08), baseY - h, Math.round(ppt * 0.16), h)
   // pernas
@@ -243,6 +309,21 @@ function drawPublisher(ctx, pb, t, ppt) {
 // ---- Price Relay: postinho com a bolinha; apagado = cinza, aceso = roxo (com o anel do tempo se for "fresh")
 function drawRelay(ctx, g, r, t, ppt) {
   const x = (r.x + 0.5) * ppt, baseY = r.y * ppt
+  const ra = A(r.on ? 'relay-on' : 'relay-off')
+  if (ra) {
+    sprite(ctx, ra, r.x + 0.5, r.y, ppt)
+    const oy = baseY - ppt * 1.75
+    if (!r.on) {
+      if (Math.sin(t * 5) > 0) { ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.4)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.fillText('\u25BC', x, oy - ppt * 0.75) }
+      return
+    }
+    const left = freshLeft(g, r.group)
+    if (left != null) {
+      ctx.strokeStyle = '#f4c542'; ctx.lineWidth = Math.max(2, ppt * 0.1)
+      ctx.beginPath(); ctx.arc(x, oy, ppt * 0.55, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.stroke()
+    }
+    return
+  }
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.38), baseY - ppt * 0.3, Math.round(ppt * 0.76), ppt * 0.3)
   ctx.fillRect(Math.round(x - ppt * 0.12), baseY - ppt * 1.5, Math.round(ppt * 0.24), ppt * 1.3)
   ctx.fillStyle = r.on ? '#a78bfa' : '#6b6380'; ctx.fillRect(Math.round(x - ppt * 0.05), baseY - ppt * 1.5, Math.round(ppt * 0.1), ppt * 1.3)
@@ -276,6 +357,8 @@ function drawGem(ctx, gm, t, ppt) {
   const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, ppt * 0.9)
   glow.addColorStop(0, 'rgba(241,76,235,0.45)'); glow.addColorStop(1, 'rgba(241,76,235,0)')
   ctx.fillStyle = glow; ctx.fillRect(cx - ppt, cy - ppt, ppt * 2, ppt * 2)
+  const ga = A(Math.sin(t * 4 + gm.x * 3) > 0.6 ? 'gem-sparkle' : 'gem')
+  if (ga) { sprite(ctx, ga, gm.x + 0.5, gm.y + 0.95 + Math.sin(t * 3 + gm.x) * 0.08, ppt); return }
   const dia = (k, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(cx, cy - s * k); ctx.lineTo(cx + s * 0.8 * k, cy - s * 0.2 * k); ctx.lineTo(cx, cy + s * k); ctx.lineTo(cx - s * 0.8 * k, cy - s * 0.2 * k); ctx.closePath(); ctx.fill() }
   dia(1.25, '#140a26'); dia(1.1, '#f4c542'); dia(0.9, '#f14ceb')
   ctx.fillStyle = '#ffd6fb'; ctx.beginPath(); ctx.moveTo(cx - s * 0.15, cy - s * 0.75); ctx.lineTo(cx + s * 0.25, cy - s * 0.2); ctx.lineTo(cx - s * 0.45, cy - s * 0.2); ctx.closePath(); ctx.fill()
@@ -290,6 +373,9 @@ function drawChest(ctx, c, t, ppt) {
   const x = c.x * ppt, by = c.y * ppt, w = ppt * 0.96, h = ppt * 0.72
   const lx = x + ppt * 0.02
   const shake = c.state === 'opening' ? Math.sin(t * 40) * 2 : 0
+  const ca = A(c.state === 'closed' ? 'chest-closed' : c.state === 'opening' ? 'chest-opening' : 'chest-open')
+  if (ca) sprite(ctx, ca, c.x + 0.5 + shake / ppt, c.y, ppt)
+  else {
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(lx - 2 + shake), Math.round(by - h - 2), Math.round(w + 4), Math.round(h + 2))
   ctx.fillStyle = '#7c3aed'; ctx.fillRect(Math.round(lx + shake), Math.round(by - h * 0.62), Math.round(w), Math.round(h * 0.62))
   const lidUp = c.state === 'open' ? Math.min(1, c.t * 5) : 0
@@ -297,6 +383,7 @@ function drawChest(ctx, c, t, ppt) {
   ctx.fillStyle = '#f4c542'
   ctx.fillRect(Math.round(lx + shake), Math.round(by - h * 0.62), Math.round(w), 3)
   ctx.fillRect(Math.round(lx + w / 2 - ppt * 0.1 + shake), Math.round(by - h * 0.7), Math.round(ppt * 0.2), Math.round(ppt * 0.24))
+  }
   if (c.state === 'opening') {
     // dado do Entropy girando em cima enquanto o sorteio chega
     ctx.save(); ctx.translate(x + ppt * 0.5, by - ppt * 1.4); ctx.rotate(t * 8)
@@ -321,6 +408,8 @@ function drawChest(ctx, c, t, ppt) {
 // ---- poderes soltos: escudo (bolha roxa com P) e Lazer Boots (bota com raio)
 function drawItem(ctx, it, t, ppt) {
   const cx = (it.x + 0.5) * ppt, cy = (it.y + 0.5 + (it.rise > 0 ? 0 : Math.sin(t * 4) * 0.07)) * ppt
+  const ia = A(it.kind === 'shield' ? 'power-shield' : 'power-lazer')
+  if (ia) { sprite(ctx, ia, it.x + 0.5, it.y + 0.9 + (it.rise > 0 ? 0 : Math.sin(t * 4) * 0.07), ppt); return }
   if (it.kind === 'shield') {
     ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.arc(cx, cy, ppt * 0.42, 0, Math.PI * 2); ctx.fill()
     ctx.fillStyle = '#8b5cf6'; ctx.beginPath(); ctx.arc(cx, cy, ppt * 0.36, 0, Math.PI * 2); ctx.fill()
@@ -335,6 +424,8 @@ function drawItem(ctx, it, t, ppt) {
 }
 
 function drawCheckpoint(ctx, cp, reached, t, ppt) {
+  const fa = A(reached ? 'checkpoint-on' : 'checkpoint-off')
+  if (fa) { sprite(ctx, fa, cp.x + 0.75, FLOOR, ppt); return }
   const x = (cp.x + 0.5) * ppt, baseY = FLOOR * ppt
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - 2), baseY - ppt * 2.2, 4, ppt * 2.2)
   ctx.fillStyle = reached ? '#22c55e' : '#6b5a7e'
@@ -353,8 +444,45 @@ function heroFrame(g, heroId) {
   return frame
 }
 
+// quadro da folha de lado: 0 parado, 1-4 corrida, 5 pulo, 6 queda, 7 dano, 8 comemora
+function sheetFrame(g) {
+  const p = g.player
+  if (g.status === 'dying' || p.invuln > P.invuln - 0.35) return 7
+  if (g.status === 'won' && p.onGround && Math.abs(p.vx) < 0.1) return 8
+  if (!p.onGround) return p.vy < 0 ? 5 : 6
+  if (Math.abs(p.vx) > 0.2) return 1 + (Math.floor(p.walkT * 11) % 4)
+  return 0
+}
+
 function drawHero(ctx, g, heroId, ppt) {
   const p = g.player
+  const hs = A(`hero-${heroId}`)
+  if (hs) {
+    const fw = hs.naturalWidth / 9, fh = hs.naturalHeight
+    const w = (fw / APX) * ppt, h = (fh / APX) * ppt
+    const feetX = (p.x + P.w / 2) * ppt, feetY = (p.y + P.h) * ppt
+    const fi = sheetFrame(g)
+    const draw = (dx) => {
+      ctx.save(); ctx.translate(Math.round(feetX + dx), 0); if (p.facing < 0) ctx.scale(-1, 1)
+      ctx.drawImage(hs, fi * fw, 0, fw, fh, Math.round(-w / 2), Math.round(feetY - h), Math.round(w), Math.round(h)); ctx.restore()
+    }
+    ctx.save(); ctx.imageSmoothingEnabled = false
+    if (p.onGround) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(feetX, feetY, ppt * 0.35, ppt * 0.08, 0, 0, Math.PI * 2); ctx.fill() }
+    if (p.lazer > 0 && Math.abs(p.vx) > 1) for (let i = 3; i >= 1; i--) { ctx.globalAlpha = 0.12 * (4 - i) * (p.lazer < 2 ? p.lazer / 2 : 1); draw(-Math.sign(p.vx) * i * ppt * 0.35) }
+    ctx.globalAlpha = 1
+    if (g.status === 'dying') ctx.globalAlpha = Math.sin(g.statusT * 30) > 0 ? 1 : 0.6
+    if (p.invuln > 0 && Math.sin(p.invuln * 40) > 0) ctx.globalAlpha = 0.35
+    draw(0)
+    ctx.globalAlpha = 1
+    if (p.shield) {
+      const cy = feetY - ppt * 0.85, r = ppt * 1.05
+      ctx.strokeStyle = `rgba(196,166,255,${0.75 + Math.sin(g.time * 6) * 0.15})`; ctx.lineWidth = Math.max(2, ppt * 0.08)
+      ctx.beginPath(); ctx.arc(feetX, cy, r, 0, Math.PI * 2); ctx.stroke()
+      ctx.fillStyle = 'rgba(139,92,246,0.14)'; ctx.beginPath(); ctx.arc(feetX, cy, r, 0, Math.PI * 2); ctx.fill()
+    }
+    ctx.restore()
+    return
+  }
   const frame = heroFrame(g, heroId)
   const feetX = (p.x + P.w / 2) * ppt, feetY = (p.y + P.h) * ppt
   ctx.save()
@@ -467,7 +595,9 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
       }
       const bump = g.bumps.find((b) => b.x === tx && b.y === ty)
       const dy = bump ? -Math.sin((bump.t / 0.2) * Math.PI) * ppt * 0.25 : 0
-      ctx.drawImage(sheet.cv, sheet.index[k] * ART, 0, ART, ART, Math.floor(tx * ppt), Math.floor(ty * ppt + dy), size, size)
+      const ta = TILE_ART[k] && A(TILE_ART[k])
+      if (ta) ctx.drawImage(ta, Math.floor(tx * ppt), Math.floor(ty * ppt + dy), size, size)
+      else ctx.drawImage(sheet.cv, sheet.index[k] * ART, 0, ART, ART, Math.floor(tx * ppt), Math.floor(ty * ppt + dy), size, size)
     }
   }
   for (const r of g.relays) if (near(r.x)) drawRelay(ctx, g, r, g.time, ppt)

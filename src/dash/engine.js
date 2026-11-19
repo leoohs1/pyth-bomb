@@ -101,8 +101,8 @@ export function step(g, input, dt) {
   if (g.status === 'won') {
     g.statusT += dt
     const p = g.player
-    // desce do beacon e anda pra direita
-    if (!p.onGround) { p.vy = 5; moveY(g, p, dt) } else { p.vx = 3; p.facing = 1; moveX(g, p, dt); p.walkT += dt }
+    // desce do beacon, anda um pouquinho e para pra comemorar
+    if (!p.onGround) { p.vy = 5; moveY(g, p, dt) } else if (g.statusT < 1.4) { p.vx = 3; p.facing = 1; moveX(g, p, dt); p.walkT += dt } else p.vx = 0
     return g
   }
   if (g.status !== 'playing') return g

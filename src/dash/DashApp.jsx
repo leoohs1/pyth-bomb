@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LEVELS } from './levels.js'
 import { createGame, step, starsOf, openChest } from './engine.js'
-import { drawGame, loadHero, RARITY, lootLabel } from './render.js'
+import { drawGame, loadHero, loadArt, RARITY, lootLabel } from './render.js'
 import { startRun, chestLoot, revealRun } from './draw.js'
 import { ODDS } from './loot.js'
 import { HEROES } from '../pvp/heroes.js'
@@ -37,7 +37,7 @@ export default function DashApp() {
   const [hero, setHero] = useState(() => { try { return localStorage.getItem(HERO_KEY) || 'pirb' } catch { return 'pirb' } })
   const [run, setRun] = useState(0) // muda a cada partida nova (recomeça o jogo)
   useSoloAudio('/music/solo.mp3') // efeitos e música do Solo ("Pixel Adventure")
-  useEffect(() => { for (const h of HEROES) loadHero(h.id) }, [])
+  useEffect(() => { for (const h of HEROES) loadHero(h.id); loadArt() }, [])
   const pick = (id) => { setHero(id); try { localStorage.setItem(HERO_KEY, id) } catch { /* sem localStorage */ } }
   const start = () => { unlock(); setRun((r) => r + 1); setScreen('play') }
 
