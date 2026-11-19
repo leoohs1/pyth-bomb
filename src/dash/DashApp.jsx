@@ -30,6 +30,11 @@ const SFX = {
   bosswake: 'solo_chop_intro', slam: 'solo_boom', bosshit: 'solo_chop_hurt', bossdown: 'solo_chop_die',
 }
 const HERO_KEY = 'pb_dash_hero'
+const DEV_LEVEL = (() => {
+  if (!import.meta.env.DEV) return null
+  const n = Number(new URLSearchParams(window.location.search).get('level'))
+  return n >= 1 && n <= LEVELS.length ? n - 1 : null
+})()
 const CHEST_MIN_MS = 700 // o dado gira pelo menos isso (o sorteio pode chegar antes)
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -41,8 +46,9 @@ export default function DashApp() {
   useEffect(() => { for (const h of HEROES) loadHero(h.id); loadArt() }, [])
   useEffect(() => { const old = document.title; document.title = 'Pyth Odyssey · Pyth Bomb'; return () => { document.title = old } }, [])
   const pick = (id) => { setHero(id); try { localStorage.setItem(HERO_KEY, id) } catch { /* sem localStorage */ } }
-  const [levelIdx, setLevelIdx] = useState(() => Math.min(clearedCount(), LEVELS.length - 1))
-  const [cleared, setCleared] = useState(clearedCount)
+  // só no computador (npm run dev): /odyssey?level=3 já abre na fase 3, liberada, pra testar
+  const [levelIdx, setLevelIdx] = useState(() => (DEV_LEVEL != null ? DEV_LEVEL : Math.min(clearedCount(), LEVELS.length - 1)))
+  const [cleared, setCleared] = useState(() => Math.max(clearedCount(), DEV_LEVEL ?? 0))
   const start = (idx = levelIdx) => { unlock(); setLevelIdx(idx); setRun((r) => r + 1); setScreen('play') }
   // na primeira vez, a historinha em quadrinhos antes da fase 1 (depois, só pelo botão Story do menu)
   const play = () => { unlock(); if (levelIdx === 0 && !storySeen()) { setScreen('story'); return } start() }
