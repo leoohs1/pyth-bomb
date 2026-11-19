@@ -5,6 +5,7 @@
 //   '.' vazio  '#' chão  'b' bloco de dados  '?' bloco oráculo (moeda)  '!' bloco oráculo com PODER (Confidence Shield)
 //   'u' oráculo já usado  'g'/'G' vela verde (corpo/topo)  'r'/'R' vela vermelha (corpo/topo)
 //   '1'..'9' bloco APAGADO do grupo N: só vira chão quando alguém liga o Price Relay daquele grupo
+//   'f' parede FALSA (parece bloco, mas dá pra atravessar: esconde segredos)  'x' portão do chefe (abre quando ele cai)
 // Coisas soltas (fora da grade): moedas (price updates), inimigos (lag bugs), Price Relays, os 3 Publishers,
 // Confidence Gems, baús (sorteio do Pyth Entropy), checkpoint e o Oracle Beacon do fim (a "bandeira").
 
@@ -15,6 +16,7 @@ function makeBuilder(cols) {
   const grid = Array.from({ length: ROWS }, () => Array(cols).fill('.'))
   const L = {
     cols, grid, coins: [], enemies: [], relays: [], publishers: [], gems: [], chests: [], movers: [], winds: [],
+    echoes: [], torches: [], dark: false, boss: null,
     start: { x: 2, y: FLOOR - 2 }, checkpoint: null, flag: cols - 8, restoreStart: 8,
   }
   const set = (x, y, c) => { if (x >= 0 && x < cols && y >= 0 && y < ROWS) grid[y][x] = c }
@@ -45,6 +47,13 @@ function makeBuilder(cols) {
     // zona de vento: rajadas que empurram (force < 0 = pra esquerda)
     wind(x0, x1, force, { period = 3.2, dur = 1.4, warn = 0.6 } = {}) { L.winds.push({ x0, x1, force, period, dur, warn }) },
     harpy(x, y, range = 3) { L.enemies.push({ type: 'harpy', x, y, range }) },
+    // zona da Echo Shadow: entre x0 e x1 uma sombra refaz o seu caminho "delay" segundos depois
+    echo(x0, x1, delay = 2) { L.echoes.push({ x0, x1, delay }) },
+    torch(x, y = FLOOR) { L.torches.push({ x, y }) },
+    // retângulo de blocos iguais (ex.: parede falsa 'f')
+    fill(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c) },
+    // chefe Talos: começa em x, briga entre ax0 e ax1 (acorda quando o herói passa de ax0)
+    boss(x, ax0, ax1) { L.boss = { x, ax0, ax1, floor: FLOOR } },
     gem(x, y) { L.gems.push({ x, y }) },
     chest(x, y = FLOOR) { L.chests.push({ x, y }) },
   }
@@ -178,4 +187,77 @@ function level2() {
   return { id: 'parnassus', name: 'Mount Parnassus', par: 130, theme: 'parnassus', ...b.L }
 }
 
-export const LEVELS = [level1(), level2()]
+// Fase 3: "Echoes of the Styx". O submundo escuro (só as tochas e o herói iluminam), sombras que repetem os seus passos,
+// paredes falsas com segredos, o rio Estige atravessado em barcos (polias de lado) e o 1º chefe: TALOS, o gigante de bronze.
+function level3() {
+  const F = FLOOR
+  const b = makeBuilder(200)
+  b.L.dark = true
+  // 1) a entrada da caverna: tochas, o 1º Publisher, e a 1ª zona de sombra (corredor reto pra aprender)
+  b.ground(0, 49)
+  for (const x of [3, 14, 26, 37]) b.torch(x)
+  b.publisher(8)
+  b.coins(4, F - 1, 3)
+  b.row(16, F - 4, 'b?b')
+  b.enemy(22)
+  b.echo(24, 60, 2)
+  b.coins(27, F - 1, 6)
+  // 2) a parede com segredo: por fora é um bloco de pedra; os 2 de baixo da esquerda são FALSOS e escondem uma salinha
+  //    com o baú e o Price Relay que acende o caminho alto até a GEM 1. O caminho normal sobe pela escada e passa por cima.
+  b.stairs(39, 3) // (entre a escada e a parede ficam 2 casas de chão: quem descer ali e andar pra parede acha a salinha)
+  b.fill(44, F - 5, 49, F - 5, '#')     // teto da parede
+  b.fill(49, F - 4, 49, F - 1, '#')     // fundo da salinha
+  b.fill(44, F - 4, 48, F - 1, 'f')     // fachada falsa (atravessa)
+  b.chest(45)
+  b.relay(47, 1)
+  b.row(52, F - 7, '111')
+  b.row(57, F - 8, '111')
+  b.gem(61, F - 10)
+  b.coins(52, F - 8, 3)
+  b.ground(50, 56)
+  b.enemy(53)
+  b.row(59, F - 2, 'b'); b.row(62, F - 3, 'b') // pedrinhas pra atravessar o rio
+  b.coins(59, F - 3, 1); b.coins(62, F - 4, 1)
+  // 3) checkpoint, 2º Publisher, a 2ª sombra (mais rápida) numa subida, e um nicho escondido com o 2º baú
+  b.ground(65, 83)
+  b.torch(66); b.torch(80)
+  b.L.checkpoint = { x: 68 }
+  b.publisher(72)
+  b.echo(76, 108, 1.6)
+  b.stairs(79, 4)
+  b.ground(83, 92, F - 4)
+  b.enemy(88, F - 5)
+  b.coins(85, F - 5, 5)
+  b.torch(90, F - 4)
+  b.ground(96, 106, F - 3)
+  b.enemy(99, F - 4)
+  b.fill(102, F - 6, 106, F - 6, '#')  // teto do nicho
+  b.fill(105, F - 5, 106, F - 4, '#')  // fundo do nicho
+  b.fill(102, F - 5, 104, F - 4, 'f')  // fachada falsa
+  b.chest(103, F - 3)
+  b.ground(107, 112, F - 3)
+  b.torch(108, F - 3)
+  // 4) o rio Estige: barcos (polias de lado), uma pedra no meio e a GEM 2 em cima do 2º barco
+  b.mover(114, F - 2, 3, { dx: 6, period: 5 })
+  b.mover(124, F - 3, 3, { dx: 6, period: 5 })
+  b.ground(134, 135, F - 4)
+  b.mover(137, F - 2, 3, { dx: 3, period: 4 })
+  b.gem(128, F - 8)
+  b.coins(116, F - 4, 3); b.coins(126, F - 5, 3)
+  b.ground(142, 199)
+  b.torch(144)
+  b.publisher(146)
+  // 5) a arena do TALOS (portão fechado até ele cair) e a GEM 3 num degrau alto da arena
+  for (const x of [152, 168, 183]) b.torch(x)
+  b.row(153, F - 4, 'b')
+  b.row(155, F - 7, 'bb')
+  b.gem(156, F - 9)
+  b.boss(172, 152, 183)
+  b.fill(184, F - 6, 185, F - 1, 'x')
+  // 6) depois do portão: o Oracle Beacon
+  b.coins(187, F - 1, 3)
+  b.L.flag = 193
+  return { id: 'styx', name: 'Echoes of the Styx', par: 160, theme: 'styx', ...b.L }
+}
+
+export const LEVELS = [level1(), level2(), level3()]

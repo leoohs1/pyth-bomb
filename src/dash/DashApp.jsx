@@ -27,6 +27,7 @@ const SFX = {
   jump: 'solo_kick', coin: 'solo_pickup', stomp: 'solo_enemy_die', bump: 'solo_hit', die: 'solo_dead', gameover: 'solo_gameover',
   win: 'solo_clear', checkpoint: 'solo_door', relay: 'solo_door', stale: 'solo_hit', publisher: 'solo_shield', gem: 'solo_chest_win',
   chest: 'solo_chest_open', power: 'solo_pickup', item: 'solo_jet', shieldbreak: 'solo_hurt',
+  bosswake: 'solo_chop_intro', slam: 'solo_boom', bosshit: 'solo_chop_hurt', bossdown: 'solo_chop_die',
 }
 const HERO_KEY = 'pb_dash_hero'
 const CHEST_MIN_MS = 700 // o dado gira pelo menos isso (o sorteio pode chegar antes)

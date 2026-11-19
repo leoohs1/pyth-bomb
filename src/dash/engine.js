@@ -21,7 +21,7 @@ export const P = {
   lazerTime: 10, lazerRun: 1.45, // Lazer Boots: corre 45% mais rápido por 10 s
 }
 const ENEMY = { w: 0.9, h: 0.9, speed: 1.8, wake: 17 }
-const SOLID = new Set(['#', 'b', '?', '!', 'u', 'g', 'G', 'r', 'R'])
+const SOLID = new Set(['#', 'b', '?', '!', 'u', 'g', 'G', 'r', 'R', 'x'])
 const EPS = 1e-4
 const RESTORE_SPEED = 26 // casas por segundo da onda de cor
 const STALE_WARN = 1.5   // segundos antes de apagar: o bloco pisca
@@ -45,6 +45,10 @@ export function createGame(level, { lives = 3 } = {}) {
     coins: level.coins.map((c) => ({ ...c, taken: false })),
     enemies: freshEnemies(level),
     movers: freshMovers(level),
+    // fase 3: sombras que repetem o que o herói fez (trail = por onde ele passou) e o chefe Talos
+    trail: [],
+    echoes: (level.echoes ?? []).map((z) => ({ ...z, active: false, startT: 0, visible: false, x: 0, y: 0, facing: 1, onGround: true, vx: 0, vy: 0, walkT: 0 })),
+    boss: level.boss ? freshBoss(level.boss) : null,
     relays: (level.relays ?? []).map((r) => ({ ...r, on: false, t: 0 })),
     groupOn: {},  // grupo -> aceso?
     publishers: (level.publishers ?? []).map((p) => ({ ...p, on: false, t: 0 })),
@@ -206,6 +210,8 @@ export function step(g, input, dt) {
   g.items = g.items.filter((it) => !it.taken)
 
   stepEnemies(g, dt)
+  stepEchoes(g)
+  stepBoss(g, dt)
 
   // checkpoint
   const cp = g.level.checkpoint
@@ -411,6 +417,89 @@ function stepEnemies(g, dt) {
 }
 
 // levou um golpe: com escudo, só perde o escudo (e pisca um tempinho); sem escudo, perde a vida
+// ---- Echo Shadow: guarda por onde o herói passou e, depois de "delay" segundos, uma sombra refaz o mesmo caminho.
+// Encostou nela = dano (não dá pra pisar, é só uma sombra). Some quando o herói sai da zona.
+function stepEchoes(g) {
+  const p = g.player
+  if (!g.echoes?.length) return
+  g.trail.push({ t: g.time, x: p.x, y: p.y, f: p.facing, og: p.onGround, vx: p.vx, vy: p.vy, w: p.walkT })
+  const keep = g.time - 4
+  while (g.trail.length && g.trail[0].t < keep) g.trail.shift()
+  for (const z of g.echoes) {
+    if (!z.active && p.x >= z.x0 && p.x <= z.x1) { z.active = true; z.startT = g.time; z.visible = false }
+    if (z.active && (p.x > z.x1 + 3 || p.x < z.x0 - 6)) { z.active = false; z.visible = false }
+    if (!z.active) continue
+    const want = g.time - z.delay
+    if (want < z.startT) { z.visible = false; continue }
+    let s0 = null
+    for (let i = g.trail.length - 1; i >= 0; i--) if (g.trail[i].t <= want) { s0 = g.trail[i]; break }
+    if (!s0) continue
+    z.visible = true
+    z.x = s0.x; z.y = s0.y; z.facing = s0.f; z.onGround = s0.og; z.vx = s0.vx; z.vy = s0.vy; z.walkT = s0.w
+    if (g.status === 'playing' && p.invuln <= 0 && p.x < z.x + P.w - 0.15 && p.x + P.w > z.x + 0.15 && p.y < z.y + P.h - 0.2 && p.y + P.h > z.y + 0.2) {
+      hurt(g, { x: z.x - (ENEMY.w - P.w) / 2 })
+    }
+  }
+}
+
+// ---- TALOS, o gigante de bronze (1º mini-chefe). Anda até você, levanta o martelo (aviso) e bate no chão:
+// saem duas ondas pelo chão (pula por cima). Pisa na cabeça dele 3 vezes; a cada golpe ele fica mais rápido.
+// Quando ele cai, o portão ('x') abre.
+export const BOSS = { w: 1.8, h: 2.6, hp: 3, walk: 1.6, wave: 6.5 }
+function freshBoss(b) {
+  return { ...b, x: b.x, y: (b.floor ?? 12) - BOSS.h, hp: BOSS.hp, state: 'sleep', t: 0, vx: 0, inv: 0, alive: true, deadT: 0, facing: -1, waves: [] }
+}
+function stepBoss(g, dt) {
+  const b = g.boss
+  if (!b) return
+  const p = g.player
+  if (!b.alive) { b.deadT += dt; return }
+  for (const w of b.waves) w.x += w.dir * BOSS.wave * dt
+  b.waves = b.waves.filter((w) => w.x > b.ax0 - 1 && w.x < b.ax1 + 1)
+  if (b.state === 'sleep') { if (p.x >= b.ax0) { b.state = 'walk'; b.t = 0; g.events.push('bosswake') } return }
+  b.t += dt
+  b.inv = Math.max(0, b.inv - dt)
+  const fast = 1 + (BOSS.hp - b.hp) * 0.35
+  const cx = b.x + BOSS.w / 2, pc = p.x + P.w / 2
+  if (b.state === 'walk') {
+    b.facing = pc < cx ? -1 : 1
+    b.vx = b.facing * BOSS.walk * fast
+    b.x = Math.max(b.ax0, Math.min(b.ax1 - BOSS.w, b.x + b.vx * dt))
+    if (b.t > 2.2 / fast) { b.state = 'windup'; b.t = 0; b.vx = 0 }
+  } else if (b.state === 'windup') {
+    if (b.t > 0.6 / fast) {
+      b.state = 'slam'; b.t = 0
+      const feet = b.y + BOSS.h
+      b.waves.push({ x: cx, y: feet, dir: -1 }, { x: cx, y: feet, dir: 1 })
+      g.events.push('slam')
+    }
+  } else if (b.state === 'slam') {
+    if (b.t > 0.75) { b.state = 'walk'; b.t = 0 }
+  }
+  if (g.status !== 'playing') return
+  // ondas no chão: pega quem está pisando no chão perto dela
+  for (const w of b.waves) {
+    if (p.invuln <= 0 && p.onGround && Math.abs(p.y + P.h - w.y) < 0.2 && Math.abs(pc - w.x) < 0.55) hurt(g, { x: w.x - ENEMY.w / 2 })
+  }
+  // encostou no Talos: de cima = golpe nele; do lado = dano em você
+  if (p.x < b.x + BOSS.w && p.x + P.w > b.x && p.y < b.y + BOSS.h && p.y + P.h > b.y) {
+    const fromAbove = p.vy > 0 && p.y + P.h - b.y < 0.75
+    if (fromAbove && b.inv <= 0) {
+      b.hp--; b.inv = 1.2
+      p.vy = -P.stompHoldV * 1.1; p.jumping = true
+      g.events.push('bosshit')
+      if (b.hp <= 0) {
+        b.alive = false; b.deadT = 0; b.waves = []
+        for (const row of g.tiles) for (let i = 0; i < row.length; i++) if (row[i] === 'x') row[i] = '.'
+        g.events.push('bossdown')
+      }
+    } else if (!fromAbove && p.invuln <= 0) {
+      hurt(g, { x: b.x + BOSS.w / 2 - ENEMY.w / 2 })
+      p.vx = (pc < cx ? -1 : 1) * 7
+    }
+  }
+}
+
 function hurt(g, e) {
   const p = g.player
   if (p.shield) {
@@ -442,6 +531,9 @@ function respawn(g) {
   const at = g.checkpoint ?? g.level.start
   g.player = spawnPlayer({ x: at.x, y: at.y ?? g.level.start.y })
   g.enemies = freshEnemies(g.level) // inimigos voltam pro lugar
+  g.trail = []
+  for (const z of g.echoes ?? []) { z.active = false; z.visible = false }
+  if (g.boss?.alive) g.boss = freshBoss(g.level.boss) // o chefe volta com a vida cheia
   // relays "fresh" apagam de novo (os normais continuam acesos: a ponte que você ligou fica)
   for (const r of g.relays) if (r.fresh && r.on) { r.on = false; r.t = 0; g.groupOn[r.group] = false }
   g.status = 'playing'; g.statusT = 0

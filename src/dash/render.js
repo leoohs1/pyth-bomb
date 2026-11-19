@@ -1,7 +1,7 @@
 // Desenho do Pyth Dash no <canvas>. Blocos, moedas, bugs e bandeira são desenhados por código em pixel art
 // (provisório: depois a arte de verdade entra no lugar). Os heróis são os pixels do Solo/PVP (vista de lado).
 import { ROWS, FLOOR } from './levels.js'
-import { P, ENEMY_SIZE, freshLeft, staleWarn, windState } from './engine.js'
+import { P, ENEMY_SIZE, freshLeft, staleWarn, windState, BOSS } from './engine.js'
 
 export const ART = 32 // pixels de arte por casa (o herói tem ~53 px de altura: ~1,65 casa)
 
@@ -110,7 +110,7 @@ function sprite(ctx, im, cx, by, ppt, flip = false) {
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
 function drawBackground(ctx, w, h, camX, ppt, theme) {
   // Grécia: céu bem longe + morros mais perto. Cada fase tem o seu par (fase 2 = bg2-*); sem ele, usa o de Delfos
-  const pre = theme === 'parnassus' && A('bg2-far') ? 'bg2' : 'bg'
+  const pre = theme === 'parnassus' && A('bg2-far') ? 'bg2' : theme === 'styx' && A('bg3-far') ? 'bg3' : 'bg'
   const far = A(`${pre}-far`), near = A(`${pre}-near`)
   if (far) {
     const fw = far.naturalWidth * (h / far.naturalHeight)
@@ -419,6 +419,144 @@ function drawWind(ctx, g, w, ppt, camX, viewW, h) {
   ctx.restore()
 }
 
+// ---- fase 3: tocha (braseiro de pedra com chama violeta), sombra, Talos, portão e o escuro
+
+function drawTorch(ctx, tc, t, ppt) {
+  const art = A(Math.sin(t * 9 + tc.x) > 0 ? 'torch-1' : 'torch-2')
+  if (art) { sprite(ctx, art, tc.x + 0.5, tc.y, ppt); return }
+  const x = (tc.x + 0.5) * ppt, by = tc.y * ppt
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.2), Math.round(by - ppt * 1.1), Math.round(ppt * 0.4), Math.round(ppt * 1.1))
+  ctx.fillStyle = '#5e5670'; ctx.fillRect(Math.round(x - ppt * 0.13), Math.round(by - ppt * 1.05), Math.round(ppt * 0.26), Math.round(ppt * 1.0))
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.38), Math.round(by - ppt * 1.3), Math.round(ppt * 0.76), Math.round(ppt * 0.25))
+  ctx.fillStyle = '#c9a227'; ctx.fillRect(Math.round(x - ppt * 0.33), Math.round(by - ppt * 1.27), Math.round(ppt * 0.66), Math.round(ppt * 0.15))
+  const fl = 1 + Math.sin(t * 13 + tc.x * 2) * 0.12
+  for (const [r, c] of [[0.34, '#7c3aed'], [0.24, '#c084fc'], [0.12, '#f5d0fe']]) {
+    ctx.fillStyle = c; ctx.beginPath()
+    ctx.moveTo(x - ppt * r, by - ppt * 1.3); ctx.quadraticCurveTo(x, by - ppt * (1.3 + r * 3.2 * fl), x + ppt * r, by - ppt * 1.3); ctx.fill()
+  }
+}
+
+// a sombra: o herói pintado de roxo-escuro e meio transparente
+let tintCv = null
+function echoFrameIndex(z) {
+  if (!z.onGround) return z.vy < 0 ? 5 : 6
+  if (Math.abs(z.vx) > 0.2) return 1 + (Math.floor(z.walkT * 11) % 4)
+  return 0
+}
+function drawEcho(ctx, z, heroId, t, ppt) {
+  const hs = A(`hero-${heroId}`)
+  const fw = hs ? hs.naturalWidth / 9 : 0, fh = hs ? hs.naturalHeight : 0
+  const feetX = (z.x + P.w / 2) * ppt, feetY = (z.y + P.h) * ppt
+  ctx.save()
+  const glow = ctx.createRadialGradient(feetX, feetY - ppt * 0.8, 0, feetX, feetY - ppt * 0.8, ppt * 1.4)
+  glow.addColorStop(0, 'rgba(241,76,235,0.45)'); glow.addColorStop(1, 'rgba(241,76,235,0)')
+  ctx.fillStyle = glow; ctx.fillRect(feetX - ppt * 1.5, feetY - ppt * 2.3, ppt * 3, ppt * 3)
+  if (hs) {
+    if (!tintCv) tintCv = document.createElement('canvas')
+    tintCv.width = Math.ceil(fw); tintCv.height = Math.ceil(fh)
+    const tx = tintCv.getContext('2d')
+    tx.clearRect(0, 0, fw, fh); tx.imageSmoothingEnabled = false
+    tx.drawImage(hs, echoFrameIndex(z) * fw, 0, fw, fh, 0, 0, fw, fh)
+    tx.globalCompositeOperation = 'source-atop'; tx.fillStyle = 'rgba(90,30,150,0.85)'; tx.fillRect(0, 0, fw, fh); tx.globalCompositeOperation = 'source-over'
+    const w = (fw / APX) * ppt, h = (fh / APX) * ppt
+    ctx.globalAlpha = 0.72 + Math.sin(t * 10) * 0.08
+    ctx.translate(Math.round(feetX), 0); if (z.facing < 0) ctx.scale(-1, 1)
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(tintCv, Math.round(-w / 2), Math.round(feetY - h), Math.round(w), Math.round(h))
+  } else {
+    ctx.globalAlpha = 0.7; ctx.fillStyle = '#2e105a'; ctx.fillRect(z.x * ppt, z.y * ppt, P.w * ppt, P.h * ppt)
+  }
+  ctx.restore()
+}
+
+// Talos: gigante de bronze com um olho magenta; martelo pra cima (aviso) e pra baixo (batida)
+function drawBoss(ctx, b, t, ppt) {
+  const W = BOSS.w * ppt, H = BOSS.h * ppt
+  const x = b.x * ppt, y = b.y * ppt
+  for (const w of b.waves) {
+    const wx = w.x * ppt, wy = w.y * ppt
+    ctx.fillStyle = 'rgba(241,76,235,0.85)'
+    ctx.beginPath(); ctx.moveTo(wx - ppt * 0.45, wy); ctx.quadraticCurveTo(wx, wy - ppt * 0.9, wx + ppt * 0.45, wy); ctx.fill()
+    ctx.fillStyle = 'rgba(255,214,251,0.9)'
+    ctx.beginPath(); ctx.moveTo(wx - ppt * 0.25, wy); ctx.quadraticCurveTo(wx, wy - ppt * 0.5, wx + ppt * 0.25, wy); ctx.fill()
+  }
+  const art = A(!b.alive ? 'talos-down' : b.state === 'windup' ? 'talos-windup' : b.state === 'slam' ? 'talos-slam' : Math.sin(t * 6) > 0 ? 'talos-walk1' : 'talos-walk2')
+  ctx.save()
+  if (!b.alive) { ctx.globalAlpha = Math.max(0, 1 - b.deadT * 0.5) }
+  if (b.inv > 0 && Math.sin(b.inv * 40) > 0) ctx.globalAlpha = 0.45
+  if (art) { sprite(ctx, art, b.x + BOSS.w / 2, b.y + BOSS.h, ppt, b.facing > 0); ctx.restore(); return }
+  ctx.translate(x + W / 2, y + H); ctx.scale(b.facing > 0 ? 1 : -1, 1)
+  if (!b.alive) ctx.rotate(-Math.min(1.4, b.deadT * 2))
+  const o = '#140a26', br = '#b7791f', brHi = '#f6c453', brDk = '#7c4a12'
+  const box = (bx, by, bw, bh, c) => { ctx.fillStyle = o; ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4); ctx.fillStyle = c; ctx.fillRect(bx, by, bw, bh) }
+  const step = b.state === 'walk' && Math.sin(t * 8) > 0 ? ppt * 0.08 : 0
+  box(-W * 0.38, -H * 0.38 - step, W * 0.26, H * 0.38, brDk); box(W * 0.12, -H * 0.38 + step, W * 0.26, H * 0.38, brDk)
+  box(-W * 0.45, -H * 0.82, W * 0.9, H * 0.46, br)
+  ctx.fillStyle = brHi; ctx.fillRect(-W * 0.42, -H * 0.8, W * 0.84, H * 0.06)
+  ctx.fillStyle = '#f14ceb'; ctx.beginPath(); ctx.arc(0, -H * 0.6, W * 0.12, 0, Math.PI * 2); ctx.fill()
+  box(-W * 0.24, -H, W * 0.48, H * 0.2, br)
+  ctx.fillStyle = '#f14ceb'; ctx.fillRect(W * 0.02, -H * 0.93, W * 0.16, H * 0.05)
+  const up = b.state === 'windup', down = b.state === 'slam'
+  ctx.save(); ctx.translate(W * 0.45, -H * 0.72); ctx.rotate(up ? -2.4 : down ? 0.5 : -0.4)
+  box(-W * 0.07, 0, W * 0.14, H * 0.42, brDk)
+  box(-W * 0.22, H * 0.38, W * 0.44, H * 0.18, '#6b6380')
+  ctx.restore()
+  ctx.restore()
+}
+
+function drawGate(ctx, tx, ty, ppt, t) {
+  const x = Math.floor(tx * ppt), y = Math.floor(ty * ppt), sz = Math.ceil(ppt)
+  ctx.fillStyle = '#140a26'; ctx.fillRect(x, y, sz, sz)
+  ctx.fillStyle = '#7c4a12'; ctx.fillRect(x + 2, y, sz - 4, sz)
+  ctx.fillStyle = '#b7791f'; for (let i = 0; i < 3; i++) ctx.fillRect(Math.round(x + sz * (0.18 + i * 0.3)), y, Math.max(2, Math.round(sz * 0.12)), sz)
+  ctx.fillStyle = `rgba(241,76,235,${0.6 + Math.sin(t * 4) * 0.3})`; ctx.fillRect(x, Math.round(y + sz * 0.45), sz, Math.max(2, Math.round(sz * 0.08)))
+}
+
+// o escuro do submundo: tela quase preta com "furos" de luz no herói, nas tochas, nos publishers acesos e nas gems
+let darkCv = null
+function drawDarkness(ctx, g, w, h, ppt, camX) {
+  if (!darkCv) darkCv = document.createElement('canvas')
+  if (darkCv.width !== w || darkCv.height !== h) { darkCv.width = w; darkCv.height = h }
+  const d = darkCv.getContext('2d')
+  d.globalCompositeOperation = 'source-over'
+  d.clearRect(0, 0, w, h)
+  d.fillStyle = 'rgba(6,2,16,0.8)'; d.fillRect(0, 0, w, h)
+  d.globalCompositeOperation = 'destination-out'
+  const hole = (wx, wy, r) => {
+    const sx = (wx - camX) * ppt, sy = wy * ppt, R = r * ppt
+    if (sx < -R || sx > w + R) return
+    const gr = d.createRadialGradient(sx, sy, R * 0.15, sx, sy, R)
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.75)'); gr.addColorStop(1, 'rgba(0,0,0,0)')
+    d.fillStyle = gr; d.fillRect(sx - R, sy - R, R * 2, R * 2)
+  }
+  const p = g.player
+  hole(p.x + P.w / 2, p.y + P.h * 0.5, 5)
+  for (const tc of g.level.torches ?? []) hole(tc.x + 0.5, tc.y - 1.4, 3.6 + Math.sin(g.time * 7 + tc.x) * 0.2)
+  for (const pb of g.publishers) if (pb.on) hole(pb.x + 0.5, (pb.y ?? FLOOR) - 3, 4.5)
+  for (const r of g.relays) if (r.on) hole(r.x + 0.5, r.y - 1.6, 2.4)
+  for (const gm of g.gems) if (!gm.taken) hole(gm.x + 0.5, gm.y + 0.5, 1.4)
+  if (g.boss?.alive && g.boss.state !== 'sleep') hole(g.boss.x + BOSS.w / 2, g.boss.y + 0.5, 2.2)
+  hole(g.level.flag + 0.5, FLOOR - 7.5, g.status === 'won' ? 12 : 3)
+  if (g.status === 'won') { d.fillStyle = `rgba(0,0,0,${Math.min(1, g.statusT * 0.6)})`; d.fillRect(0, 0, w, h) }
+  ctx.drawImage(darkCv, 0, 0)
+}
+
+// barra de vida do chefe no topo da tela
+function drawBossBar(ctx, g, w, ppt) {
+  const b = g.boss
+  if (!b || !b.alive || b.state === 'sleep') return
+  const size = Math.max(10, Math.round(ppt * 0.38))
+  ctx.font = `${size}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  const y = ppt * 0.7
+  ctx.fillStyle = '#140a26'; ctx.fillText('TALOS', w / 2 + 2, y + 2)
+  ctx.fillStyle = '#f6c453'; ctx.fillText('TALOS', w / 2, y)
+  for (let i = 0; i < BOSS.hp; i++) {
+    const x = w / 2 + (i - 1) * size * 1.6
+    ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - size * 0.55), Math.round(y + size), Math.round(size * 1.1), Math.round(size * 0.7))
+    ctx.fillStyle = i < b.hp ? '#f14ceb' : '#3e3350'; ctx.fillRect(Math.round(x - size * 0.45), Math.round(y + size * 1.1), Math.round(size * 0.9), Math.round(size * 0.5))
+  }
+}
+
 // bloco apagado de um grupo (contorno tracejado cinza)
 function drawGhost(ctx, tx, ty, ppt, t) {
   const x = Math.floor(tx * ppt), y = Math.floor(ty * ppt), s = Math.ceil(ppt)
@@ -648,7 +786,8 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   for (let ty = 0; ty < ROWS; ty++) {
     for (let tx = x0; tx <= x1; tx++) {
       let k = g.tiles[ty][tx]
-      if (k === '.') continue
+      if (k === '.' || k === 'f') continue
+      if (k === 'x') { drawGate(ctx, tx, ty, ppt, g.time); continue }
       if (k >= '1' && k <= '9') {
         // bloco de grupo: aceso (roxo) ou apagado (contorno); piscando quando o sinal está envelhecendo
         if (!g.groupOn[k]) { drawGhost(ctx, tx, ty, ppt, g.time); continue }
@@ -678,6 +817,7 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   }
   for (const r of g.relays) if (near(r.x)) drawRelay(ctx, g, r, g.time, ppt)
   for (const m of g.movers ?? []) if (near(m.x, m.w + 6)) drawMover(ctx, g, m, g.time, ppt)
+  for (const tc of g.level.torches ?? []) if (near(tc.x)) drawTorch(ctx, tc, g.time, ppt)
 
   // o que ainda está "stale" fica cinza (moedas, gems, baús, inimigos e o herói ficam por cima, coloridos)
   drawStale(ctx, g, ppt, camX, viewW, h)
@@ -693,7 +833,28 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   }
   for (const it of g.items) if (near(it.x)) drawItem(ctx, it, g.time, ppt)
   for (const e of g.enemies) if (near(e.x, 2)) (e.type === 'harpy' ? drawHarpy : drawEnemy)(ctx, e, g.time, ppt)
+  if (g.boss) drawBoss(ctx, g.boss, g.time, ppt)
   drawHero(ctx, g, heroId, ppt)
   for (const w of g.level.winds ?? []) drawWind(ctx, g, w, ppt, camX, viewW, h)
+  // paredes falsas: desenhadas por cima do herói (escondem a salinha); ficam meio transparentes com ele lá dentro
+  const pl = g.player
+  const inside = g.tiles[Math.floor(pl.y + P.h / 2)]?.[Math.floor(pl.x + P.w / 2)] === 'f'
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = x0; tx <= x1; tx++) {
+    if (g.tiles[ty][tx] !== 'f') continue
+    ctx.globalAlpha = inside ? 0.45 : 1
+    const top = ty === 0 || !['#', 'f'].includes(g.tiles[ty - 1][tx])
+    const ta = A(top ? 'tile-grass' : 'tile-soil')
+    if (ta) ctx.drawImage(ta, Math.floor(tx * ppt), Math.floor(ty * ppt), size, size)
+    else ctx.drawImage(sheet.cv, sheet.index[top ? '^' : '#'] * ART, 0, ART, ART, Math.floor(tx * ppt), Math.floor(ty * ppt), size, size)
+    ctx.globalAlpha = 1
+  }
   ctx.restore()
+  if (g.level.dark) drawDarkness(ctx, g, w, h, ppt, camX)
+  // a sombra vem por cima do escuro (senão some na caverna)
+  if (g.echoes?.some((z) => z.visible)) {
+    ctx.save(); ctx.translate(-Math.round(camX * ppt), 0)
+    for (const z of g.echoes) if (z.visible) drawEcho(ctx, z, heroId, g.time, ppt)
+    ctx.restore()
+  }
+  drawBossBar(ctx, g, w, ppt)
 }
