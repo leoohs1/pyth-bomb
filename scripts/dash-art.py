@@ -4,7 +4,8 @@ Uso:  python scripts/dash-art.py <pasta com as folhas> [pasta de saída]
       (padrão da saída: public/dash/art)
 
 Folhas esperadas na pasta (nomes de Downloads/pyth-dash-arte):
-  01-blocos.png  02-lag-bug.png  03-objetos.png  04-itens.png  05-pirb-lado.png  06-fundo-longe.png
+  01-blocos.png  02-lag-bug.png  03-objetos.png  04-itens.png  05-pirb-lado.png
+  grecia/greek-01-far.png  grecia/greek-02-near.png  grecia/greek-comic-1..5.png
 
 O que faz: tira o verde (e a "franja" verde das bordas), acha cada desenho pelos espaços verdes entre eles,
 recorta e reduz pra escala do jogo (64 px por bloco), com as bordas duras de pixel art.
@@ -184,21 +185,39 @@ def main():
         strip.paste(f, (i * w, 0), f)
     save(strip, out, 'hero-pirb.png')
 
-    # 6) fundo distante: recorta o desenho e emenda as pontas (degradê) pra repetir sem costura
-    sheet = key_green(Image.open(src / '06-fundo-longe.png'))
-    a = np.asarray(sheet)[..., 3] > 0
-    ys, xs = np.where(a.any(1))[0], np.where(a.any(0))[0]
-    crop = sheet.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
-    hgt = 6 * PX
-    crop = crop.resize((round(crop.width * hgt / crop.height), hgt), Image.BOX)
-    arr = np.asarray(crop).astype(np.float32)
+    # 6) Grécia (Delphi's Olive Grove), na subpasta grecia/: fundo longe (céu inteiro), fundo perto (morros, sem verde)
+    #    e os 5 quadros da história em quadrinhos da abertura
+    g = src / 'grecia'
+    if g.exists():
+        far = Image.open(g / 'greek-01-far.png').convert('RGBA')
+        far = far.resize((round(far.width * 512 / far.height), 512), Image.BOX)
+        save(seamless(far, hard_alpha=False), out, 'bg-far.png')
+        near = key_green(Image.open(g / 'greek-02-near.png'))
+        a = np.asarray(near)[..., 3] > 0
+        ys, xs = np.where(a.any(1))[0], np.where(a.any(0))[0]
+        near = near.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
+        hgt = round(4 * PX)
+        near = near.resize((round(near.width * hgt / near.height), hgt), Image.BOX)
+        save(seamless(near), out, 'bg-near.png')
+        story = out.parent / 'story'
+        story.mkdir(parents=True, exist_ok=True)
+        for i in range(1, 6):
+            im = Image.open(g / f'greek-comic-{i}.png').convert('RGB')
+            im = im.resize((1280, round(im.height * 1280 / im.width)), Image.LANCZOS)
+            im.save(story / f'{i}.webp', quality=86, method=6)
+            print(f'  story/{i}.webp  {im.width}x{im.height}')
+
+
+def seamless(img, hard_alpha=True):
+    """emenda as pontas (degradê de 10%) pra imagem repetir na horizontal sem costura"""
+    arr = np.asarray(img).astype(np.float32)
     ov = arr.shape[1] // 10
     t = np.linspace(0, 1, ov)[None, :, None]
     head = arr[:, :ov] * t + arr[:, -ov:] * (1 - t)
-    seam = np.concatenate([head, arr[:, ov:-ov]], axis=1)
-    seam[..., 3] = np.where(seam[..., 3] >= 110, 255, 0)
-    save(Image.fromarray(seam.clip(0, 255).astype(np.uint8), 'RGBA'), out, 'bg-far.png')
-
+    out = np.concatenate([head, arr[:, ov:-ov]], axis=1)
+    if hard_alpha:
+        out[..., 3] = np.where(out[..., 3] >= 110, 255, 0)
+    return Image.fromarray(out.clip(0, 255).astype(np.uint8), 'RGBA')
 
 if __name__ == '__main__':
     main()

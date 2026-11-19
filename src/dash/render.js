@@ -87,7 +87,7 @@ const ready = (i) => i && i.complete && i.naturalWidth > 0
 // Enquanto uma imagem não carrega (ou se não existir), o jogo usa o desenho por código de antes.
 const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
   'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
-  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far']
+  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near']
 const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
 const APX = 64 // pixels de arte por casa
 const art = {}
@@ -109,6 +109,20 @@ function sprite(ctx, im, cx, by, ppt, flip = false) {
 // ---- fundo: céu roxo + gráfico de velas ao longe (parallax) + linha de preço brilhando
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
 function drawBackground(ctx, w, h, camX, ppt) {
+  // Grécia (Delphi's Olive Grove): céu com o Parnaso e o templo de Delfos bem longe + morros com oliveiras mais perto
+  const far = A('bg-far'), near = A('bg-near')
+  if (far) {
+    const fw = far.naturalWidth * (h / far.naturalHeight)
+    const off = (camX * ppt * 0.08) % fw
+    for (let x = -off; x < w; x += fw) ctx.drawImage(far, Math.floor(x), 0, Math.ceil(fw) + 1, h)
+    if (near) {
+      const nh = ppt * 4.4, nw = near.naturalWidth * (nh / near.naturalHeight)
+      const noff = (camX * ppt * 0.3) % nw
+      ctx.imageSmoothingEnabled = false
+      for (let x = -noff; x < w; x += nw) ctx.drawImage(near, Math.floor(x), Math.round(FLOOR * ppt - nh + ppt * 0.5), Math.ceil(nw) + 1, Math.round(nh))
+    }
+    return
+  }
   const g = ctx.createLinearGradient(0, 0, 0, h)
   g.addColorStop(0, '#120726'); g.addColorStop(0.55, '#2a1157'); g.addColorStop(1, '#3b1a6e')
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h)
@@ -117,16 +131,6 @@ function drawBackground(ctx, w, h, camX, ppt) {
   for (let i = 0; i < 70; i++) {
     const sx = ((hash(i) * 2000 - camX * ppt * 0.05) % w + w) % w, sy = hash(i + 99) * h * 0.55
     ctx.fillRect(Math.round(sx), Math.round(sy), hash(i + 7) > 0.8 ? 2 : 1, hash(i + 7) > 0.8 ? 2 : 1)
-  }
-  const far = A('bg-far')
-  if (far) {
-    // torres de oráculo e velas ao longe (repete na horizontal, anda devagar)
-    const fh = ppt * 6, fw = far.naturalWidth * (fh / far.naturalHeight)
-    const off = (camX * ppt * 0.2) % fw
-    ctx.globalAlpha = 0.4 // bem apagado: os cristais do fundo não podem parecer as Confidence Gems
-    for (let x = -off; x < w; x += fw) ctx.drawImage(far, Math.round(x), Math.round(FLOOR * ppt - fh + ppt * 0.4), Math.ceil(fw) + 1, Math.round(fh))
-    ctx.globalAlpha = 1
-    return
   }
   // duas camadas de velas
   for (const [par, alpha, scale] of [[0.15, 0.22, 0.8], [0.35, 0.35, 1.1]]) {

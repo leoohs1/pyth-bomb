@@ -43,7 +43,7 @@ function makeBuilder(cols) {
   }
 }
 
-// Fase 1: "Price Feed Plains". Segue os 7 momentos combinados com a Halls (2026-11-19):
+// Fase 1: "Delphi's Olive Grove" (antes "Price Feed Plains"; virou Grécia antiga em 2026-11-19). Segue os 7 momentos combinados com a Halls (2026-11-19):
 // 1 começo seguro · 2 primeiro lag bug · 3 oracle blocks e o poder · 4 primeiro Price Relay · 5 checkpoint e segredo
 // 6 desafio final (sinal "fresco" que apaga) · 7 Oracle Beacon. Os 3 Publishers ficam no caminho (não dá pra pular).
 function level1() {
@@ -110,7 +110,7 @@ function level1() {
   b.stairs(157, 6)
   b.coins(157, FLOOR - 8, 3)
   b.L.flag = 172
-  return { id: 'plains', name: 'Price Feed Plains', par: 110, ...b.L }
+  return { id: 'delphi', name: "Delphi's Olive Grove", par: 110, ...b.L }
 }
 
 export const LEVELS = [level1()]
