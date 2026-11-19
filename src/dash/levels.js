@@ -14,13 +14,14 @@ export const FLOOR = ROWS - 2 // linha do topo do chão
 function makeBuilder(cols) {
   const grid = Array.from({ length: ROWS }, () => Array(cols).fill('.'))
   const L = {
-    cols, grid, coins: [], enemies: [], relays: [], publishers: [], gems: [], chests: [],
+    cols, grid, coins: [], enemies: [], relays: [], publishers: [], gems: [], chests: [], movers: [], winds: [],
     start: { x: 2, y: FLOOR - 2 }, checkpoint: null, flag: cols - 8, restoreStart: 8,
   }
   const set = (x, y, c) => { if (x >= 0 && x < cols && y >= 0 && y < ROWS) grid[y][x] = c }
   return {
     L,
-    ground(x0, x1) { for (let x = x0; x <= x1; x++) for (let y = FLOOR; y < ROWS; y++) set(x, y, '#') },
+    // chão de x0 a x1; top = linha de cima (padrão FLOOR). Com top menor vira morro/penhasco
+    ground(x0, x1, top = FLOOR) { for (let x = x0; x <= x1; x++) for (let y = top; y < ROWS; y++) set(x, y, '#') },
     row(x, y, str) { [...str].forEach((c, i) => { if (c !== ' ') set(x + i, y, c) }) },
     // vela do gráfico: 2 casas de largura, h de altura a partir do chão
     candle(x, h, up = true) {
@@ -37,7 +38,13 @@ function makeBuilder(cols) {
     // Price Relay: o poste que liga os blocos apagados do grupo. y = chão onde ele fica em pé.
     // fresh = segundos que o sinal dura (o bloco "envelhece" e apaga; toca de novo pra renovar). Sem fresh: fica ligado.
     relay(x, group, { y = FLOOR, fresh = 0 } = {}) { L.relays.push({ x, y, group, fresh }) },
-    publisher(x) { L.publishers.push({ x }) },
+    publisher(x, y = FLOOR) { L.publishers.push({ x, y }) },
+    // plataforma de mármore que anda (polia): w casas de largura, vai de (x,y) até (x+dx,y+dy) e volta em period s.
+    // group: só anda depois que o Price Relay desse grupo acende. y = linha onde se pisa
+    mover(x, y, w, { dx = 0, dy = 0, period = 4, group = 0 } = {}) { L.movers.push({ x, y, w, dx, dy, period, group }) },
+    // zona de vento: rajadas que empurram (force < 0 = pra esquerda)
+    wind(x0, x1, force, { period = 3.2, dur = 1.4, warn = 0.6 } = {}) { L.winds.push({ x0, x1, force, period, dur, warn }) },
+    harpy(x, y, range = 3) { L.enemies.push({ type: 'harpy', x, y, range }) },
     gem(x, y) { L.gems.push({ x, y }) },
     chest(x, y = FLOOR) { L.chests.push({ x, y }) },
   }
@@ -113,4 +120,62 @@ function level1() {
   return { id: 'delphi', name: "Delphi's Olive Grove", par: 110, ...b.L }
 }
 
-export const LEVELS = [level1()]
+// Fase 2: "Mount Parnassus". Subida da montanha sagrada: polias de mármore (algumas ligadas por Price Relay),
+// as primeiras harpias e, no fim, o vento dos deuses empurrando nos pilares.
+function level2() {
+  const F = FLOOR
+  const b = makeBuilder(196)
+  // 1) pé da montanha: chão, 1º Publisher, um degrau e a 1ª polia (anda sozinha, de lado)
+  b.ground(0, 20)
+  b.coins(4, F - 1, 3)
+  b.publisher(7)
+  b.row(11, F - 4, 'b?b')
+  b.enemy(15)
+  b.ground(21, 30, F - 2)
+  b.coins(23, F - 3, 4)
+  b.mover(31, F - 3, 3, { dx: 4, period: 4 })
+  b.coins(33, F - 5, 3)
+  // 2) a 1ª harpia num lugar plano, o poder antes dela, o baú e o relay que liga o elevador do penhasco
+  b.ground(38, 47, F - 2)
+  b.row(40, F - 6, '!')
+  b.harpy(44, F - 6, 3)
+  b.chest(42, F - 2)
+  b.relay(46, 1, { y: F - 2 })
+  b.mover(48, F - 2, 3, { dy: -6.6, period: 5, group: 1 }) // elevador: passa um pouco do alto do penhasco (janela de ~1 s pra sair andando)
+  b.row(44, F - 9, 'bb') // GEM 1: pula do elevador lá em cima pra esquerda
+  b.gem(44, F - 10)
+  // 3) o alto do penhasco e a descida pro checkpoint
+  b.ground(51, 75, F - 8)
+  b.coins(54, F - 9, 6)
+  b.enemy(62, F - 9); b.enemy(68, F - 9)
+  b.ground(76, 100, F - 4)
+  b.L.checkpoint = { x: 79, y: F - 4 }
+  b.publisher(83, F - 4)
+  b.row(88, F - 8, 'b?b')
+  b.enemy(92, F - 5)
+  b.coins(95, F - 5, 4)
+  // 4) o abismo das polias: dois elevadores subindo e descendo ao contrário, uma polia de lado e uma harpia
+  b.mover(103, F - 4, 3, { dy: 3, period: 4 })
+  b.mover(109, F - 1, 3, { dy: -4, period: 4 })
+  b.mover(115, F - 4, 3, { dx: 6, period: 5 })
+  b.harpy(112, F - 9, 4)
+  b.coins(104, F - 6, 2); b.coins(110, F - 7, 2)
+  b.gem(110, F - 9) // GEM 2: em cima do 2º elevador quando ele está no alto
+  b.ground(126, 150, F - 3)
+  b.row(131, F - 6, 'bbb')
+  b.chest(132, F - 6) // 2º baú, num degrau alto
+  b.enemy(137, F - 4); b.enemy(144, F - 4)
+  b.publisher(147, F - 3)
+  // 5) o vento dos deuses: pilares com rajadas empurrando pra esquerda (o aviso vem antes)
+  for (const x of [154, 159, 164, 169]) b.ground(x, x + 1, F - 3)
+  b.wind(151, 175, -16)
+  b.coins(156, F - 5, 2); b.coins(166, F - 5, 2)
+  b.gem(163, F - 7) // GEM 3: no ar, entre dois pilares
+  // 6) a chegada: chão, uns lag bugs e o Oracle Beacon
+  b.ground(174, 195)
+  b.enemy(181)
+  b.L.flag = 188
+  return { id: 'parnassus', name: 'Mount Parnassus', par: 130, theme: 'parnassus', ...b.L }
+}
+
+export const LEVELS = [level1(), level2()]

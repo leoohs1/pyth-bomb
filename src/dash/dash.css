@@ -156,3 +156,10 @@
 .dash-menu .dash-back { position: absolute; top: 14px; left: 16px; margin: 0; padding: 6px 10px; font-size: 13px; color: #f3ecff; background: rgba(20, 10, 38, 0.6); border-radius: 8px; text-decoration: none; }
 .dash-menu .dash-back:hover { background: rgba(42, 22, 87, 0.85); }
 .dash-menu { position: relative; box-sizing: border-box; }
+
+/* ---- escolher a fase no menu */
+.dash-levels { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 6px 0 2px; }
+.dash-level-btn { padding: 7px 10px; cursor: pointer; font: 400 10px/1.3 'Press Start 2P', monospace; color: #cbb8f5; background: rgba(42, 22, 87, 0.7); border: 2px solid rgba(167, 123, 255, 0.4); border-radius: 8px; }
+.dash-level-btn b { color: #f4c542; font-weight: 400; }
+.dash-level-btn.is-on { color: #fff; border-color: #f4c542; background: rgba(244, 197, 66, 0.16); }
+.dash-level-btn:disabled { cursor: not-allowed; opacity: 0.5; }

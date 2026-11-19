@@ -27,7 +27,14 @@ const RESTORE_SPEED = 26 // casas por segundo da onda de cor
 const STALE_WARN = 1.5   // segundos antes de apagar: o bloco pisca
 
 const isGroup = (c) => c >= '1' && c <= '9'
-const freshEnemies = (level) => level.enemies.map((e) => ({ x: e.x + 0.05, y: e.y + 0.1, vx: -ENEMY.speed, vy: 0, alive: true, awake: false, squashT: 0 }))
+const HARPY = { speed: 2.4, bob: 0.6 }
+const freshEnemies = (level) => level.enemies.map((e) => (e.type === 'harpy'
+  // harpia: voa de um lado pro outro (range casas pra cada lado), subindo e descendo um pouco
+  ? { type: 'harpy', x: e.x, y: e.y, x0: e.x, baseY: e.y, range: e.range ?? 3, vx: -HARPY.speed, vy: 0, alive: true, awake: false, squashT: 0, t: 0 }
+  : { x: e.x + 0.05, y: e.y + 0.1, vx: -ENEMY.speed, vy: 0, alive: true, awake: false, squashT: 0 }))
+// plataforma que anda (polia): vai e volta entre (x, y) e (x+dx, y+dy) em "period" segundos;
+// com group, só anda depois que o Price Relay daquele grupo acende
+const freshMovers = (level) => (level.movers ?? []).map((m) => ({ ...m, x0: m.x, y0: m.y, t: 0, ddx: 0, ddy: 0 }))
 
 export function createGame(level, { lives = 3 } = {}) {
   return {
@@ -37,6 +44,7 @@ export function createGame(level, { lives = 3 } = {}) {
     player: spawnPlayer(level.start),
     coins: level.coins.map((c) => ({ ...c, taken: false })),
     enemies: freshEnemies(level),
+    movers: freshMovers(level),
     relays: (level.relays ?? []).map((r) => ({ ...r, on: false, t: 0 })),
     groupOn: {},  // grupo -> aceso?
     publishers: (level.publishers ?? []).map((p) => ({ ...p, on: false, t: 0 })),
@@ -90,6 +98,7 @@ export function step(g, input, dt) {
   if (g.restoreX < g.restoreTo) g.restoreX = Math.min(g.restoreTo, g.restoreX + RESTORE_SPEED * dt)
   stepRelays(g, dt)
   stepItems(g, dt)
+  stepMovers(g, dt)
 
   if (g.status === 'dying') {
     g.statusT += dt
@@ -110,6 +119,12 @@ export function step(g, input, dt) {
   const p = g.player
   const pressed = input.jump && !g.prevJump
   g.prevJump = !!input.jump
+  // em cima de plataforma que anda: vai junto
+  if (p.mover) {
+    const m = p.mover
+    if (p.x < m.x + m.w && p.x + P.w > m.x && Math.abs(p.y + P.h - (m.y - m.ddy)) < 0.2) { p.x += m.ddx; p.y = m.y - P.h }
+    else p.mover = null
+  }
   if (p.invuln > 0) p.invuln = Math.max(0, p.invuln - dt)
   if (p.lazer > 0) p.lazer = Math.max(0, p.lazer - dt)
   const maxRun = P.maxRun * (p.lazer > 0 ? P.lazerRun : 1)
@@ -127,6 +142,14 @@ export function step(g, input, dt) {
     p.vx = Math.abs(p.vx) <= d ? 0 : p.vx - Math.sign(p.vx) * d
   }
   if (Math.abs(p.vx) > maxRun) p.vx = Math.sign(p.vx) * Math.max(maxRun, Math.abs(p.vx) - P.decel * dt) // acabou o Lazer: desacelera
+  // rajada de vento (empurra; dá pra andar contra)
+  // no ar ela mexe na velocidade; no chão ela vai arrastando o herói devagar (windPush, em casas/s)
+  p.windPush = 0
+  for (const w of g.level.winds ?? []) {
+    if (p.x + P.w < w.x0 || p.x > w.x1 || windState(g, w) !== 'on') continue
+    p.windPush = w.force * 0.05
+    if (!p.onGround) p.vx = Math.max(-maxRun * 1.4, Math.min(maxRun * 1.4, p.vx + w.force * dt))
+  }
 
   // pular (com perdão de beirada e de botão adiantado)
   p.coyote = p.onGround ? P.coyote : Math.max(0, p.coyote - dt)
@@ -186,7 +209,7 @@ export function step(g, input, dt) {
 
   // checkpoint
   const cp = g.level.checkpoint
-  if (cp && !g.checkpoint && p.x >= cp.x) { g.checkpoint = { x: cp.x, y: g.level.start.y }; g.events.push('checkpoint') }
+  if (cp && !g.checkpoint && p.x >= cp.x) { g.checkpoint = { x: cp.x, y: (cp.y ?? g.level.start.y + 2) - 2 }; g.events.push('checkpoint') }
 
   // caiu no buraco
   if (p.y > ROWS + 1) die(g)
@@ -199,6 +222,26 @@ export function step(g, input, dt) {
     g.events.push('win')
   }
   return g
+}
+
+function stepMovers(g, dt) {
+  for (const m of g.movers ?? []) {
+    const ox = m.x, oy = m.y
+    if (!m.group || g.groupOn[m.group]) m.t += dt
+    const f = (1 - Math.cos((2 * Math.PI * m.t) / m.period)) / 2
+    m.x = m.x0 + (m.dx ?? 0) * f
+    m.y = m.y0 + (m.dy ?? 0) * f
+    m.ddx = m.x - ox; m.ddy = m.y - oy
+  }
+}
+
+// vento: 'warn' (avisa), 'on' (empurrando) ou null. Ciclo: espera, avisa (warn s), sopra (dur s)
+export function windState(g, w) {
+  const period = w.period ?? 3.2, dur = w.dur ?? 1.4, warn = w.warn ?? 0.6
+  const ph = g.time % period
+  if (ph >= period - dur) return 'on'
+  if (ph >= period - dur - warn) return 'warn'
+  return null
 }
 
 // relays "fresh": o sinal envelhece e os blocos apagam (quem estiver em cima cai)
@@ -261,24 +304,33 @@ export function openChest(g, n, loot) {
 }
 
 function moveX(g, p, dt) {
-  p.x += p.vx * dt
+  p.x += (p.vx + (p.windPush || 0)) * dt
   const top = Math.floor(p.y + EPS), bot = Math.floor(p.y + P.h - EPS)
-  if (p.vx > 0) {
+  const mv = p.vx + (p.windPush || 0)
+  if (mv > 0) {
     const tx = Math.floor(p.x + P.w)
     for (let ty = top; ty <= bot; ty++) if (solidAt(g, tx, ty)) { p.x = tx - P.w - EPS; p.vx = 0; break }
-  } else if (p.vx < 0) {
+  } else if (mv < 0) {
     const tx = Math.floor(p.x)
     for (let ty = top; ty <= bot; ty++) if (solidAt(g, tx, ty)) { p.x = tx + 1 + EPS; p.vx = 0; break }
   }
 }
 
 function moveY(g, p, dt) {
+  const feetBefore = p.y + P.h
   p.y += p.vy * dt
   const left = Math.floor(p.x + EPS), right = Math.floor(p.x + P.w - EPS)
   p.onGround = false
+  p.mover = null
+  if (p.vy >= 0) {
+    for (const m of g.movers ?? []) {
+      if (p.x >= m.x + m.w || p.x + P.w <= m.x) continue
+      if (feetBefore <= m.y + 0.06 + Math.abs(m.ddy) && p.y + P.h >= m.y) { p.y = m.y - P.h; p.vy = 0; p.onGround = true; p.mover = m; break }
+    }
+  }
   if (p.vy > 0) {
     const ty = Math.floor(p.y + P.h)
-    for (let tx = left; tx <= right; tx++) if (solidAt(g, tx, ty)) { p.y = ty - P.h; p.vy = 0; p.onGround = true; break }
+    for (let tx = left; tx <= right; tx++) if (solidAt(g, tx, ty)) { p.y = ty - P.h; p.vy = 0; p.onGround = true; p.mover = null; break }
   } else if (p.vy < 0) {
     const ty = Math.floor(p.y)
     // bate a cabeça: no bloco mais perto do meio do herói
@@ -319,6 +371,13 @@ function stepEnemies(g, dt) {
   for (const e of g.enemies) {
     if (!e.alive) { e.squashT += dt; continue }
     if (!e.awake) { if (Math.abs(e.x - p.x) < ENEMY.wake) e.awake = true; else continue }
+    if (e.type === 'harpy') {
+      e.t += dt
+      e.x += e.vx * dt
+      if (e.x < e.x0 - e.range) { e.x = e.x0 - e.range; e.vx = HARPY.speed }
+      if (e.x > e.x0 + e.range) { e.x = e.x0 + e.range; e.vx = -HARPY.speed }
+      e.y = e.baseY + Math.sin(e.t * 3) * HARPY.bob
+    } else {
     // anda e vira na parede ou na beirada (não se joga no buraco)
     e.vy = Math.min(P.maxFall, e.vy + P.gravity * dt)
     e.x += e.vx * dt
@@ -335,6 +394,7 @@ function stepEnemies(g, dt) {
     const l = Math.floor(e.x + EPS), r = Math.floor(e.x + ENEMY.w - EPS)
     for (let tx = l; tx <= r; tx++) if (solidAt(g, tx, fy)) { e.y = fy - ENEMY.h; e.vy = 0; break }
     if (e.y > ROWS + 1) e.alive = false
+    }
 
     // encostou no herói: pisou em cima (mata o bug) ou levou dano
     if (g.status !== 'playing') continue

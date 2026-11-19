@@ -1,7 +1,7 @@
 // Desenho do Pyth Dash no <canvas>. Blocos, moedas, bugs e bandeira são desenhados por código em pixel art
 // (provisório: depois a arte de verdade entra no lugar). Os heróis são os pixels do Solo/PVP (vista de lado).
 import { ROWS, FLOOR } from './levels.js'
-import { P, ENEMY_SIZE, freshLeft, staleWarn } from './engine.js'
+import { P, ENEMY_SIZE, freshLeft, staleWarn, windState } from './engine.js'
 
 export const ART = 32 // pixels de arte por casa (o herói tem ~53 px de altura: ~1,65 casa)
 
@@ -87,7 +87,7 @@ const ready = (i) => i && i.complete && i.naturalWidth > 0
 // Enquanto uma imagem não carrega (ou se não existir), o jogo usa o desenho por código de antes.
 const ART_NAMES = ['tile-grass', 'tile-soil', 'tile-brick', 'tile-oracle', 'tile-used', 'tile-powered', 'bug-walk1', 'bug-walk2', 'bug-squash',
   'publisher-off', 'publisher-on', 'relay-off', 'relay-on', 'beacon-off', 'beacon-on', 'chest-closed', 'chest-opening', 'chest-open',
-  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near']
+  'checkpoint-off', 'checkpoint-on', 'gem', 'gem-sparkle', 'coin-1', 'coin-2', 'coin-3', 'coin-4', 'power-shield', 'power-lazer', 'bg-far', 'bg-near']  // (fase 2: 'bg2-far', 'bg2-near', 'harpy-1', 'harpy-2', 'lift' entram aqui quando a arte existir)
 const HERO_SHEETS = ['pirb'] // heróis que já têm a folha de lado (parado, corrida 1-4, pulo, queda, dano, comemora)
 const APX = 64 // pixels de arte por casa
 const art = {}
@@ -108,9 +108,10 @@ function sprite(ctx, im, cx, by, ppt, flip = false) {
 
 // ---- fundo: céu roxo + gráfico de velas ao longe (parallax) + linha de preço brilhando
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
-function drawBackground(ctx, w, h, camX, ppt) {
-  // Grécia (Delphi's Olive Grove): céu com o Parnaso e o templo de Delfos bem longe + morros com oliveiras mais perto
-  const far = A('bg-far'), near = A('bg-near')
+function drawBackground(ctx, w, h, camX, ppt, theme) {
+  // Grécia: céu bem longe + morros mais perto. Cada fase tem o seu par (fase 2 = bg2-*); sem ele, usa o de Delfos
+  const pre = theme === 'parnassus' && A('bg2-far') ? 'bg2' : 'bg'
+  const far = A(`${pre}-far`), near = A(`${pre}-near`)
   if (far) {
     const fw = far.naturalWidth * (h / far.naturalHeight)
     const off = (camX * ppt * 0.08) % fw
@@ -269,11 +270,11 @@ function drawBeacon(ctx, fx, t, ppt, won, wonT) {
 
 // ---- Publisher: antena com prato. Apagada = cinza; ligada = roxa mandando sinal
 function drawPublisher(ctx, pb, t, ppt) {
-  const x = (pb.x + 0.5) * ppt, baseY = FLOOR * ppt, h = ppt * 4.2
+  const x = (pb.x + 0.5) * ppt, baseY = (pb.y ?? FLOOR) * ppt, h = ppt * 4.2
   const on = pb.on
   const pa = A(on ? 'publisher-on' : 'publisher-off')
   if (pa) {
-    sprite(ctx, pa, pb.x + 0.5, FLOOR, ppt)
+    sprite(ctx, pa, pb.x + 0.5, pb.y ?? FLOOR, ppt)
     if (on && pb.t < 2.2) {
       ctx.globalAlpha = Math.max(0, 1 - pb.t / 2.2)
       ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.32)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'
@@ -345,6 +346,77 @@ function drawRelay(ctx, g, r, t, ppt) {
     ctx.strokeStyle = '#f4c542'; ctx.lineWidth = Math.max(2, ppt * 0.1)
     ctx.beginPath(); ctx.arc(x, oy, ppt * 0.48, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.stroke()
   }
+}
+
+// ---- polia de mármore (plataforma que anda): laje lilás com friso dourado; as que sobem/descem têm cordas
+function drawMover(ctx, g, m, t, ppt) {
+  const x = m.x * ppt, y = m.y * ppt, w = m.w * ppt, h = ppt * 0.5
+  const idle = m.group && !g.groupOn[m.group]
+  if (m.dy) {
+    ctx.strokeStyle = '#140a26'; ctx.lineWidth = Math.max(2, ppt * 0.07)
+    for (const cx of [x + ppt * 0.35, x + w - ppt * 0.35]) { ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, y); ctx.stroke() }
+    ctx.strokeStyle = '#c9a227'; ctx.lineWidth = Math.max(1, ppt * 0.03)
+    for (const cx of [x + ppt * 0.35, x + w - ppt * 0.35]) { ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, y); ctx.stroke() }
+  }
+  const art = A('lift')
+  if (art) { ctx.imageSmoothingEnabled = false; ctx.drawImage(art, Math.round(x), Math.round(y), Math.round(w), Math.round(h * 1.4)) }
+  else {
+    ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - 2), Math.round(y - 2), Math.round(w + 4), Math.round(h + 4))
+    ctx.fillStyle = idle ? '#8a8299' : '#d9cdf2'; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
+    ctx.fillStyle = idle ? '#6b6380' : '#a78bfa'; ctx.fillRect(Math.round(x), Math.round(y + h * 0.65), Math.round(w), Math.round(h * 0.35))
+    ctx.fillStyle = '#f4c542'; ctx.fillRect(Math.round(x), Math.round(y + h * 0.5), Math.round(w), Math.max(2, Math.round(ppt * 0.06)))
+    for (let i = 1; i < m.w; i++) { ctx.fillStyle = 'rgba(20,10,38,0.35)'; ctx.fillRect(Math.round(x + i * ppt), Math.round(y), 2, Math.round(h * 0.5)) }
+  }
+}
+
+// ---- harpia: passarinho roxo de asas batendo (a arte entra no lugar quando existir)
+function drawHarpy(ctx, e, t, ppt) {
+  const { w, h } = ENEMY_SIZE
+  if (!e.alive && e.squashT > 0.5) return
+  const flap = Math.sin(t * 16 + e.x) > 0
+  const art = A(flap ? 'harpy-1' : 'harpy-2')
+  if (art) { if (!e.alive) ctx.globalAlpha = Math.max(0, 1 - e.squashT * 2); sprite(ctx, art, e.x + w / 2, e.y + h + 0.1, ppt, e.vx > 0); ctx.globalAlpha = 1; return }
+  const cx = (e.x + w / 2) * ppt, cy = (e.y + h / 2) * ppt, dir = e.vx > 0 ? 1 : -1
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(dir, 1)
+  if (!e.alive) { ctx.globalAlpha = Math.max(0, 1 - e.squashT * 2); ctx.rotate(e.squashT * 6) }
+  const wy = flap ? -ppt * 0.55 : ppt * 0.15
+  ctx.fillStyle = '#140a26'
+  ctx.beginPath(); ctx.moveTo(-ppt * 0.1, -ppt * 0.05); ctx.lineTo(-ppt * 0.75, wy - 3); ctx.lineTo(ppt * 0.15, ppt * 0.05); ctx.fill()
+  ctx.fillStyle = '#7c3aed'
+  ctx.beginPath(); ctx.moveTo(-ppt * 0.1, -ppt * 0.05); ctx.lineTo(-ppt * 0.7, wy); ctx.lineTo(ppt * 0.1, ppt * 0.05); ctx.fill()
+  ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.ellipse(0, 0, ppt * 0.42, ppt * 0.32, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.ellipse(0, 0, ppt * 0.37, ppt * 0.27, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#f5d0fe'; ctx.beginPath(); ctx.arc(ppt * 0.24, -ppt * 0.12, ppt * 0.17, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.arc(ppt * 0.29, -ppt * 0.14, ppt * 0.05, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#f4c542'; ctx.beginPath(); ctx.moveTo(ppt * 0.38, -ppt * 0.08); ctx.lineTo(ppt * 0.55, -ppt * 0.02); ctx.lineTo(ppt * 0.38, ppt * 0.03); ctx.fill()
+  ctx.fillStyle = '#f4c542'; ctx.fillRect(-ppt * 0.08, ppt * 0.25, ppt * 0.06, ppt * 0.14); ctx.fillRect(ppt * 0.08, ppt * 0.25, ppt * 0.06, ppt * 0.14)
+  ctx.restore()
+}
+
+// ---- vento dos deuses: risquinhos brancos correndo pra onde ele sopra; antes de soprar, aviso piscando
+function drawWind(ctx, g, w, ppt, camX, viewW, h) {
+  const st = windState(g, w)
+  if (!st) return
+  const x0 = Math.max(w.x0, camX - 1), x1 = Math.min(w.x1, camX + viewW + 1)
+  if (x0 >= x1) return
+  const dir = Math.sign(w.force) || -1
+  ctx.save()
+  if (st === 'warn') {
+    if (Math.sin(g.time * 18) > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = `${Math.round(ppt * 0.6)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'
+      for (let x = Math.ceil(x0 / 6) * 6; x < x1; x += 6) ctx.fillText(dir < 0 ? '\u00AB' : '\u00BB', x * ppt, ppt * 2)
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = Math.max(1.5, ppt * 0.05)
+    for (let i = 0; i < 40; i++) {
+      const len = (0.8 + hash(i * 7.1) * 1.6) * ppt
+      const span = (x1 - x0) * ppt
+      const xx = x0 * ppt + (((hash(i) * span + dir * g.time * ppt * 22) % span) + span) % span
+      const yy = (1 + hash(i + 3.3) * 10) * ppt
+      ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx - dir * len, yy); ctx.stroke()
+    }
+  }
+  ctx.restore()
 }
 
 // bloco apagado de um grupo (contorno tracejado cinza)
@@ -429,8 +501,8 @@ function drawItem(ctx, it, t, ppt) {
 
 function drawCheckpoint(ctx, cp, reached, t, ppt) {
   const fa = A(reached ? 'checkpoint-on' : 'checkpoint-off')
-  if (fa) { sprite(ctx, fa, cp.x + 0.75, FLOOR, ppt); return }
-  const x = (cp.x + 0.5) * ppt, baseY = FLOOR * ppt
+  if (fa) { sprite(ctx, fa, cp.x + 0.75, cp.y ?? FLOOR, ppt); return }
+  const x = (cp.x + 0.5) * ppt, baseY = (cp.y ?? FLOOR) * ppt
   ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - 2), baseY - ppt * 2.2, 4, ppt * 2.2)
   ctx.fillStyle = reached ? '#22c55e' : '#6b5a7e'
   const y = baseY - ppt * 2.2
@@ -559,7 +631,7 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   cam.x = cam.x == null ? target : cam.x + (target - cam.x) * 0.2
   const camX = Math.max(0, Math.min(g.cols - viewW, cam.x))
   ctx.imageSmoothingEnabled = false
-  drawBackground(ctx, w, h, camX, ppt)
+  drawBackground(ctx, w, h, camX, ppt, g.level.theme)
 
   ctx.save()
   ctx.translate(-Math.round(camX * ppt), 0)
@@ -605,6 +677,7 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
     }
   }
   for (const r of g.relays) if (near(r.x)) drawRelay(ctx, g, r, g.time, ppt)
+  for (const m of g.movers ?? []) if (near(m.x, m.w + 6)) drawMover(ctx, g, m, g.time, ppt)
 
   // o que ainda está "stale" fica cinza (moedas, gems, baús, inimigos e o herói ficam por cima, coloridos)
   drawStale(ctx, g, ppt, camX, viewW, h)
@@ -619,7 +692,8 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
     ctx.globalAlpha = 1
   }
   for (const it of g.items) if (near(it.x)) drawItem(ctx, it, g.time, ppt)
-  for (const e of g.enemies) if (near(e.x, 2)) drawEnemy(ctx, e, g.time, ppt)
+  for (const e of g.enemies) if (near(e.x, 2)) (e.type === 'harpy' ? drawHarpy : drawEnemy)(ctx, e, g.time, ppt)
   drawHero(ctx, g, heroId, ppt)
+  for (const w of g.level.winds ?? []) drawWind(ctx, g, w, ppt, camX, viewW, h)
   ctx.restore()
 }
