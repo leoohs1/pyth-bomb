@@ -81,3 +81,25 @@
   .dash-play.is-touch .dash-pad-btn { pointer-events: auto; opacity: 0.85; }
 }
 @media (max-width: 420px) { .dash-heroes { grid-template-columns: repeat(5, 58px); gap: 6px; } .dash-hero { height: 70px; } .dash-hero img { height: 56px; } }
+
+/* ---- fase 1: abertura, gems, baús e prova do Pyth Entropy */
+.dash-odds { margin: 2px 0 0; color: #9d88c9; font-size: 12px; text-transform: capitalize; }
+.dash-hud-gems { color: #f14ceb; }
+.dash-title-card {
+  position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;
+  animation: dash-card 3s ease-out forwards;
+}
+.dash-title-card p { margin: 0; font: 400 clamp(10px, 1.6vw, 14px)/1 'Press Start 2P', monospace; color: #c4a6ff; letter-spacing: 2px; }
+.dash-title-card h2 { margin: 10px 0; font: 400 clamp(18px, 3.6vw, 34px)/1.1 'Press Start 2P', monospace; color: #fff; text-shadow: 0 4px 0 #5b34b0, 0 7px 0 #140a26; }
+.dash-title-card span { font: 400 clamp(9px, 1.3vw, 12px)/1 'Press Start 2P', monospace; color: #f4c542; }
+@keyframes dash-card { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+.dash-result { max-height: calc(100% - 16px); overflow-y: auto; }
+.dash-coins { margin: 0 0 10px; font-size: 14px; color: #f4c542; }
+.dash-loot { margin: 0 0 14px; padding: 10px; border-radius: 10px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(167, 123, 255, 0.35); }
+.dash-loot .dash-label { margin: 0 0 6px; }
+.dash-loot ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.dash-loot b { text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-right: 4px; }
+.dash-proof { margin: 0; font-size: 12px; color: #cbb8f5; }
+.dash-proof a { color: #f4c542; }
+.dash-proof-ok { color: #86efac; }
+.dash-proof-bad { color: #fca5a5; }

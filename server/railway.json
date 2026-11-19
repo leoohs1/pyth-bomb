@@ -3,7 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "server/Dockerfile",
-    "watchPatterns": ["server/**", "src/pvp/engine/**", "src/pvp/bracket.js"]
+    "watchPatterns": ["server/**", "src/pvp/engine/**", "src/pvp/bracket.js", "src/dash/loot.js"]
   },
   "deploy": {
     "healthcheckPath": "/",

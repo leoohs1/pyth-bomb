@@ -1,11 +1,15 @@
-// PYTH DASH — jogo de plataforma com os heróis do Pyth Bomb (modo PVE, fase de teste).
+// PYTH DASH — jogo de plataforma com os heróis do Pyth Bomb (modo PVE).
 // Endereço: /dash (ainda fora do menu de modos, até a Halls aprovar).
 // Teclado: ← → ou A D pra correr, Espaço / ↑ / W / Z pra pular (segurar = pulo mais alto). Esc volta pro menu.
 // Celular: botões ◀ ▶ embaixo à esquerda e o botão de pulo à direita.
+// História: King Latency roubou o Genesis Price e o Purple Realm congelou no preço velho (cinza).
+// O herói liga os Publishers e entrega o preço no Oracle Beacon; o mundo volta a ser roxo. "The price must flow."
 import { useEffect, useRef, useState } from 'react'
 import { LEVELS } from './levels.js'
-import { createGame, step, starsOf } from './engine.js'
-import { drawGame, loadHero } from './render.js'
+import { createGame, step, starsOf, openChest } from './engine.js'
+import { drawGame, loadHero, RARITY, lootLabel } from './render.js'
+import { startRun, chestLoot, revealRun } from './draw.js'
+import { ODDS } from './loot.js'
 import { HEROES } from '../pvp/heroes.js'
 import { play, unlock } from '../sound.js'
 import { useSoloAudio } from '../pvp/useSoloAudio.js'
@@ -19,8 +23,13 @@ const TOUCH = (() => {
   if (v === '0') return false
   return window.matchMedia('(hover: none) and (pointer: coarse)').matches
 })()
-const SFX = { jump: 'solo_kick', coin: 'solo_pickup', stomp: 'solo_enemy_die', bump: 'solo_hit', die: 'solo_dead', gameover: 'solo_gameover', win: 'solo_clear', checkpoint: 'solo_door' }
+const SFX = {
+  jump: 'solo_kick', coin: 'solo_pickup', stomp: 'solo_enemy_die', bump: 'solo_hit', die: 'solo_dead', gameover: 'solo_gameover',
+  win: 'solo_clear', checkpoint: 'solo_door', relay: 'solo_door', stale: 'solo_hit', publisher: 'solo_shield', gem: 'solo_chest_win',
+  chest: 'solo_chest_open', power: 'solo_pickup', item: 'solo_jet', shieldbreak: 'solo_hurt',
+}
 const HERO_KEY = 'pb_dash_hero'
+const CHEST_MIN_MS = 700 // o dado gira pelo menos isso (o sorteio pode chegar antes)
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
 export default function DashApp() {
@@ -47,7 +56,7 @@ function DashMenu({ hero, onPick, onStart }) {
   return (
     <div className="dash-menu">
       <h1 className="dash-title">PYTH <span>DASH</span></h1>
-      <p className="dash-sub">Run, jump and grab every price update. Stomp the lag bugs!</p>
+      <p className="dash-sub">King Latency froze the Purple Realm. Wake the Publishers, deliver the price and bring the color back.</p>
       <p className="dash-label">Choose your hero</p>
       <div className="dash-heroes" role="radiogroup" aria-label="Choose your hero">
         {HEROES.map((h) => (
@@ -60,6 +69,7 @@ function DashMenu({ hero, onPick, onStart }) {
       <p className="dash-level">World 1-1 · {level.name}</p>
       <button type="button" className="dash-btn dash-btn-go" onClick={onStart}>Play</button>
       <p className="dash-keys">{TOUCH ? '◀ ▶ to run · big button to jump (hold = higher)' : '← → or A D to run · Space or ↑ to jump (hold = higher) · Esc = menu'}</p>
+      <p className="dash-odds">🎲 Chests are drawn with Pyth Entropy · {ODDS.map((o) => `${o.rarity} ${o.chance}%`).join(' · ')}</p>
       <a className="dash-back" href="/play">← Back to Pyth Bomb</a>
     </div>
   )
@@ -70,12 +80,20 @@ function DashPlay({ hero, onMenu, onAgain }) {
   const canvasRef = useRef(null)
   const input = useRef({ left: false, right: false, jump: false })
   const [hud, setHud] = useState(null)
+  const [chests, setChests] = useState([]) // prêmios que saíram (pra tela do fim)
+  const [runInfo, setRunInfo] = useState(null)
+  const [reveal, setReveal] = useState(null)
+  const runRef = useRef(null)
   const level = LEVELS[0]
   const menuRef = useRef(onMenu) // (num ref: trocar a função não reinicia a partida)
   useEffect(() => { menuRef.current = onMenu }, [onMenu])
 
   useEffect(() => {
     const g = createGame(level)
+    const runP = startRun() // pega o sorteio do Pyth Entropy pra esta partida (não trava o começo)
+    runRef.current = runP
+    let alive = true
+    runP.then((r) => { if (alive) setRunInfo(r) })
     const cam = { x: null }
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -99,6 +117,21 @@ function DashPlay({ hero, onMenu, onAgain }) {
     const blur = () => { input.current = { left: false, right: false, jump: false } }
     window.addEventListener('keydown', down); window.addEventListener('keyup', up); window.addEventListener('blur', blur)
 
+    // baú aberto: pede o prêmio ao servidor (Pyth Entropy) e abre quando chegar
+    const askChest = (n) => {
+      const t0 = performance.now()
+      chestLoot(runP, n).then((loot) => {
+        const wait = Math.max(0, CHEST_MIN_MS - (performance.now() - t0))
+        setTimeout(() => {
+          if (!alive) return
+          openChest(g, n, loot)
+          for (const ev of g.events.splice(0)) if (SFX[ev]) play(SFX[ev])
+          setChests((c) => [...c, { n, ...loot }])
+        }, wait)
+      })
+    }
+
+    let revealed = false
     const frame = (now) => {
       acc += Math.min(0.1, (now - last) / 1000); last = now
       while (acc >= DT) {
@@ -106,9 +139,15 @@ function DashPlay({ hero, onMenu, onAgain }) {
         for (const ev of g.events) if (SFX[ev]) play(SFX[ev])
         acc -= DT
       }
+      while (g.chestAsks.length) askChest(g.chestAsks.shift())
+      if (g.status === 'won' && !revealed) { revealed = true; revealRun(runP).then((r) => { if (alive) setReveal(r) }) }
       drawGame(ctx, g, canvas.width, canvas.height, hero, cam)
       const st = starsOf(g)
-      const h = { coins: g.coinsTaken, total: st.total, time: Math.floor(g.time), lives: g.lives, status: g.status, done: g.status === 'won' && g.statusT > 1.2, stars: st }
+      const h = {
+        coins: g.coinsTaken + g.bonusCoins, total: st.total, time: Math.floor(g.time), lives: g.lives, status: g.status,
+        done: g.status === 'won' && g.statusT > 2.2, stars: st, gems: g.gemsTaken, pubs: g.publishers.filter((p) => p.on).length,
+        npubs: g.publishers.length, shield: g.player.shield, lazer: Math.ceil(g.player.lazer),
+      }
       const key = JSON.stringify(h)
       if (key !== hudKey) { hudKey = key; setHud(h) }
       if (import.meta.env.DEV) window.__dash = g // só no desenvolvimento: pros testes
@@ -116,6 +155,7 @@ function DashPlay({ hero, onMenu, onAgain }) {
     }
     raf = requestAnimationFrame(frame)
     return () => {
+      alive = false
       cancelAnimationFrame(raf); ro.disconnect()
       window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur)
     }
@@ -133,15 +173,22 @@ function DashPlay({ hero, onMenu, onAgain }) {
     <div className={`dash-play${TOUCH ? ' is-touch' : ''}`}>
       <div className="dash-hud">
         <span className="dash-hud-world">1-1 · {level.name}</span>
-        <span>🪙 {hud?.coins ?? 0}/{hud?.total ?? 0}</span>
+        <span title="Price updates">🪙 {hud?.coins ?? 0}</span>
+        <span title="Confidence Gems" className="dash-hud-gems">◆ {hud?.gems ?? 0}/{hud?.stars?.gems ?? 3}</span>
+        <span title="Publishers online">📡 {hud?.pubs ?? 0}/{hud?.npubs ?? 3}</span>
         <span>⏱ {fmt(hud?.time ?? 0)}</span>
-        <span>{'❤'.repeat(Math.max(0, hud?.lives ?? 3))}</span>
+        <span>{'❤'.repeat(Math.max(0, hud?.lives ?? 3))}{hud?.shield ? ' 🛡' : ''}{hud?.lazer ? ` ⚡${hud.lazer}` : ''}</span>
         <button type="button" className="dash-hud-menu" onClick={onMenu}>Menu</button>
       </div>
       <div className="dash-stage" ref={wrapRef}>
         <canvas ref={canvasRef} className="dash-canvas" />
-        {hud?.done && <DashResult hud={hud} won onAgain={onAgain} onMenu={onMenu} />}
-        {hud?.status === 'gameover' && <DashResult hud={hud} onAgain={onAgain} onMenu={onMenu} />}
+        <div className="dash-title-card" aria-hidden="true">
+          <p>WORLD 1-1</p>
+          <h2>{level.name}</h2>
+          <span>The price must flow.</span>
+        </div>
+        {hud?.done && <DashResult hud={hud} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} />}
+        {hud?.status === 'gameover' && <DashResult hud={hud} chests={chests} runInfo={runInfo} onAgain={onAgain} onMenu={onMenu} />}
       </div>
       {TOUCH && (
         <div className="dash-pad">
@@ -156,23 +203,61 @@ function DashPlay({ hero, onMenu, onAgain }) {
   )
 }
 
-function DashResult({ hud, won, onAgain, onMenu }) {
+// confere o sorteio: sha256(segredo) tem que ser o commit que foi pra blockchain antes do número sair
+function useCommitCheck(reveal) {
+  const [ok, setOk] = useState(null)
+  useEffect(() => {
+    if (!reveal?.secret || !reveal?.proof?.commit) return
+    const bytes = new Uint8Array(reveal.secret.slice(2).match(/../g).map((h) => parseInt(h, 16)))
+    crypto.subtle.digest('SHA-256', bytes).then((d) => {
+      const hex = '0x' + [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
+      setOk(hex.toLowerCase() === String(reveal.proof.commit).toLowerCase())
+    }).catch(() => setOk(null))
+  }, [reveal])
+  return ok
+}
+
+function DashResult({ hud, won, chests, runInfo, reveal, onAgain, onMenu }) {
   const s = hud.stars
-  const got = won ? [s.finished, s.allCoins, s.fast].filter(Boolean).length : 0
+  const got = won ? [s.finished, s.allGems, s.fast].filter(Boolean).length : 0
+  const via = runInfo?.via
+  const proof = runInfo?.proof
+  const check = useCommitCheck(reveal)
   return (
-    <div className="dash-result" role="dialog" aria-label={won ? 'Level clear' : 'Game over'}>
-      <h2>{won ? 'Level clear!' : 'Out of lives'}</h2>
+    <div className="dash-result" role="dialog" aria-label={won ? 'Price delivered' : 'Game over'}>
+      <h2>{won ? 'Price delivered!' : 'Out of lives'}</h2>
       {won && (
         <>
+          <p className="dash-sub">The Oracle Beacon is back online. Price Feed Plains is purple again.</p>
           <p className="dash-stars" aria-label={`${got} of 3 stars`}>{[0, 1, 2].map((i) => <span key={i} className={i < got ? 'is-on' : ''}>★</span>)}</p>
           <ul className="dash-goals">
-            <li className={s.finished ? 'is-on' : ''}>Reach the flag</li>
-            <li className={s.allCoins ? 'is-on' : ''}>Grab all price updates ({hud.coins}/{s.total})</li>
+            <li className={s.finished ? 'is-on' : ''}>Deliver the price to the Oracle Beacon</li>
+            <li className={s.allGems ? 'is-on' : ''}>Find all Confidence Gems ({hud.gems}/{s.gems})</li>
             <li className={s.fast ? 'is-on' : ''}>Finish in {fmt(LEVELS[0].par)} ({fmt(hud.time)})</li>
           </ul>
+          <p className="dash-coins">🪙 {hud.coins} price updates</p>
         </>
       )}
       {!won && <p className="dash-sub">The lag bugs got you. Try again!</p>}
+      {chests.length > 0 && (
+        <div className="dash-loot">
+          <p className="dash-label">Chests</p>
+          <ul>
+            {chests.map((c) => (
+              <li key={c.n}><b style={{ color: RARITY[c.rarity] }}>{c.rarity}</b> {lootLabel(c)}</li>
+            ))}
+          </ul>
+          {via === 'entropy' && proof?.tx ? (
+            <p className="dash-proof">
+              🎲 Drawn with Pyth Entropy ({proof.chainName}) · <a href={`${proof.explorer}/tx/${proof.tx}`} target="_blank" rel="noreferrer">Verify ↗</a>
+              {check === true && <span className="dash-proof-ok"> · secret matches ✓</span>}
+              {check === false && <span className="dash-proof-bad"> · secret does not match ✗</span>}
+            </p>
+          ) : (
+            <p className="dash-proof">{via === 'server' ? 'Drawn by the game server (Pyth Entropy was busy)' : 'Drawn on this device (game server offline)'}</p>
+          )}
+        </div>
+      )}
       <div className="dash-result-btns">
         <button type="button" className="dash-btn dash-btn-go" onClick={onAgain}>{won ? 'Play again' : 'Try again'}</button>
         <button type="button" className="dash-btn" onClick={onMenu}>Menu</button>

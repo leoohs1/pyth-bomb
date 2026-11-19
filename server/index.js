@@ -14,6 +14,7 @@ import { verifyToken, authReady, supabaseConfig } from './auth.js'
 import { startKeepAlive } from './keepalive.js'
 import { createEntropy } from './entropy.js'
 import { startPokerDraws } from './pokerDraws.js'
+import { startDashDraws } from './dashDraws.js'
 import { matchInit, matchSnap } from '../src/pvp/engine/snapshot.js'
 import { STEP } from '../src/pvp/engine/constants.js'
 
@@ -38,6 +39,7 @@ function originOk(origin) {
 const tournaments = new Map() // código -> Tournament
 const entropy = createEntropy() // Pyth Entropy (desligado se não tiver PVP_WALLET_KEY; ver entropy.js)
 const pokerDraws = startPokerDraws({ entropy }) // sorteios prontos pro Pyth Poker (ver pokerDraws.js)
+const dashDraws = startDashDraws({ entropy }) // baús do Pyth Dash (ver dashDraws.js)
 const userSocket = new Map()  // id do usuário -> socket (uma conexão por pessoa)
 let now = 0                   // relógio do servidor (segundos de simulação)
 
@@ -151,13 +153,14 @@ async function onMessage(ws, msg) {
 }
 
 const server = http.createServer((req, res) => {
+  if (dashDraws.handle(req, res)) return // /dash/run, /dash/chest, /dash/reveal (baús do Pyth Dash)
   // página simples pra saber se o servidor está de pé (o Railway usa pra checar a saúde)
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'access-control-allow-origin': '*' })
   const e = entropy.state
   const ent = !e.enabled ? 'off' : e.ready ? `on (${e.chain.name}, contract ${e.contract})` : e.error ? `error: ${e.error}` : 'starting'
   const pd = pokerDraws.state
   const poker = !pd.on ? `off (${pd.reason})` : pd.lastError ? `error: ${pd.lastError}` : `${pd.ready ?? '?'} ready, ${pd.made} made`
-  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent} · poker draws ${poker} · loop lag ${lagShown} ms\n`)
+  res.end(`Pyth Bomb PVP server ok · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent} · poker draws ${poker} · dash draws ${dashDraws.state.on ? `${dashDraws.state.ready} ready, ${dashDraws.state.made} made, ${dashDraws.state.runs} runs` : 'server only'} · loop lag ${lagShown} ms\n`)
 })
 
 const wss = new WebSocketServer({

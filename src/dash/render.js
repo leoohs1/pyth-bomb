@@ -1,7 +1,7 @@
 // Desenho do Pyth Dash no <canvas>. Blocos, moedas, bugs e bandeira são desenhados por código em pixel art
 // (provisório: depois a arte de verdade entra no lugar). Os heróis são os pixels do Solo/PVP (vista de lado).
 import { ROWS, FLOOR } from './levels.js'
-import { P, ENEMY_SIZE } from './engine.js'
+import { P, ENEMY_SIZE, freshLeft, staleWarn } from './engine.js'
 
 export const ART = 32 // pixels de arte por casa (o herói tem ~53 px de altura: ~1,65 casa)
 
@@ -17,7 +17,7 @@ const C = {
 let sheet = null
 function makeSheet() {
   // velas: 2 casas de largura, então cada uma tem a metade esquerda (L) e a direita (R)
-  const kinds = ['#', '^', 'b', '?', 'u', 'gL', 'gR', 'GL', 'GR', 'rL', 'rR', 'RL', 'RR']
+  const kinds = ['#', '^', 'b', '?', 'u', 'gL', 'gR', 'GL', 'GR', 'rL', 'rR', 'RL', 'RR', 'p']
   const cv = document.createElement('canvas')
   cv.width = ART * kinds.length; cv.height = ART
   const x = cv.getContext('2d')
@@ -53,6 +53,12 @@ function makeSheet() {
         for (let r = 0; r < 12; r++) { const w = r < 6 ? 2 + r * 2 : 2 + (11 - r) * 2; px(o, 16 - w / 2, 10 + r, w, 1, C.gem) }
         px(o, 13, 12, 3, 3, C.gemHi)
       }
+    } else if (k === 'p') {
+      // bloco aceso por um Price Relay: roxo claro com linhas de dados brilhando
+      px(o, 0, 0, 32, 32, C.outline)
+      px(o, 1, 1, 30, 30, '#7c3aed'); px(o, 1, 1, 30, 3, '#c4a6ff'); px(o, 1, 27, 30, 4, '#4c1d95')
+      for (const yy of [9, 16, 22]) px(o, 4, yy, 24, 2, '#a78bfa')
+      for (const [a, b] of [[6, 9], [18, 16], [11, 22], [24, 9]]) px(o, a, b, 3, 2, '#f5f3ff')
     } else {
       // velas do gráfico de preço (verde = subiu, vermelha = caiu); maiúscula = topo com borda
       const up = k[0] === 'g' || k[0] === 'G', top = k[0] === 'G' || k[0] === 'R', left = k[1] === 'L'
@@ -165,23 +171,167 @@ function drawEnemy(ctx, e, t, ppt) {
   ctx.restore()
 }
 
-function drawFlag(ctx, fx, t, ppt, won) {
-  const x = (fx + 0.5) * ppt
-  const topY = (FLOOR - 9) * ppt, baseY = FLOOR * ppt
-  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - 3), topY, 6, baseY - topY)
-  ctx.fillStyle = '#e8e0ff'; ctx.fillRect(Math.round(x - 1.5), topY, 3, baseY - topY)
-  ctx.fillStyle = '#f4c542'; ctx.beginPath(); ctx.arc(x, topY, ppt * 0.2, 0, Math.PI * 2); ctx.fill()
-  // bandeira roxa tremulando (desce quando chega)
-  const fy = topY + ppt * 0.3 + (won ? Math.min(1, t) * ppt * 6.5 : 0)
-  ctx.fillStyle = '#7c3aed'
-  ctx.beginPath(); ctx.moveTo(x + 2, fy)
-  for (let i = 0; i <= 8; i++) ctx.lineTo(x + 2 + i * ppt * 0.2, fy + Math.sin(t * 6 + i * 0.8) * ppt * 0.06)
-  ctx.lineTo(x + 2, fy + ppt * 1.1); ctx.closePath(); ctx.fill()
-  ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(ppt * 0.6)}px "Press Start 2P", monospace`
+// ---- Oracle Beacon (o fim da fase): torre com o cristal roxo. Acende quando o preço é entregue.
+function drawBeacon(ctx, fx, t, ppt, won, wonT) {
+  const x = (fx + 0.5) * ppt, baseY = FLOOR * ppt, topY = (FLOOR - 8) * ppt
+  // torre
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.42), topY + ppt, Math.round(ppt * 0.84), baseY - topY - ppt)
+  ctx.fillStyle = '#3b1a6e'; ctx.fillRect(Math.round(x - ppt * 0.32), topY + ppt, Math.round(ppt * 0.64), baseY - topY - ppt)
+  ctx.fillStyle = '#5b34b0'
+  for (let yy = topY + ppt * 1.6; yy < baseY - ppt * 0.5; yy += ppt * 0.9) ctx.fillRect(Math.round(x - ppt * 0.32), Math.round(yy), Math.round(ppt * 0.64), 3)
+  // base
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.9), baseY - ppt * 0.55, Math.round(ppt * 1.8), ppt * 0.55)
+  ctx.fillStyle = '#5b34b0'; ctx.fillRect(Math.round(x - ppt * 0.8), baseY - ppt * 0.47, Math.round(ppt * 1.6), ppt * 0.47)
+  // cristal
+  const lit = won ? Math.min(1, wonT * 1.5) : 0
+  const cy = topY + ppt * 0.4 + Math.sin(t * 2) * ppt * 0.08
+  if (lit > 0) {
+    // os 3 sinais dos Publishers chegando e a onda roxa saindo
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = `rgba(196,166,255,${0.7 * lit})`; ctx.lineWidth = Math.max(2, ppt * 0.12)
+      ctx.beginPath(); ctx.moveTo(x - ppt * (14 - i * 4), (1 + i * 1.5) * ppt); ctx.lineTo(x, cy); ctx.stroke()
+    }
+    const r = wonT * ppt * 9
+    ctx.strokeStyle = `rgba(167,123,255,${Math.max(0, 0.8 - wonT * 0.35)})`; ctx.lineWidth = ppt * 0.3
+    ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI * 2); ctx.stroke()
+    const glow = ctx.createRadialGradient(x, cy, 0, x, cy, ppt * 2.2)
+    glow.addColorStop(0, `rgba(216,190,255,${0.85 * lit})`); glow.addColorStop(1, 'rgba(124,58,237,0)')
+    ctx.fillStyle = glow; ctx.fillRect(x - ppt * 2.2, cy - ppt * 2.2, ppt * 4.4, ppt * 4.4)
+  }
+  const s = ppt * 0.7
+  ctx.fillStyle = '#140a26'
+  ctx.beginPath(); ctx.moveTo(x, cy - s - 3); ctx.lineTo(x + s * 0.7 + 3, cy); ctx.lineTo(x, cy + s + 3); ctx.lineTo(x - s * 0.7 - 3, cy); ctx.closePath(); ctx.fill()
+  ctx.fillStyle = lit > 0 ? '#c4a6ff' : '#7c3aed'
+  ctx.beginPath(); ctx.moveTo(x, cy - s); ctx.lineTo(x + s * 0.7, cy); ctx.lineTo(x, cy + s); ctx.lineTo(x - s * 0.7, cy); ctx.closePath(); ctx.fill()
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(ppt * 0.5)}px "Press Start 2P", monospace`
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillText('P', x + ppt * 0.75, fy + ppt * 0.55)
-  // base de pedra
-  ctx.fillStyle = '#5b34b0'; ctx.fillRect(Math.round(x - ppt * 0.5), baseY - ppt * 0.4, ppt, ppt * 0.4)
+  ctx.fillText('P', x + 1, cy + 1)
+}
+
+// ---- Publisher: antena com prato. Apagada = cinza; ligada = roxa mandando sinal
+function drawPublisher(ctx, pb, t, ppt) {
+  const x = (pb.x + 0.5) * ppt, baseY = FLOOR * ppt, h = ppt * 4.2
+  const on = pb.on
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.16), baseY - h, Math.round(ppt * 0.32), h)
+  ctx.fillStyle = on ? '#a78bfa' : '#5e5670'; ctx.fillRect(Math.round(x - ppt * 0.08), baseY - h, Math.round(ppt * 0.16), h)
+  // pernas
+  ctx.strokeStyle = '#140a26'; ctx.lineWidth = Math.max(2, ppt * 0.1)
+  ctx.beginPath(); ctx.moveTo(x - ppt * 0.6, baseY); ctx.lineTo(x, baseY - h * 0.55); ctx.lineTo(x + ppt * 0.6, baseY); ctx.stroke()
+  // prato
+  const dy = baseY - h
+  ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.ellipse(x, dy, ppt * 0.62, ppt * 0.3, -0.35, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = on ? '#7c3aed' : '#4a4458'; ctx.beginPath(); ctx.ellipse(x, dy, ppt * 0.52, ppt * 0.22, -0.35, 0, Math.PI * 2); ctx.fill()
+  // luz na ponta
+  ctx.fillStyle = on ? '#f5f3ff' : '#2b2733'; ctx.beginPath(); ctx.arc(x + ppt * 0.1, dy - ppt * 0.35, ppt * 0.13, 0, Math.PI * 2); ctx.fill()
+  if (on) {
+    // ondas de sinal
+    for (let i = 0; i < 3; i++) {
+      const k = ((t * 0.9 + i / 3) % 1)
+      ctx.strokeStyle = `rgba(196,166,255,${1 - k})`; ctx.lineWidth = Math.max(1.5, ppt * 0.07)
+      ctx.beginPath(); ctx.arc(x + ppt * 0.1, dy - ppt * 0.35, ppt * (0.3 + k * 1.6), -Math.PI * 0.85, -Math.PI * 0.15); ctx.stroke()
+    }
+    // "PUBLISHER ONLINE" sobe e some no começo
+    if (pb.t < 2.2) {
+      ctx.globalAlpha = Math.max(0, 1 - pb.t / 2.2)
+      ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.32)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'
+      ctx.fillText('PUBLISHER ONLINE', x, dy - ppt * (1.1 + pb.t * 0.5))
+      ctx.globalAlpha = 1
+    }
+  }
+}
+
+// ---- Price Relay: postinho com a bolinha; apagado = cinza, aceso = roxo (com o anel do tempo se for "fresh")
+function drawRelay(ctx, g, r, t, ppt) {
+  const x = (r.x + 0.5) * ppt, baseY = r.y * ppt
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(x - ppt * 0.38), baseY - ppt * 0.3, Math.round(ppt * 0.76), ppt * 0.3)
+  ctx.fillRect(Math.round(x - ppt * 0.12), baseY - ppt * 1.5, Math.round(ppt * 0.24), ppt * 1.3)
+  ctx.fillStyle = r.on ? '#a78bfa' : '#6b6380'; ctx.fillRect(Math.round(x - ppt * 0.05), baseY - ppt * 1.5, Math.round(ppt * 0.1), ppt * 1.3)
+  const oy = baseY - ppt * 1.75
+  const pulse = r.on ? 1 + Math.sin(t * 8) * 0.08 : 1
+  ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.arc(x, oy, ppt * 0.36 * pulse, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = r.on ? '#c4a6ff' : '#8a8299'; ctx.beginPath(); ctx.arc(x, oy, ppt * 0.28 * pulse, 0, Math.PI * 2); ctx.fill()
+  if (!r.on) {
+    // seta piscando: "encosta aqui"
+    if (Math.sin(t * 5) > 0) { ctx.fillStyle = '#f4c542'; ctx.font = `${Math.round(ppt * 0.4)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.fillText('▼', x, oy - ppt * 0.6) }
+    return
+  }
+  const left = freshLeft(g, r.group)
+  if (left != null) {
+    ctx.strokeStyle = '#f4c542'; ctx.lineWidth = Math.max(2, ppt * 0.1)
+    ctx.beginPath(); ctx.arc(x, oy, ppt * 0.48, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.stroke()
+  }
+}
+
+// bloco apagado de um grupo (contorno tracejado cinza)
+function drawGhost(ctx, tx, ty, ppt, t) {
+  const x = Math.floor(tx * ppt), y = Math.floor(ty * ppt), s = Math.ceil(ppt)
+  ctx.fillStyle = 'rgba(120,110,140,0.18)'; ctx.fillRect(x + 2, y + 2, s - 4, s - 4)
+  ctx.strokeStyle = `rgba(170,160,190,${0.5 + Math.sin(t * 3 + tx) * 0.15})`; ctx.lineWidth = 2
+  ctx.setLineDash([Math.max(3, s * 0.15), Math.max(3, s * 0.12)]); ctx.strokeRect(x + 3, y + 3, s - 6, s - 6); ctx.setLineDash([])
+}
+
+// ---- Confidence Gem: diamante magenta com borda dourada, brilhando
+function drawGem(ctx, gm, t, ppt) {
+  const cx = (gm.x + 0.5) * ppt, cy = (gm.y + 0.5 + Math.sin(t * 3 + gm.x) * 0.08) * ppt, s = ppt * 0.42
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, ppt * 0.9)
+  glow.addColorStop(0, 'rgba(241,76,235,0.45)'); glow.addColorStop(1, 'rgba(241,76,235,0)')
+  ctx.fillStyle = glow; ctx.fillRect(cx - ppt, cy - ppt, ppt * 2, ppt * 2)
+  const dia = (k, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(cx, cy - s * k); ctx.lineTo(cx + s * 0.8 * k, cy - s * 0.2 * k); ctx.lineTo(cx, cy + s * k); ctx.lineTo(cx - s * 0.8 * k, cy - s * 0.2 * k); ctx.closePath(); ctx.fill() }
+  dia(1.25, '#140a26'); dia(1.1, '#f4c542'); dia(0.9, '#f14ceb')
+  ctx.fillStyle = '#ffd6fb'; ctx.beginPath(); ctx.moveTo(cx - s * 0.15, cy - s * 0.75); ctx.lineTo(cx + s * 0.25, cy - s * 0.2); ctx.lineTo(cx - s * 0.45, cy - s * 0.2); ctx.closePath(); ctx.fill()
+  if (Math.sin(t * 4 + gm.x * 3) > 0.85) { ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(cx + s * 0.5), Math.round(cy - s * 0.9), 3, 3) }
+}
+
+export const RARITY = { common: '#cbd5e1', uncommon: '#86efac', rare: '#a78bfa', legendary: '#f4c542' }
+export const lootLabel = (l) => (l.kind === 'coins' ? `+${l.amount} price updates` : l.kind === 'shield' ? 'Confidence Shield' : l.kind === 'lazer' ? 'Lazer Boots' : l.kind)
+
+// ---- baú (o prêmio vem do Pyth Entropy): fechado, abrindo (dado girando) e aberto (mostra o prêmio)
+function drawChest(ctx, c, t, ppt) {
+  const x = c.x * ppt, by = c.y * ppt, w = ppt * 0.96, h = ppt * 0.72
+  const lx = x + ppt * 0.02
+  const shake = c.state === 'opening' ? Math.sin(t * 40) * 2 : 0
+  ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(lx - 2 + shake), Math.round(by - h - 2), Math.round(w + 4), Math.round(h + 2))
+  ctx.fillStyle = '#7c3aed'; ctx.fillRect(Math.round(lx + shake), Math.round(by - h * 0.62), Math.round(w), Math.round(h * 0.62))
+  const lidUp = c.state === 'open' ? Math.min(1, c.t * 5) : 0
+  ctx.fillStyle = '#5b21b6'; ctx.fillRect(Math.round(lx + shake), Math.round(by - h - lidUp * ppt * 0.3), Math.round(w), Math.round(h * 0.4))
+  ctx.fillStyle = '#f4c542'
+  ctx.fillRect(Math.round(lx + shake), Math.round(by - h * 0.62), Math.round(w), 3)
+  ctx.fillRect(Math.round(lx + w / 2 - ppt * 0.1 + shake), Math.round(by - h * 0.7), Math.round(ppt * 0.2), Math.round(ppt * 0.24))
+  if (c.state === 'opening') {
+    // dado do Entropy girando em cima enquanto o sorteio chega
+    ctx.save(); ctx.translate(x + ppt * 0.5, by - ppt * 1.4); ctx.rotate(t * 8)
+    ctx.fillStyle = '#140a26'; ctx.fillRect(-ppt * 0.28, -ppt * 0.28, ppt * 0.56, ppt * 0.56)
+    ctx.fillStyle = '#fff'; ctx.fillRect(-ppt * 0.23, -ppt * 0.23, ppt * 0.46, ppt * 0.46)
+    ctx.fillStyle = '#7c3aed'; for (const [a, b] of [[-0.1, -0.1], [0.1, 0.1], [0, 0]]) ctx.fillRect(a * ppt - 2, b * ppt - 2, 4, 4)
+    ctx.restore()
+  }
+  if (c.state === 'open' && c.loot && c.t < 3) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, 3 - c.t))
+    const label = lootLabel(c.loot)
+    const size = Math.round(ppt * 0.3)
+    ctx.font = `${size}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    const ty = by - ppt * (1.6 + c.t * 0.35)
+    ctx.fillStyle = '#140a26'; ctx.fillText(c.loot.rarity.toUpperCase(), x + ppt * 0.5 + 2, ty - size * 1.4 + 2); ctx.fillText(label, x + ppt * 0.5 + 2, ty + 2)
+    ctx.fillStyle = RARITY[c.loot.rarity] ?? '#fff'; ctx.fillText(c.loot.rarity.toUpperCase(), x + ppt * 0.5, ty - size * 1.4)
+    ctx.fillStyle = '#fff'; ctx.fillText(label, x + ppt * 0.5, ty)
+    ctx.globalAlpha = 1
+  }
+}
+
+// ---- poderes soltos: escudo (bolha roxa com P) e Lazer Boots (bota com raio)
+function drawItem(ctx, it, t, ppt) {
+  const cx = (it.x + 0.5) * ppt, cy = (it.y + 0.5 + (it.rise > 0 ? 0 : Math.sin(t * 4) * 0.07)) * ppt
+  if (it.kind === 'shield') {
+    ctx.fillStyle = '#140a26'; ctx.beginPath(); ctx.arc(cx, cy, ppt * 0.42, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#8b5cf6'; ctx.beginPath(); ctx.arc(cx, cy, ppt * 0.36, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#ddd6fe'; ctx.beginPath(); ctx.arc(cx - ppt * 0.12, cy - ppt * 0.13, ppt * 0.09, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(ppt * 0.36)}px "Press Start 2P", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText('P', cx + 1, cy + 2)
+  } else {
+    ctx.fillStyle = '#140a26'; ctx.fillRect(Math.round(cx - ppt * 0.3), Math.round(cy - ppt * 0.38), Math.round(ppt * 0.36), Math.round(ppt * 0.62)); ctx.fillRect(Math.round(cx - ppt * 0.3), Math.round(cy + ppt * 0.08), Math.round(ppt * 0.66), Math.round(ppt * 0.3))
+    ctx.fillStyle = '#f14ceb'; ctx.fillRect(Math.round(cx - ppt * 0.25), Math.round(cy - ppt * 0.33), Math.round(ppt * 0.26), Math.round(ppt * 0.52)); ctx.fillRect(Math.round(cx - ppt * 0.25), Math.round(cy + ppt * 0.12), Math.round(ppt * 0.56), Math.round(ppt * 0.2))
+    ctx.fillStyle = '#f4c542'; ctx.beginPath(); ctx.moveTo(cx + ppt * 0.2, cy - ppt * 0.45); ctx.lineTo(cx + ppt * 0.05, cy - ppt * 0.1); ctx.lineTo(cx + ppt * 0.18, cy - ppt * 0.1); ctx.lineTo(cx + ppt * 0.04, cy + ppt * 0.15); ctx.lineTo(cx + ppt * 0.32, cy - ppt * 0.18); ctx.lineTo(cx + ppt * 0.2, cy - ppt * 0.18); ctx.closePath(); ctx.fill()
+  }
 }
 
 function drawCheckpoint(ctx, cp, reached, t, ppt) {
@@ -192,7 +342,7 @@ function drawCheckpoint(ctx, cp, reached, t, ppt) {
   ctx.beginPath(); ctx.moveTo(x + 2, y); ctx.lineTo(x + 2 + ppt * 0.8, y + ppt * 0.3 + Math.sin(t * 5) * 2); ctx.lineTo(x + 2, y + ppt * 0.6); ctx.closePath(); ctx.fill()
 }
 
-function drawHero(ctx, g, heroId, ppt) {
+function heroFrame(g, heroId) {
   const p = g.player
   const art = loadHero(heroId)
   const side = p.facing >= 0 ? art.right : art.left
@@ -200,17 +350,37 @@ function drawHero(ctx, g, heroId, ppt) {
   if (!p.onGround) frame = side[1]
   else if (Math.abs(p.vx) > 0.2) frame = side[Math.floor(p.walkT * 9) % 2]
   if (!ready(frame)) frame = art.front
+  return frame
+}
+
+function drawHero(ctx, g, heroId, ppt) {
+  const p = g.player
+  const frame = heroFrame(g, heroId)
   const feetX = (p.x + P.w / 2) * ppt, feetY = (p.y + P.h) * ppt
   ctx.save()
-  // sombra no chão
   if (p.onGround) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(feetX, feetY, ppt * 0.35, ppt * 0.08, 0, 0, Math.PI * 2); ctx.fill() }
+  const ok = ready(frame)
+  const w = ok ? (frame.naturalWidth / ART) * ppt : P.w * ppt, h = ok ? (frame.naturalHeight / ART) * ppt : P.h * ppt
+  ctx.imageSmoothingEnabled = false
+  // Lazer Boots: rastro de luz atrás do herói
+  if (p.lazer > 0 && ok && Math.abs(p.vx) > 1) {
+    for (let i = 3; i >= 1; i--) {
+      ctx.globalAlpha = 0.12 * (4 - i) * (p.lazer < 2 ? p.lazer / 2 : 1)
+      ctx.drawImage(frame, Math.round(feetX - w / 2 - Math.sign(p.vx) * i * ppt * 0.35), Math.round(feetY - h), Math.round(w), Math.round(h))
+    }
+    ctx.globalAlpha = 1
+  }
   if (g.status === 'dying') ctx.globalAlpha = Math.sin(g.statusT * 30) > 0 ? 1 : 0.6
-  if (ready(frame)) {
-    const w = (frame.naturalWidth / ART) * ppt, h = (frame.naturalHeight / ART) * ppt
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(frame, Math.round(feetX - w / 2), Math.round(feetY - h), Math.round(w), Math.round(h))
-  } else {
-    ctx.fillStyle = '#a77bff'; ctx.fillRect(p.x * ppt, p.y * ppt, P.w * ppt, P.h * ppt)
+  if (p.invuln > 0 && Math.sin(p.invuln * 40) > 0) ctx.globalAlpha = 0.35
+  if (ok) ctx.drawImage(frame, Math.round(feetX - w / 2), Math.round(feetY - h), Math.round(w), Math.round(h))
+  else { ctx.fillStyle = '#a77bff'; ctx.fillRect(p.x * ppt, p.y * ppt, P.w * ppt, P.h * ppt) }
+  ctx.globalAlpha = 1
+  // Confidence Shield: bolha roxa em volta
+  if (p.shield) {
+    const cy = feetY - h * 0.5, r = Math.max(w, h) * 0.58
+    ctx.strokeStyle = `rgba(196,166,255,${0.75 + Math.sin(g.time * 6) * 0.15})`; ctx.lineWidth = Math.max(2, ppt * 0.08)
+    ctx.beginPath(); ctx.arc(feetX, cy, r, 0, Math.PI * 2); ctx.stroke()
+    ctx.fillStyle = 'rgba(139,92,246,0.14)'; ctx.beginPath(); ctx.arc(feetX, cy, r, 0, Math.PI * 2); ctx.fill()
   }
   ctx.restore()
 }
@@ -220,6 +390,32 @@ export function cameraX(g, viewW) {
   const p = g.player
   const want = p.x + P.w / 2 - viewW * 0.4
   return Math.max(0, Math.min(g.cols - viewW, want))
+}
+
+// o mundo à direita da onda de cor fica cinza ("preço velho"); a beirada da onda brilha
+function drawStale(ctx, g, ppt, camX, viewW, h) {
+  const edge = g.restoreX
+  const x0 = Math.max(edge, camX - 1), x1 = camX + viewW + 1
+  if (x0 >= x1) return
+  const soft = 2.5 // casas de degradê na beirada
+  ctx.save()
+  ctx.globalCompositeOperation = 'saturation'
+  const grad = ctx.createLinearGradient(edge * ppt, 0, (edge + soft) * ppt, 0)
+  grad.addColorStop(0, 'rgba(128,128,128,0)'); grad.addColorStop(1, 'rgba(128,128,128,0.92)')
+  ctx.fillStyle = grad
+  ctx.fillRect(Math.floor(x0 * ppt), 0, Math.ceil((x1 - x0) * ppt), h)
+  ctx.globalCompositeOperation = 'source-over'
+  const dark = ctx.createLinearGradient(edge * ppt, 0, (edge + soft) * ppt, 0)
+  dark.addColorStop(0, 'rgba(14,10,24,0)'); dark.addColorStop(1, 'rgba(14,10,24,0.28)')
+  ctx.fillStyle = dark
+  ctx.fillRect(Math.floor(x0 * ppt), 0, Math.ceil((x1 - x0) * ppt), h)
+  // brilho roxo na frente da onda enquanto ela anda
+  if (g.restoreX < g.restoreTo && edge > camX - 2 && edge < camX + viewW + 2) {
+    const glow = ctx.createLinearGradient((edge - 1.5) * ppt, 0, (edge + 0.5) * ppt, 0)
+    glow.addColorStop(0, 'rgba(167,123,255,0)'); glow.addColorStop(1, 'rgba(196,166,255,0.5)')
+    ctx.fillStyle = glow; ctx.fillRect(Math.floor((edge - 1.5) * ppt), 0, Math.ceil(2 * ppt), h)
+  }
+  ctx.restore()
 }
 
 // desenha tudo. w/h = tamanho do canvas em pixels; heroId = herói escolhido; cam = estado da câmera (suavizada)
@@ -236,10 +432,12 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
   ctx.save()
   ctx.translate(-Math.round(camX * ppt), 0)
   const x0 = Math.max(0, Math.floor(camX) - 1), x1 = Math.min(g.cols - 1, Math.ceil(camX + viewW) + 1)
+  const near = (x, m = 3) => x >= x0 - m && x <= x1 + m
 
-  // checkpoint e bandeira atrás dos blocos
+  // atrás dos blocos: checkpoint, publishers, beacon
   if (g.level.checkpoint) drawCheckpoint(ctx, g.level.checkpoint, !!g.checkpoint, g.time, ppt)
-  drawFlag(ctx, g.level.flag, g.status === 'won' ? g.statusT : g.time, ppt, g.status === 'won')
+  for (const pb of g.publishers) if (near(pb.x)) drawPublisher(ctx, pb, g.time, ppt)
+  drawBeacon(ctx, g.level.flag, g.time, ppt, g.status === 'won', g.statusT)
 
   // blocos
   const size = Math.ceil(ppt)
@@ -247,6 +445,13 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
     for (let tx = x0; tx <= x1; tx++) {
       let k = g.tiles[ty][tx]
       if (k === '.') continue
+      if (k >= '1' && k <= '9') {
+        // bloco de grupo: aceso (roxo) ou apagado (contorno); piscando quando o sinal está envelhecendo
+        if (!g.groupOn[k]) { drawGhost(ctx, tx, ty, ppt, g.time); continue }
+        if (staleWarn(g, Number(k)) && Math.sin(g.time * 22) > 0) { drawGhost(ctx, tx, ty, ppt, g.time); continue }
+        k = 'p'
+      }
+      if (k === '!') k = '?'
       if (k === '#' && (ty === 0 || g.tiles[ty - 1][tx] !== '#')) k = '^' // chão com grama em cima
       if ('gGrR'.includes(k)) {
         // metade esquerda ou direita da vela (a vela começa onde o vizinho da esquerda não é vela da mesma cor)
@@ -265,15 +470,22 @@ export function drawGame(ctx, g, w, h, heroId, cam) {
       ctx.drawImage(sheet.cv, sheet.index[k] * ART, 0, ART, ART, Math.floor(tx * ppt), Math.floor(ty * ppt + dy), size, size)
     }
   }
+  for (const r of g.relays) if (near(r.x)) drawRelay(ctx, g, r, g.time, ppt)
 
-  // moedas (as soltas e as que saem dos oráculos)
-  for (const c of g.coins) if (!c.taken && c.x >= x0 - 1 && c.x <= x1 + 1) drawCoin(ctx, c.x, c.y, g.time, ppt, c.x * 0.7)
+  // o que ainda está "stale" fica cinza (moedas, gems, baús, inimigos e o herói ficam por cima, coloridos)
+  drawStale(ctx, g, ppt, camX, viewW, h)
+
+  for (const c of g.chests) if (near(c.x)) drawChest(ctx, c, g.time, ppt)
+  for (const c of g.coins) if (!c.taken && near(c.x, 1)) drawCoin(ctx, c.x, c.y, g.time, ppt, c.x * 0.7)
+  for (const gm of g.gems) if (!gm.taken && near(gm.x, 1)) drawGem(ctx, gm, g.time, ppt)
   for (const c of g.popped) {
-    ctx.globalAlpha = 1 - c.t / 0.6
+    if (c.t < 0) continue
+    ctx.globalAlpha = Math.max(0, 1 - c.t / 0.6)
     drawCoin(ctx, c.x, c.y - Math.sin((c.t / 0.6) * Math.PI) * 1.5, c.t * 4, ppt)
     ctx.globalAlpha = 1
   }
-  for (const e of g.enemies) if (e.x >= x0 - 2 && e.x <= x1 + 2) drawEnemy(ctx, e, g.time, ppt)
+  for (const it of g.items) if (near(it.x)) drawItem(ctx, it, g.time, ppt)
+  for (const e of g.enemies) if (near(e.x, 2)) drawEnemy(ctx, e, g.time, ppt)
   drawHero(ctx, g, heroId, ppt)
   ctx.restore()
 }

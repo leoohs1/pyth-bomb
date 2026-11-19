@@ -14,6 +14,7 @@ RUN npm ci --prefix server --omit=dev
 COPY server/ ./server/
 COPY src/pvp/engine/ ./src/pvp/engine/
 COPY src/pvp/bracket.js ./src/pvp/bracket.js
+COPY src/dash/loot.js ./src/dash/loot.js
 
 ENV NODE_ENV=production
 CMD ["node", "server/index.js"]
