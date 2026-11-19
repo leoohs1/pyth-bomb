@@ -83,7 +83,7 @@
 @media (max-width: 420px) { .dash-heroes { grid-template-columns: repeat(5, 58px); gap: 6px; } .dash-hero { height: 70px; } .dash-hero img { height: 56px; } }
 
 /* ---- fase 1: abertura, gems, baús e prova do Pyth Entropy */
-.dash-odds { margin: 2px 0 0; color: #9d88c9; font-size: 12px; text-transform: capitalize; }
+.dash-odds { margin: 2px 0 0; color: #9d88c9; font-size: 12px; }
 .dash-hud-gems { color: #f14ceb; }
 .dash-title-card {
   position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;
@@ -115,5 +115,44 @@
 .dash-story-dots span.is-on { background: #f4c542; }
 .dash-story-hint { font-size: 12px; color: #9d88c9; }
 .dash-story-skip { position: absolute; top: 12px; right: 64px; padding: 8px 12px; cursor: pointer; font: 400 11px/1 'Press Start 2P', monospace; color: #f3ecff; background: rgba(42, 22, 87, 0.85); border: 2px solid #a77bff; border-radius: 8px; }
-.dash-story-link { padding: 6px 12px; cursor: pointer; font: 400 11px/1 'Press Start 2P', monospace; color: #c4a6ff; background: none; border: 2px solid rgba(167, 123, 255, 0.4); border-radius: 8px; }
-.dash-story-link:hover { border-color: #a77bff; color: #fff; }
+
+/* ---- tela de título com o templo de Delfos (2026-11-19) */
+.dash-menu {
+  justify-content: space-between; gap: 18px; padding: max(28px, 6vh) 16px max(16px, 3vh);
+  background:
+    linear-gradient(to bottom, rgba(13, 6, 32, 0.25) 0%, rgba(13, 6, 32, 0) 30%, rgba(13, 6, 32, 0.15) 55%, rgba(13, 6, 32, 0.85) 100%),
+    url('/dash/title.webp') center 42% / cover no-repeat;
+  image-rendering: pixelated;
+}
+.dash-menu-top { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dash-menu .dash-title { font-size: clamp(38px, 8vw, 84px); text-shadow: 0 4px 0 #5b34b0, 0 8px 0 #140a26, 0 0 28px rgba(196, 166, 255, 0.55); }
+.dash-tagline { margin: 0; font: 400 clamp(11px, 1.8vw, 16px)/1 'Press Start 2P', monospace; color: #fff; letter-spacing: 3px; text-shadow: 0 3px 0 #140a26, 0 0 12px rgba(244, 197, 66, 0.6); }
+.dash-menu-card {
+  width: min(100%, 640px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 18px 14px;
+  background: rgba(20, 10, 38, 0.74); border: 2px solid rgba(244, 197, 66, 0.55); border-radius: 16px;
+  box-shadow: 0 8px 0 rgba(20, 10, 38, 0.8), 0 0 40px rgba(124, 58, 237, 0.35);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.dash-menu-card .dash-label { margin: 4px 0 0; }
+.dash-menu-card .dash-level { margin: 6px 0 2px; }
+.dash-menu-btns { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.dash-menu .dash-menu-btns .dash-btn-go { min-width: 200px; margin-top: 0; }
+.dash-btn-story { padding: 14px 16px; font-size: 12px; }
+.dash-emoji { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; font-style: normal; }
+.dash-menu .dash-odds { text-transform: none; }
+.dash-menu .dash-keys, .dash-menu .dash-odds { margin: 0; }
+/* o texto da história fica no céu, embaixo do título */
+.dash-menu-sub { max-width: 620px; margin: 2px 0 0; color: #fff; font-size: 15px; text-shadow: 0 2px 0 #140a26, 0 0 10px rgba(20, 10, 38, 0.9); }
+/* telas baixas (notebook): cartão mais compacto pra o templo aparecer */
+@media (max-height: 1000px) {
+  .dash-menu-card { gap: 6px; padding: 12px 16px 10px; }
+  .dash-menu .dash-hero { height: 60px; }
+  .dash-menu .dash-hero img { height: 48px; }
+  .dash-menu .dash-heroes { grid-template-columns: repeat(5, 56px); gap: 6px; }
+  .dash-menu .dash-menu-btns .dash-btn-go { padding: 12px 24px; font-size: 16px; }
+}
+@media (max-height: 640px) { .dash-menu { justify-content: flex-start; } .dash-menu-sub { display: none; } }
+/* "voltar" no canto de cima (no rodapé ele caía pra fora da tela) */
+.dash-menu .dash-back { position: absolute; top: 14px; left: 16px; margin: 0; padding: 6px 10px; font-size: 13px; color: #f3ecff; background: rgba(20, 10, 38, 0.6); border-radius: 8px; text-decoration: none; }
+.dash-menu .dash-back:hover { background: rgba(42, 22, 87, 0.85); }
+.dash-menu { position: relative; box-sizing: border-box; }

@@ -56,25 +56,34 @@ export default function DashApp() {
 
 function DashMenu({ hero, onPick, onStart, onStory }) {
   const level = LEVELS[0]
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1)
   return (
     <div className="dash-menu">
-      <h1 className="dash-title">PYTH <span>DASH</span></h1>
-      <p className="dash-sub">Kronos, the Stale Titan, froze the Purple Realm. Wake the shrines, deliver the price and bring the color back.</p>
-      <p className="dash-label">Choose your hero</p>
-      <div className="dash-heroes" role="radiogroup" aria-label="Choose your hero">
-        {HEROES.map((h) => (
-          <button key={h.id} type="button" role="radio" aria-checked={hero === h.id} aria-label={h.label}
-            className={`dash-hero${hero === h.id ? ' is-on' : ''}`} onClick={() => onPick(h.id)}>
-            <img src={`/solo/pixel/${h.id}-right1.png`} alt="" />
-          </button>
-        ))}
-      </div>
-      <p className="dash-level">World 1-1 · {level.name}</p>
-      <button type="button" className="dash-btn dash-btn-go" onClick={onStart}>Play</button>
-      <button type="button" className="dash-story-link" onClick={onStory}>📜 Story</button>
-      <p className="dash-keys">{TOUCH ? '◀ ▶ to run · big button to jump (hold = higher)' : '← → or A D to run · Space or ↑ to jump (hold = higher) · Esc = menu'}</p>
-      <p className="dash-odds">🎲 Chests are drawn with Pyth Entropy · {ODDS.map((o) => `${o.rarity} ${o.chance}%`).join(' · ')}</p>
       <a className="dash-back" href="/play">← Back to Pyth Bomb</a>
+      {/* tela de título: o templo de Delfos ao fundo (public/dash/title.webp); o título fica no céu e os botões embaixo */}
+      <div className="dash-menu-top">
+        <h1 className="dash-title">PYTH <span>DASH</span></h1>
+        <p className="dash-tagline">The Oracle's Run</p>
+        <p className="dash-sub dash-menu-sub">Kronos, the Stale Titan, froze the Purple Realm. Wake the shrines, deliver the price and bring the color back.</p>
+      </div>
+      <div className="dash-menu-card">
+        <p className="dash-label">Choose your hero</p>
+        <div className="dash-heroes" role="radiogroup" aria-label="Choose your hero">
+          {HEROES.map((h) => (
+            <button key={h.id} type="button" role="radio" aria-checked={hero === h.id} aria-label={h.label}
+              className={`dash-hero${hero === h.id ? ' is-on' : ''}`} onClick={() => onPick(h.id)}>
+              <img src={`/solo/pixel/${h.id}-right1.png`} alt="" />
+            </button>
+          ))}
+        </div>
+        <p className="dash-level">World 1-1 · {level.name}</p>
+        <div className="dash-menu-btns">
+          <button type="button" className="dash-btn dash-btn-go" onClick={onStart}>Play</button>
+          <button type="button" className="dash-btn dash-btn-story" onClick={onStory}>Story</button>
+        </div>
+        <p className="dash-keys">{TOUCH ? '◀ ▶ to run · big button to jump (hold = higher)' : '← → or A D to run · Space or ↑ to jump (hold = higher) · Esc = menu'}</p>
+        <p className="dash-odds"><span className="dash-emoji" aria-hidden="true">🎲</span> Chests are drawn with Pyth Entropy · {ODDS.map((o) => `${cap(o.rarity)} ${o.chance}%`).join(' · ')}</p>
+      </div>
     </div>
   )
 }
