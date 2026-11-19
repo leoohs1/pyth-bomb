@@ -273,7 +273,7 @@ export function DrawPanel({ tour, meId, room }) {
         </div>
       ) : (
         <>
-          {ri === 0 && <p className="pv-label">{round.sizes.length} room{round.sizes.length > 1 ? 's' : ''} · {round.sizes.reduce((a, b) => a + b, 0)} fighters</p>}
+          {ri === 0 && <p className="pv-label">{round.sizes.length} room{round.sizes.length > 1 ? 's' : ''} · {rooms.reduce((a, r) => a + r.ids.length, 0)} fighters</p>}
           <div className={`pv-cards${rooms.length === 1 ? ' is-single' : ''}`}>
             {rooms.map((r) => <RoomCard key={r.id} room={r} players={tour.players} mine={r.ids.includes(meId)} title={roomTitle(round, r)} />)}
           </div>
