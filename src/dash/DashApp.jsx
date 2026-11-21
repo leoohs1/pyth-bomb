@@ -25,6 +25,7 @@ const TOUCH = (() => {
 })()
 // celular em pé: o jogo mostra pouco do caminho; avisamos pra deitar (uma vez por visita, dá pra jogar assim mesmo)
 let rotateDismissed = false
+let forceRotate = false // "Rotate the game": quando o celular não gira sozinho, o próprio jogo deita (continua nas próximas fases)
 const PORTRAIT_MQ = '(orientation: portrait)'
 function usePortrait() {
   const [p, setP] = useState(() => TOUCH && window.matchMedia(PORTRAIT_MQ).matches)
@@ -147,7 +148,19 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
   useEffect(() => { menuRef.current = onMenu }, [onMenu])
   const portrait = usePortrait()
   const [rotateOk, setRotateOk] = useState(rotateDismissed)
-  const showRotate = portrait && !rotateOk
+  const [rotated, setRotated] = useState(forceRotate)
+  const turned = portrait && rotated // jogo deitado por CSS (o celular continua "em pé" para o navegador)
+  const showRotate = portrait && !rotateOk && !rotated
+  // 1º tenta girar de verdade (Android: tela cheia + trava em paisagem); se não der (iPhone, app sem permissão), deita o jogo por CSS
+  const rotateGame = async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' })
+      await window.screen?.orientation?.lock?.('landscape')
+      if (window.matchMedia(PORTRAIT_MQ).matches) throw new Error('still portrait')
+      return
+    } catch { /* sem suporte: deita por CSS */ }
+    forceRotate = true; setRotated(true)
+  }
   const pausedRef = useRef(showRotate) // o jogo espera enquanto o aviso de girar o celular estiver na tela
   useEffect(() => { pausedRef.current = showRotate }, [showRotate])
 
@@ -163,7 +176,8 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
     let raf = 0, last = performance.now(), acc = 0, hudKey = ''
 
     const fit = () => {
-      const r = wrapRef.current.getBoundingClientRect()
+      // tamanho do layout (sem a rotação do modo deitado por CSS)
+      const r = { width: wrapRef.current.clientWidth, height: wrapRef.current.clientHeight }
       const dpr = Math.min(2, window.devicePixelRatio || 1)
       canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr)
     }
@@ -234,7 +248,7 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
   })
 
   return (
-    <div className={`dash-play${TOUCH ? ' is-touch' : ''}`}>
+    <div className={`dash-play${TOUCH ? ' is-touch' : ''}${turned ? ' is-rot' : ''}`}>
       <div className="dash-hud">
         <span className="dash-hud-world">1-{levelIdx + 1} · {level.name}</span>
         <span title="Price updates">🪙 {hud?.coins ?? 0}</span>
@@ -259,7 +273,11 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
           <div className="dash-rotate-phone" aria-hidden="true"><span /></div>
           <h3>Turn your phone sideways</h3>
           <p>Pyth Odyssey plays best in landscape: you see more of the road ahead.</p>
-          <button type="button" className="dash-btn" onClick={() => { rotateDismissed = true; setRotateOk(true) }}>Play anyway</button>
+          <p className="dash-rotate-hint">Screen won&apos;t turn? Tap <b>Rotate the game</b> and hold your phone sideways.</p>
+          <div className="dash-result-btns">
+            <button type="button" className="dash-btn dash-btn-go" onClick={rotateGame}>Rotate the game</button>
+            <button type="button" className="dash-btn" onClick={() => { rotateDismissed = true; setRotateOk(true) }}>Play anyway</button>
+          </div>
         </div>
       )}
       {TOUCH && (
