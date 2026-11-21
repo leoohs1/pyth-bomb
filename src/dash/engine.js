@@ -34,7 +34,8 @@ const freshEnemies = (level) => level.enemies.map((e) => (e.type === 'harpy'
   : { x: e.x + 0.05, y: e.y + 0.1, vx: -ENEMY.speed, vy: 0, alive: true, awake: false, squashT: 0 }))
 // plataforma que anda (polia): vai e volta entre (x, y) e (x+dx, y+dy) em "period" segundos;
 // com group, só anda depois que o Price Relay daquele grupo acende
-const freshMovers = (level) => (level.movers ?? []).map((m) => ({ ...m, x0: m.x, y0: m.y, t: 0, ddx: 0, ddy: 0 }))
+// phase (0..1) adianta o ciclo: 0.5 = começa do outro lado (dois barcos em fase oposta se aproximam e se afastam)
+const freshMovers = (level) => (level.movers ?? []).map((m) => ({ ...m, x0: m.x, y0: m.y, t: (m.phase ?? 0) * (m.period ?? 4), ddx: 0, ddy: 0 }))
 
 export function createGame(level, { lives = 3 } = {}) {
   return {

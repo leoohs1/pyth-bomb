@@ -44,7 +44,7 @@ function makeBuilder(cols) {
     publisher(x, y = FLOOR) { L.publishers.push({ x, y }) },
     // plataforma de mármore que anda (polia): w casas de largura, vai de (x,y) até (x+dx,y+dy) e volta em period s.
     // group: só anda depois que o Price Relay desse grupo acende. y = linha onde se pisa
-    mover(x, y, w, { dx = 0, dy = 0, period = 4, group = 0 } = {}) { L.movers.push({ x, y, w, dx, dy, period, group }) },
+    mover(x, y, w, { dx = 0, dy = 0, period = 4, group = 0, phase = 0 } = {}) { L.movers.push({ x, y, w, dx, dy, period, group, phase }) },
     // zona de vento: rajadas que empurram (force < 0 = pra esquerda)
     wind(x0, x1, force, { period = 3.2, dur = 1.4, warn = 0.6 } = {}) { L.winds.push({ x0, x1, force, period, dur, warn }) },
     harpy(x, y, range = 3) { L.enemies.push({ type: 'harpy', x, y, range }) },
@@ -267,7 +267,7 @@ function level3() {
   b.torch(108, F - 3)
   // 4) o rio Estige: barcos (polias de lado), uma pedra no meio e a GEM 2 em cima do 2º barco
   b.mover(114, F - 2, 3, { dx: 6, period: 5 })
-  b.mover(124, F - 3, 3, { dx: 6, period: 5 })
+  b.mover(124, F - 3, 3, { dx: 6, period: 5, phase: 0.5 }) // anda ao contrário do 1º: a cada 5 s os dois quase se encostam (pulo fácil)
   b.ground(134, 135, F - 4)
   b.mover(137, F - 2, 3, { dx: 3, period: 4 })
   b.gem(128, F - 8)
