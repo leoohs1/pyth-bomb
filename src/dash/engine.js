@@ -517,7 +517,7 @@ function stepEchoes(g) {
 export const BOSS = { w: 1.8, h: 2.6, hp: 3, walk: 1.6, wave: 6.5 }
 function freshBoss(b) {
   if (b.type === 'kronos') return freshKronos(b)
-  return { ...b, x: b.x, y: (b.floor ?? 12) - BOSS.h, hp: BOSS.hp, state: 'sleep', t: 0, vx: 0, inv: 0, alive: true, deadT: 0, facing: -1, waves: [] }
+  return { ...b, x: b.x, y: (b.floor ?? 12) - BOSS.h, hp: BOSS.hp, state: 'sleep', t: 0, vx: 0, inv: 0, safe: 0, alive: true, deadT: 0, facing: -1, waves: [] }
 }
 function stepBoss(g, dt) {
   const b = g.boss
@@ -530,6 +530,7 @@ function stepBoss(g, dt) {
   if (b.state === 'sleep') { if (p.x >= b.ax0) { b.state = 'walk'; b.t = 0; g.events.push('bosswake') } return }
   b.t += dt
   b.inv = Math.max(0, b.inv - dt)
+  b.safe = Math.max(0, (b.safe ?? 0) - dt)
   const fast = 1 + (BOSS.hp - b.hp) * 0.35
   const cx = b.x + BOSS.w / 2, pc = p.x + P.w / 2
   if (b.state === 'walk') {
@@ -552,19 +553,26 @@ function stepBoss(g, dt) {
   for (const w of b.waves) {
     if (p.invuln <= 0 && p.onGround && Math.abs(p.y + P.h - w.y) < 0.2 && Math.abs(pc - w.x) < 0.55) hurt(g, { x: w.x - ENEMY.w / 2 })
   }
-  // encostou no Talos: de cima = golpe nele; do lado = dano em você
+  // encostou no Talos: de cima = golpe nele; do lado = dano em você.
+  // (bug que a Halls achou, 2026-11-21: depois do pisão o herói subia ainda encostado no Talos, o jogo achava que era
+  //  "do lado" e matava o herói, e aí o Talos voltava com a vida cheia. Agora o pisão põe o herói em cima da cabeça,
+  //  o Talos fica inofensivo por um instante, e cair nele enquanto ele pisca também quica em vez de machucar.)
   if (p.x < b.x + BOSS.w && p.x + P.w > b.x && p.y < b.y + BOSS.h && p.y + P.h > b.y) {
-    const fromAbove = p.vy > 0 && p.y + P.h - b.y < 0.75
-    if (fromAbove && b.inv <= 0) {
-      b.hp--; b.inv = 1.2
+    const fromAbove = p.vy > 0 && p.y + P.h - b.y < 0.9
+    if (fromAbove) {
+      p.y = b.y - P.h // fica em cima da cabeça (sai de dentro do Talos)
       p.vy = -P.stompHoldV * 1.1; p.jumping = true
-      g.events.push('bosshit')
-      if (b.hp <= 0) {
-        b.alive = false; b.deadT = 0; b.waves = []
-        for (const row of g.tiles) for (let i = 0; i < row.length; i++) if (row[i] === 'x') row[i] = '.'
-        g.events.push('bossdown')
-      }
-    } else if (!fromAbove && p.invuln <= 0) {
+      b.safe = 0.45
+      if (b.inv <= 0) {
+        b.hp--; b.inv = 1.2
+        g.events.push('bosshit')
+        if (b.hp <= 0) {
+          b.alive = false; b.deadT = 0; b.waves = []
+          for (const row of g.tiles) for (let i = 0; i < row.length; i++) if (row[i] === 'x') row[i] = '.'
+          g.events.push('bossdown')
+        }
+      } else g.events.push('stomp') // ele ainda está piscando: só quica
+    } else if (b.safe <= 0 && p.invuln <= 0) {
       hurt(g, { x: b.x + BOSS.w / 2 - ENEMY.w / 2 })
       p.vx = (pc < cx ? -1 : 1) * 7
     }
