@@ -54,6 +54,9 @@ const DEV_LEVEL = (() => {
   const n = Number(new URLSearchParams(window.location.search).get('level'))
   return n >= 1 && n <= LEVELS.length ? n - 1 : null
 })()
+// fases abertas no site: por enquanto só até a 3 (Halls testando); as outras aparecem como "Coming soon".
+// no computador (npm run dev) dá pra abrir todas com ?all=1
+const OPEN_LEVELS = import.meta.env.DEV && new URLSearchParams(window.location.search).get('all') ? LEVELS.length : 3
 const CHEST_MIN_MS = 700 // o dado gira pelo menos isso (o sorteio pode chegar antes)
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -66,13 +69,13 @@ export default function DashApp() {
   useEffect(() => { const old = document.title; document.title = 'Pyth Odyssey · Pyth Bomb'; return () => { document.title = old } }, [])
   const pick = (id) => { setHero(id); try { localStorage.setItem(HERO_KEY, id) } catch { /* sem localStorage */ } }
   // só no computador (npm run dev): /odyssey?level=3 já abre na fase 3, liberada, pra testar
-  const [levelIdx, setLevelIdx] = useState(() => (DEV_LEVEL != null ? DEV_LEVEL : Math.min(clearedCount(), LEVELS.length - 1)))
+  const [levelIdx, setLevelIdx] = useState(() => (DEV_LEVEL != null ? DEV_LEVEL : Math.min(clearedCount(), OPEN_LEVELS - 1)))
   const [cleared, setCleared] = useState(() => Math.max(clearedCount(), DEV_LEVEL ?? 0))
   const start = (idx = levelIdx) => { unlock(); setLevelIdx(idx); setRun((r) => r + 1); setScreen('play') }
   // na primeira vez, a historinha em quadrinhos antes da fase 1 (depois, só pelo botão Story do menu)
   const play = () => { unlock(); if (levelIdx === 0 && !storySeen()) { setScreen('story'); return } start() }
   const storyDone = () => { markStorySeen(); start() }
-  const onCleared = (idx) => { const n = Math.max(clearedCount(), idx + 1); saveCleared(n); setCleared(n) }
+  const onCleared = (idx, time) => { const n = Math.max(clearedCount(), idx + 1); saveCleared(n); setCleared(n); saveBest(idx, time) }
 
   return (
     <div className="dash-page">
@@ -82,7 +85,7 @@ export default function DashApp() {
       {screen === 'story' && <DashStory onDone={storyDone} />}
       {screen === 'ending' && <DashStory panels={ENDING} onDone={() => setScreen('menu')} />}
       {screen === 'play' && <DashPlay key={run} hero={hero} levelIdx={levelIdx} onMenu={() => setScreen('menu')} onAgain={() => start(levelIdx)}
-        onNext={levelIdx + 1 < LEVELS.length ? () => start(levelIdx + 1) : null} onCleared={onCleared} onEnding={() => setScreen('ending')} />}
+        onNext={levelIdx + 1 < OPEN_LEVELS ? () => start(levelIdx + 1) : null} onCleared={onCleared} onEnding={() => setScreen('ending')} />}
     </div>
   )
 }
@@ -112,11 +115,12 @@ function DashMenu({ hero, onPick, onStart, onStory, levelIdx, onLevel, cleared }
         </>}
         <div className="dash-levels" role="radiogroup" aria-label="Choose the level">
           {LEVELS.map((L, i) => {
-            const locked = i > cleared
+            const soon = i >= OPEN_LEVELS && DEV_LEVEL == null
+            const locked = soon || i > cleared
             return (
               <button key={L.id} type="button" role="radio" aria-checked={levelIdx === i} disabled={locked}
-                className={`dash-level-btn${levelIdx === i ? ' is-on' : ''}`} onClick={() => onLevel(i)}>
-                <b>1-{i + 1}</b> {locked ? 'Locked' : L.name}{i < cleared ? ' \u2713' : ''}
+                className={`dash-level-btn${levelIdx === i ? ' is-on' : ''}${soon ? ' is-soon' : ''}`} onClick={() => onLevel(i)}>
+                <b>1-{i + 1}</b> {soon ? 'Coming soon' : locked ? 'Locked' : L.name}{!soon && i < cleared ? ' \u2713' : ''}
               </button>
             )
           })}
@@ -218,7 +222,7 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
         acc -= DT
       }
       while (g.chestAsks.length) askChest(g.chestAsks.shift())
-      if (g.status === 'won' && !revealed) { revealed = true; clearedRef.current?.(levelIdx); revealRun(runP).then((r) => { if (alive) setReveal(r) }) }
+      if (g.status === 'won' && !revealed) { revealed = true; clearedRef.current?.(levelIdx, g.time); revealRun(runP).then((r) => { if (alive) setReveal(r) }) }
       drawGame(ctx, g, canvas.width, canvas.height, hero, cam)
       const st = starsOf(g)
       const h = {
@@ -265,7 +269,7 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
           <h2>{level.name}</h2>
           <span>The price must flow.</span>
         </div>
-        {hud?.done && <DashResult hud={hud} level={level} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} onNext={onNext} onEnding={onEnding} />}
+        {hud?.done && <DashResult hud={hud} level={level} finale={levelIdx + 1 === OPEN_LEVELS && OPEN_LEVELS < LEVELS.length} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} onNext={onNext} onEnding={onEnding} />}
         {hud?.status === 'gameover' && <DashResult hud={hud} level={level} chests={chests} runInfo={runInfo} onAgain={onAgain} onMenu={onMenu} />}
       </div>
       {showRotate && (
@@ -301,14 +305,28 @@ function useCommitCheck(reveal) {
   return ok
 }
 
-function DashResult({ hud, level, won, chests, runInfo, reveal, onAgain, onMenu, onNext, onEnding }) {
+function DashResult({ hud, level, won, finale, chests, runInfo, reveal, onAgain, onMenu, onNext, onEnding }) {
   const s = hud.stars
+  const best = finale && won ? bestTimes() : null
+  const parts = best ? Array.from({ length: OPEN_LEVELS }, (_, i) => best[i]) : []
+  const total = parts.length && parts.every((t) => t > 0) ? parts.reduce((a, b) => a + b, 0) : null
   const got = won ? [s.finished, s.allGems, s.fast].filter(Boolean).length : 0
   const via = runInfo?.via
   const proof = runInfo?.proof
   const check = useCommitCheck(reveal)
   return (
-    <div className="dash-result" role="dialog" aria-label={won ? 'Price delivered' : 'Game over'}>
+    <div className={`dash-result${best ? ' is-finale' : ''}`} role="dialog" aria-label={won ? 'Price delivered' : 'Game over'}>
+      {best && <Confetti />}
+      {best && (
+        <div className="dash-finale">
+          <h2><span className="dash-emoji" aria-hidden="true">🎉</span> Congratulations, Data Runner!</h2>
+          <p className="dash-finale-time">
+            {total != null ? <>You finished the first {OPEN_LEVELS} levels in <b>{fmt(total)}</b></> : <>You finished the first {OPEN_LEVELS} levels!</>}
+          </p>
+          {total != null && <p className="dash-finale-split">{parts.map((t, i) => `1-${i + 1} ${fmt(t)}`).join(' · ')} <span>(your best times)</span></p>}
+          <p className="dash-finale-soon">But this is just the beginning… New levels are coming soon. Kronos is waiting! <span className="dash-emoji" aria-hidden="true">⏳</span></p>
+        </div>
+      )}
       <h2>{won ? (level.final ? 'The Genesis Flame is back!' : 'Price delivered!') : 'Out of lives'}</h2>
       {won && (
         <>
@@ -405,5 +423,52 @@ function DashStory({ onDone, panels = STORY }) {
 
 // fases liberadas: quantas já foram vencidas (a próxima abre quando você entrega o preço na anterior)
 const CLEARED_KEY = 'pb_dash_cleared'
+// melhor tempo (segundos) de cada fase vencida, pra somar no fim da fase 3
+const BEST_KEY = 'pb_dash_best'
+function bestTimes() { try { return JSON.parse(localStorage.getItem(BEST_KEY)) || {} } catch { return {} } }
+function saveBest(idx, time) {
+  if (!(time > 0)) return
+  try {
+    const b = bestTimes()
+    if (!(b[idx] > 0) || time < b[idx]) { b[idx] = Math.round(time * 10) / 10; localStorage.setItem(BEST_KEY, JSON.stringify(b)) }
+  } catch { /* sem localStorage */ }
+}
+
+// confete na tela de parabéns (canvas por cima de tudo, some sozinho em ~5 s)
+function Confetti() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const c = ref.current, ctx = c.getContext('2d')
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    const W = c.clientWidth, H = c.clientHeight
+    c.width = W * dpr; c.height = H * dpr; ctx.scale(dpr, dpr)
+    const cols = ['#f4c542', '#a77bff', '#f14ceb', '#ffffff', '#7c3aed', '#86efac']
+    const few = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const ps = Array.from({ length: few ? 40 : 170 }, (_, i) => ({
+      x: W / 2 + (Math.random() - 0.5) * W * 0.3, y: H * 0.35, vx: (Math.random() - 0.5) * 9, vy: -6 - Math.random() * 9,
+      w: 6 + Math.random() * 6, h: 4 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+      c: cols[i % cols.length], delay: Math.random() * 0.6,
+    }))
+    let raf = 0
+    const t0 = performance.now()
+    let last = t0
+    const frame = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000) * 60; last = now
+      const t = (now - t0) / 1000
+      ctx.clearRect(0, 0, W, H)
+      for (const p of ps) {
+        if (t < p.delay) continue
+        p.vy += 0.25 * dt; p.vx *= 0.99; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt
+        const flip = Math.abs(Math.cos(p.r * 2))
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, Math.min(1, 5 - t))
+        ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -(p.h * flip + 1) / 2, p.w, p.h * flip + 1); ctx.restore()
+      }
+      if (t < 5.2) raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <canvas ref={ref} className="dash-confetti" aria-hidden="true" />
+}
 function clearedCount() { try { return Math.max(0, Number(localStorage.getItem(CLEARED_KEY)) || 0) } catch { return 0 } }
 function saveCleared(n) { try { localStorage.setItem(CLEARED_KEY, String(n)) } catch { /* sem localStorage */ } }
