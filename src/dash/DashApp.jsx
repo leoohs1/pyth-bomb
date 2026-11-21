@@ -269,15 +269,9 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
         {hud?.status === 'gameover' && <DashResult hud={hud} level={level} chests={chests} runInfo={runInfo} onAgain={onAgain} onMenu={onMenu} />}
       </div>
       {showRotate && (
-        <div className="dash-rotate" role="dialog" aria-label="Turn your phone sideways">
-          <div className="dash-rotate-phone" aria-hidden="true"><span /></div>
-          <h3>Turn your phone sideways</h3>
-          <p>Pyth Odyssey plays best in landscape: you see more of the road ahead.</p>
-          <p className="dash-rotate-hint">Screen won&apos;t turn? Tap <b>Rotate the game</b> and hold your phone sideways.</p>
-          <div className="dash-result-btns">
-            <button type="button" className="dash-btn dash-btn-go" onClick={rotateGame}>Rotate the game</button>
-            <button type="button" className="dash-btn" onClick={() => { rotateDismissed = true; setRotateOk(true) }}>Play anyway</button>
-          </div>
+        <div className="dash-rotate" role="dialog" aria-label="Ready to play">
+          <button type="button" className="dash-btn dash-btn-go dash-rotate-play" onClick={() => { rotateDismissed = true; setRotateOk(true) }}>PLAY</button>
+          <button type="button" className="dash-rotate-alt" onClick={rotateGame}>or rotate the game ↻</button>
         </div>
       )}
       {TOUCH && (
