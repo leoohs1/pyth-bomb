@@ -42,7 +42,7 @@ export function PlacesList({ players, me }) {
 }
 
 export default function PokerApp() {
-  const R = useModeRoom({ mode: 'poker', tickRpc: 'poker_tick' })
+  const R = useModeRoom({ mode: 'poker', tickRpc: 'poker_tick', deadlineOf: (r) => (r?.poker_turn ? r.poker_turn_ends_at : r?.poker_next_at) ?? null })
   const { room, me, players, error, setError, serverNow } = R
   const chat = useChat(room?.id)
   useModeTheme('poker')

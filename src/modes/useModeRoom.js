@@ -24,7 +24,10 @@ const saved = (key) => ({
   clear: () => { try { store()?.removeItem(key) } catch { /* nada a limpar */ } },
 })
 
-export default function useModeRoom({ mode, tickRpc }) {
+// prazo da fase atual (quando o servidor deve avançar): a maioria usa question_expires_at; o Poker passa o dele
+const defaultDeadline = (r) => r?.question_expires_at ?? null
+
+export default function useModeRoom({ mode, tickRpc, deadlineOf = defaultDeadline }) {
   const remember = useRef(saved(`pythbomb:${mode}-code`)).current
   const [room, setRoom] = useState(null)
   const [me, setMe] = useState(null)
@@ -142,25 +145,44 @@ export default function useModeRoom({ mode, tickRpc }) {
     }
   }, [roomId, mode, remember])
 
-  // durante a partida: cutuca o servidor 1x por segundo (ele avança as rodadas).
-  // Se o tique devolver a hora do servidor, acerta o relógio daqui (pra todos ouvirem/verem juntos).
+  // durante a partida: quem avança as rodadas é o servidor do jogo (Railway chama tick_all 2x por segundo,
+  // supabase/046). Daqui o celular só cutuca DE RESERVA: a cada 5 s (também acerta o relógio) e, se a fase passou
+  // do prazo e nada mudou (servidor do jogo fora do ar), na hora. Antes era 1x por segundo por celular e, com 13
+  // pessoas, o Supabase grátis travava.
+  const deadlineRef = useRef(null)
+  deadlineRef.current = deadlineOf(room)
+  const offsetRef = useRef(0)
+  offsetRef.current = serverOffset
   useEffect(() => {
     if (!roomId || room?.status !== 'playing') return
     let n = 0
+    let busy = false
+    let lastTick = 0
     const tick = setInterval(async () => {
-      const t0 = Date.now()
-      const { data, error: e } = await supabase.rpc(tickRpc, { p_room_id: roomId })
-      if (e) console.log('TICK ERROR:', e.message)
-      else takeClock(data, t0, Date.now())
+      if (busy) return
+      busy = true
       n++
-      // rede de segurança se o aviso ao vivo se perder (celular com tela apagada etc.)
-      if (n % 3 === 0) {
-        const { data: r } = await supabase.from('rooms').select().eq('id', roomId).single()
-        if (r) setRoom((old) => (old && JSON.stringify(old) === JSON.stringify(r) ? old : r))
-      }
-      if (n % 4 === 0) {
-        const { data: ps } = await supabase.from('players').select().eq('room_id', roomId).order('joined_at')
-        if (ps) setPlayers((old) => (JSON.stringify(old) === JSON.stringify(ps) ? old : ps))
+      try {
+        const due = Date.parse(deadlineRef.current ?? '')
+        const late = !Number.isNaN(due) && Date.now() + offsetRef.current > due + 1800
+        if (n % 5 === 0 || (late && Date.now() - lastTick > 1500)) {
+          lastTick = Date.now()
+          const t0 = Date.now()
+          const { data, error: e } = await supabase.rpc(tickRpc, { p_room_id: roomId })
+          if (e) console.log('TICK ERROR:', e.message)
+          else takeClock(data, t0, Date.now())
+        }
+        // rede de segurança se o aviso ao vivo se perder (celular com tela apagada etc.)
+        if (n % 4 === 0) {
+          const { data: r } = await supabase.from('rooms').select().eq('id', roomId).single()
+          if (r) setRoom((old) => (old && JSON.stringify(old) === JSON.stringify(r) ? old : r))
+        }
+        if (n % 8 === 0) {
+          const { data: ps } = await supabase.from('players').select().eq('room_id', roomId).order('joined_at')
+          if (ps) setPlayers((old) => (JSON.stringify(old) === JSON.stringify(ps) ? old : ps))
+        }
+      } finally {
+        busy = false
       }
     }, 1000)
     return () => clearInterval(tick)

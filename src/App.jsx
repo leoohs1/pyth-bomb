@@ -153,18 +153,28 @@ export default function App() {
     return () => clearInterval(id)
   }, [room?.round_started_at, room?.status])
 
-  // cutuca o servidor pra ver se já explodiu
+  // quem explode a bomba na hora é o servidor do jogo (Railway chama tick_all 2x por segundo, supabase/046).
+  // Daqui só cutuca DE RESERVA: a cada 5 s e, se o tempo da vez passou e nada aconteceu (servidor do jogo fora
+  // do ar), na hora. Antes era 1x por segundo por celular, e com muita gente o Supabase grátis travava.
+  const expiresRef = useRef(null)
+  expiresRef.current = room?.question_expires_at ?? null
   useEffect(() => {
     if (!roomId || room?.status !== 'playing') return
     let n = 0
+    let lastTick = 0
     const id = setInterval(async () => {
-      const { error } = await supabase.rpc('tick', { p_room_id: roomId })
-      if (error) console.log('TICK ERROR:', error.message)
+      const due = Date.parse(expiresRef.current ?? '')
+      const late = !Number.isNaN(due) && Date.now() > due + 1800
+      if ((n + 1) % 5 === 0 || (late && Date.now() - lastTick > 1500)) {
+        lastTick = Date.now()
+        const { error } = await supabase.rpc('tick', { p_room_id: roomId })
+        if (error) console.log('TICK ERROR:', error.message)
+      }
       // rede de segurança: o tempo real pode falhar no celular (tela apagou, sinal fraco). A cada
-      // 3 s confere a sala e a cada 6 s os jogadores, e só atualiza se algo mudou. Assim a bomba, a
+      // 4 s confere a sala e a cada 8 s os jogadores, e só atualiza se algo mudou. Assim a bomba, a
       // eliminação e o aviso de explosão chegam mesmo se o aviso ao vivo se perder.
       n++
-      if (n % 3 === 0) {
+      if (n % 4 === 0) {
         const { data: r } = await supabase.from('rooms').select().eq('id', roomId).single()
         // (nunca aceita uma versão MAIS VELHA da sala que a já mostrada: resposta atrasada)
         if (r) setRoom((old) => {
@@ -173,7 +183,7 @@ export default function App() {
           return r
         })
       }
-      if (n % 6 === 0) {
+      if (n % 8 === 0) {
         const { data: ps } = await supabase.from('players').select().eq('room_id', roomId).order('joined_at')
         if (ps) setPlayers((old) => (JSON.stringify(old) === JSON.stringify(ps) ? old : ps))
       }
