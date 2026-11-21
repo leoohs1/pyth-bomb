@@ -13,6 +13,7 @@ import { Tournament, cleanName, cleanHero } from './tournament.js'
 import { verifyToken, authReady, supabaseConfig } from './auth.js'
 import { startKeepAlive } from './keepalive.js'
 import { startGameClock } from './gameClock.js'
+import { issueResume, useResume } from './resume.js'
 import { createEntropy } from './entropy.js'
 import { startPokerDraws } from './pokerDraws.js'
 import { startDashDraws } from './dashDraws.js'
@@ -93,14 +94,18 @@ function onChat(ws, t, text) {
 async function onMessage(ws, msg) {
   const pv = ws.pv
   if (msg.t === 'hello') {
-    let id = await verifyToken(msg.token)
+    // 1º o código de volta (não depende do Supabase); se não tiver ou venceu, o login do Supabase
+    let id = useResume(msg.resume)
+    if (!id) id = await verifyToken(msg.token)
     if (!id && DEV_AUTH && typeof msg.devId === 'string') id = 'dev-' + msg.devId.slice(0, 40)
+    // código de volta velho (servidor reiniciou) e sem crachá: o site tenta de novo esperando o login do Supabase
+    if (!id && typeof msg.resume === 'string' && !msg.token) return send(ws, { t: 'resume_bad' })
     if (!id) return fail(ws, authReady ? 'Login check failed. Reload the page.' : 'Server login is not configured')
     pv.user = id
     const old = userSocket.get(id)
     if (old && old !== ws) { send(old, { t: 'kicked' }); old.close() }
     userSocket.set(id, ws)
-    send(ws, { t: 'hello', id, testBots: TEST_BOTS })
+    send(ws, { t: 'hello', id, testBots: TEST_BOTS, resume: issueResume(id) })
     return
   }
   if (!pv.user) return fail(ws, 'Say hello first')

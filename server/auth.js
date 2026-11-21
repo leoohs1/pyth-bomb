@@ -31,7 +31,7 @@ export async function verifyToken(token) {
   const hit = cache.get(token)
   if (hit && hit.until > Date.now()) return hit.id
   try {
-    const res = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: KEY, Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: KEY, Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(5000) })
     if (!res.ok) return null
     const user = await res.json()
     if (!user?.id) return null

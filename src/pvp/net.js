@@ -26,7 +26,15 @@ const delayFor = (dir) => {
 }
 const later = (fn, dir = 'in') => { const d = delayFor(dir); return d ? setTimeout(fn, d) : fn() }
 
+// código de volta que o servidor entrega no hello (server/resume.js): com ele, quem cai volta na hora mesmo se o
+// Supabase estiver lento. Fica na aba (sessionStorage), então recarregar a página também volta.
+const RESUME_KEY = 'pb_pvp_resume'
+const loadResume = () => { try { return sessionStorage.getItem(RESUME_KEY) || null } catch { return null } }
+const saveResume = (c) => { try { sessionStorage.setItem(RESUME_KEY, c) } catch { /* sem storage: fica só na memória */ } }
+const within = (p, ms) => Promise.race([p, new Promise((resolve) => setTimeout(() => resolve(null), ms))])
+
 export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
+  let resume = loadResume()
   let ws = null
   let closed = false
   let retry = 0
@@ -35,17 +43,24 @@ export function connectPvp({ url = PVP_URL, getToken, onMessage, onStatus }) {
   const open = () => {
     onStatus?.(retry ? 'reconnecting' : 'connecting')
     try { ws = new WebSocket(url) } catch { schedule(); return }
+    // com código de volta não precisa esperar o Supabase; sem ele, espera o crachá no máximo 3 s
+    const hello = async () => {
+      let token = null
+      try { token = await within(getToken(), resume ? 300 : 3000) } catch { /* sem crachá: o código de volta resolve, ou o servidor responde com erro */ }
+      if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'hello', token, resume }))
+    }
     ws.onopen = async () => {
       retry = 0
-      let token = null
-      try { token = await getToken() } catch { /* sem crachá: o servidor responde com erro */ }
-      if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'hello', token }))
+      await hello()
       onStatus?.('open')
     }
     ws.onmessage = (e) => {
       let m
       try { m = JSON.parse(e.data) } catch { return }
       if (m.t === 'kicked') closed = true // abriu o jogo em outra aba: esta para de tentar
+      if (m.t === 'hello' && typeof m.resume === 'string') { resume = m.resume; saveResume(m.resume) }
+      // o servidor não reconheceu o código (reiniciou): esquece e manda o hello de novo com o login do Supabase
+      if (m.t === 'resume_bad') { resume = null; saveResume(''); hello(); return }
       later(() => onMessage(m))
     }
     ws.onclose = () => {
