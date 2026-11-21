@@ -46,6 +46,8 @@ const SFX = {
   crumble: 'solo_hit', portal: 'solo_jet', chaser: 'solo_roar', freeze: 'solo_shield', sweep: 'solo_kick', altar: 'solo_clear',
 }
 const HERO_KEY = 'pb_dash_hero'
+// por enquanto só o PIRB tem os desenhos de lado (correr, pular...); ligar de volta quando os outros 9 ficarem prontos
+const PICK_HEROES = false
 const DEV_LEVEL = (() => {
   if (!import.meta.env.DEV) return null
   const n = Number(new URLSearchParams(window.location.search).get('level'))
@@ -56,10 +58,10 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 
 export default function DashApp() {
   const [screen, setScreen] = useState('menu') // 'menu' | 'story' | 'play' | 'ending'
-  const [hero, setHero] = useState(() => { try { return localStorage.getItem(HERO_KEY) || 'pirb' } catch { return 'pirb' } })
+  const [hero, setHero] = useState(() => { if (!PICK_HEROES) return 'pirb'; try { return localStorage.getItem(HERO_KEY) || 'pirb' } catch { return 'pirb' } })
   const [run, setRun] = useState(0) // muda a cada partida nova (recomeça o jogo)
   useSoloAudio('/music/solo.mp3') // efeitos e música do Solo ("Pixel Adventure")
-  useEffect(() => { for (const h of HEROES) loadHero(h.id); loadArt() }, [])
+  useEffect(() => { for (const h of HEROES) if (PICK_HEROES || h.id === 'pirb') loadHero(h.id); loadArt() }, [])
   useEffect(() => { const old = document.title; document.title = 'Pyth Odyssey · Pyth Bomb'; return () => { document.title = old } }, [])
   const pick = (id) => { setHero(id); try { localStorage.setItem(HERO_KEY, id) } catch { /* sem localStorage */ } }
   // só no computador (npm run dev): /odyssey?level=3 já abre na fase 3, liberada, pra testar
@@ -96,15 +98,17 @@ function DashMenu({ hero, onPick, onStart, onStory, levelIdx, onLevel, cleared }
         <p className="dash-sub dash-menu-sub">Kronos, the Stale Titan, froze the Purple Realm. Wake the shrines, deliver the price and bring the color back.</p>
       </div>
       <div className="dash-menu-card">
-        <p className="dash-label">Choose your hero</p>
-        <div className="dash-heroes" role="radiogroup" aria-label="Choose your hero">
-          {HEROES.map((h) => (
-            <button key={h.id} type="button" role="radio" aria-checked={hero === h.id} aria-label={h.label}
-              className={`dash-hero${hero === h.id ? ' is-on' : ''}`} onClick={() => onPick(h.id)}>
-              <img src={`/solo/pixel/${h.id}-right1.png`} alt="" />
-            </button>
-          ))}
-        </div>
+        {PICK_HEROES && <>
+          <p className="dash-label">Choose your hero</p>
+          <div className="dash-heroes" role="radiogroup" aria-label="Choose your hero">
+            {HEROES.map((h) => (
+              <button key={h.id} type="button" role="radio" aria-checked={hero === h.id} aria-label={h.label}
+                className={`dash-hero${hero === h.id ? ' is-on' : ''}`} onClick={() => onPick(h.id)}>
+                <img src={`/solo/pixel/${h.id}-right1.png`} alt="" />
+              </button>
+            ))}
+          </div>
+        </>}
         <div className="dash-levels" role="radiogroup" aria-label="Choose the level">
           {LEVELS.map((L, i) => {
             const locked = i > cleared
