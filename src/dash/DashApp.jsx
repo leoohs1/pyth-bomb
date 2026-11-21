@@ -23,6 +23,21 @@ const TOUCH = (() => {
   if (v === '0') return false
   return window.matchMedia('(hover: none) and (pointer: coarse)').matches
 })()
+// celular em pé: o jogo mostra pouco do caminho; avisamos pra deitar (uma vez por visita, dá pra jogar assim mesmo)
+let rotateDismissed = false
+const PORTRAIT_MQ = '(orientation: portrait)'
+function usePortrait() {
+  const [p, setP] = useState(() => TOUCH && window.matchMedia(PORTRAIT_MQ).matches)
+  useEffect(() => {
+    if (!TOUCH) return
+    const mq = window.matchMedia(PORTRAIT_MQ)
+    const on = () => setP(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return p
+}
+
 const SFX = {
   jump: 'solo_kick', coin: 'solo_pickup', stomp: 'solo_enemy_die', bump: 'solo_hit', die: 'solo_dead', gameover: 'solo_gameover',
   win: 'solo_clear', checkpoint: 'solo_door', relay: 'solo_door', stale: 'solo_hit', publisher: 'solo_shield', gem: 'solo_chest_win',
@@ -126,6 +141,11 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
   useEffect(() => { clearedRef.current = onCleared }, [onCleared])
   const menuRef = useRef(onMenu) // (num ref: trocar a função não reinicia a partida)
   useEffect(() => { menuRef.current = onMenu }, [onMenu])
+  const portrait = usePortrait()
+  const [rotateOk, setRotateOk] = useState(rotateDismissed)
+  const showRotate = portrait && !rotateOk
+  const pausedRef = useRef(showRotate) // o jogo espera enquanto o aviso de girar o celular estiver na tela
+  useEffect(() => { pausedRef.current = showRotate }, [showRotate])
 
   useEffect(() => {
     const g = createGame(level)
@@ -173,6 +193,7 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
     let revealed = false
     const frame = (now) => {
       acc += Math.min(0.1, (now - last) / 1000); last = now
+      if (pausedRef.current) acc = 0
       while (acc >= DT) {
         step(g, input.current, DT)
         for (const ev of g.events) if (SFX[ev]) play(SFX[ev])
@@ -229,6 +250,14 @@ function DashPlay({ hero, levelIdx = 0, onMenu, onAgain, onNext, onCleared, onEn
         {hud?.done && <DashResult hud={hud} level={level} won chests={chests} runInfo={runInfo} reveal={reveal} onAgain={onAgain} onMenu={onMenu} onNext={onNext} onEnding={onEnding} />}
         {hud?.status === 'gameover' && <DashResult hud={hud} level={level} chests={chests} runInfo={runInfo} onAgain={onAgain} onMenu={onMenu} />}
       </div>
+      {showRotate && (
+        <div className="dash-rotate" role="dialog" aria-label="Turn your phone sideways">
+          <div className="dash-rotate-phone" aria-hidden="true"><span /></div>
+          <h3>Turn your phone sideways</h3>
+          <p>Pyth Odyssey plays best in landscape: you see more of the road ahead.</p>
+          <button type="button" className="dash-btn" onClick={() => { rotateDismissed = true; setRotateOk(true) }}>Play anyway</button>
+        </div>
+      )}
       {TOUCH && (
         <div className="dash-pad">
           <div className="dash-pad-move">
