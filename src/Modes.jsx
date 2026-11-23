@@ -15,9 +15,9 @@ const PERSON_OPEN = true
 let personUrl = false
 try { personUrl = new URLSearchParams(window.location.search).get('person') === '1' } catch { /* tudo bem */ }
 
-// Pyth Poker (Texas Hold'em, fichas de brincadeira): aberto pra todo mundo desde 2026-11-10.
-// Pra esconder de novo (só com ?poker=1 no endereço): POKER_OPEN = false.
-const POKER_OPEN = true
+// Pyth Poker (Texas Hold'em, fichas de brincadeira): aberto de 2026-11-10 a 2026-11-23; a Halls pediu pra tirar do menu
+// (o jogo continua em /poker e com ?poker=1 o card aparece). Pra voltar pra todo mundo: POKER_OPEN = true.
+const POKER_OPEN = false
 let pokerUrl = false
 try { pokerUrl = new URLSearchParams(window.location.search).get('poker') === '1' } catch { /* tudo bem */ }
 
@@ -87,6 +87,26 @@ const MODES = [
     hidden: !(PVP_OPEN || pvpUrl),
   },
   {
+    id: 'odyssey',
+    icon: '🏛️',
+    img: '/modes/odyssey.webp',
+    title: 'Pyth Odyssey',
+    badge: 'Beta', // só as fases 1 a 3 abertas por enquanto
+    sub: 'A pixel platform adventure in Ancient Greece. Stop Kronos and make the price flow again.',
+    locked: false,
+    href: '/odyssey',
+  },
+  {
+    id: 'solo',
+    icon: '🕹️',
+    img: '/modes/solo.webp',
+    title: 'Solo',
+    badge: 'Beta',
+    sub: 'A Bomberman-style dungeon run in 3 levels: the tavern, the shipwreck and the whirlpool.',
+    locked: false,
+    href: '/solo',
+  },
+  {
     id: 'new',
     icon: '✨',
     img: '/modes/new.webp',
@@ -103,15 +123,6 @@ const MODES = [
     sub: 'What was it worth? Closest guess wins the round.',
     locked: true, // ainda com preços de demonstração; destrava (locked: false) quando a chave da Pyth estiver ligada
     href: '/price',
-    hidden: true,
-  },
-  {
-    id: 'solo',
-    icon: '🕹️',
-    img: '/modes/solo.webp',
-    title: 'Solo',
-    sub: 'A real Bomberman-style dungeon run. Movement, power-ups, bosses.',
-    locked: true,
     hidden: true,
   },
   {
