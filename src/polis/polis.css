@@ -1,0 +1,131 @@
+/* PYTH POLIS (vila grega) — v1 com placas no lugar das artes (as artes de verdade vêm depois) */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.po-page {
+  position: fixed; inset: 0; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 0%, #3b1a6e 0%, #1a0b35 55%, #0d0620 100%);
+  color: #f3ecff; font-family: 'Inter', system-ui, sans-serif;
+}
+.po-emoji { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; font-style: normal; }
+.po-center { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; gap: 18px; box-sizing: border-box; }
+.po-loading { color: #c9b8f0; }
+
+/* login */
+.po-login-wrap { background: url('/dash/title.webp') center 30% / cover no-repeat; }
+.po-hero { text-align: center; }
+.po-title { margin: 0; font: 400 clamp(34px, 8vw, 72px)/1 'Press Start 2P', monospace; letter-spacing: 2px; color: #fff;
+  text-shadow: 0 4px 0 #5b34b0, 0 8px 0 #140a26, 0 0 28px rgba(196, 166, 255, 0.55); }
+.po-title span { color: #f4c542; }
+.po-tagline { margin: 14px 0 0; font: 400 clamp(10px, 1.8vw, 14px)/1.4 'Press Start 2P', monospace; text-shadow: 0 3px 0 #140a26; }
+.po-card { background: rgba(20, 10, 38, 0.84); border: 2px solid rgba(244, 197, 66, 0.55); border-radius: 16px; padding: 18px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+.po-login { width: min(100%, 380px); display: flex; flex-direction: column; gap: 12px; }
+.po-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.po-tabs button { padding: 10px; border-radius: 10px; border: 2px solid #5b34b0; background: transparent; color: #c9b8f0; font: inherit; font-weight: 600; cursor: pointer; }
+.po-tabs button.is-on { background: #5b34b0; color: #fff; }
+.po-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #c9b8f0; }
+.po-field input { padding: 11px 12px; border-radius: 10px; border: 2px solid #4a2a8c; background: #120826; color: #fff; font: inherit; font-size: 16px; }
+.po-field input:focus { outline: none; border-color: #f4c542; }
+.po-err { margin: 0; color: #ff9db0; font-size: 14px; }
+.po-note { margin: 0; color: #a993d6; font-size: 12.5px; line-height: 1.45; }
+
+.po-btn { padding: 11px 16px; border-radius: 12px; border: 2px solid #a77bff; background: #2a1657; color: #f3ecff; font: 600 15px 'Inter', system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 0 #140a26; }
+.po-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #140a26; }
+.po-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.po-btn-go { color: #2a1400; background: linear-gradient(#ffe58a, #f4c542); border-color: #b8860b; font-weight: 700; }
+.po-btn-ghost { padding: 7px 12px; font-size: 13px; background: transparent; box-shadow: none; }
+.po-pulse:not(:disabled) { animation: po-pulse 1.4s ease-in-out infinite; }
+@keyframes po-pulse { 50% { box-shadow: 0 4px 0 #140a26, 0 0 24px rgba(244, 197, 66, 0.8); } }
+
+/* vila */
+.po-village { min-height: 100%; display: flex; flex-direction: column; }
+.po-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 14px;
+  background: rgba(13, 6, 32, 0.92); border-bottom: 2px solid rgba(244, 197, 66, 0.4); backdrop-filter: blur(4px); }
+.po-top-name { display: flex; flex-direction: column; min-width: 0; }
+.po-top-name b { font: 400 13px/1.3 'Press Start 2P', monospace; color: #f4c542; }
+.po-top-name span { font-size: 12px; color: #a993d6; }
+.po-res { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; justify-content: center; }
+.po-res-item { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 6px; padding: 6px 10px; border-radius: 10px; background: rgba(91, 52, 176, 0.25); border: 1px solid rgba(167, 123, 255, 0.35); }
+.po-res-item .po-emoji { font-size: 18px; grid-row: span 2; }
+.po-res-num { font-weight: 700; font-variant-numeric: tabular-nums; }
+.po-res-bar { display: block; width: 64px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.po-res-bar i { display: block; height: 100%; background: #86efac; }
+.po-res-item.is-full { border-color: #f4c542; }
+.po-res-item.is-full .po-res-bar i { background: #f4c542; }
+
+.po-status { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 8px 14px; font-size: 13px; color: #c9b8f0; }
+.po-status b { color: #fff; }
+.po-status-ready { color: #f4c542; font-weight: 700; }
+
+/* a cena: céu de Delfos ao fundo e as construções em cima do chão */
+.po-scene { position: relative; flex: 1; min-height: 560px; margin: 0 12px 14px; border-radius: 18px; overflow: hidden; border: 2px solid rgba(167, 123, 255, 0.35);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto auto; gap: 16px; padding: 150px 18px 18px; align-content: end; }
+.po-sky { position: absolute; inset: 0; background: url('/dash/art/bg-far.png') center top / cover no-repeat; filter: saturate(1.05); }
+.po-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 72%; background: linear-gradient(rgba(26, 12, 54, 0) 0%, rgba(26, 12, 54, 0.78) 22%, #1d0e3d 60%); }
+.po-bld { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px 12px; border-radius: 16px; cursor: pointer;
+  color: #f3ecff; font: inherit; text-align: center; background: rgba(20, 10, 38, 0.82); border: 2px solid rgba(167, 123, 255, 0.45);
+  box-shadow: 0 6px 0 rgba(10, 4, 24, 0.9), 0 10px 26px rgba(0, 0, 0, 0.35); transition: transform 0.12s ease; }
+.po-bld:hover:not(.is-locked) { transform: translateY(-3px); }
+.po-bld-art { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; font-size: 40px;
+  background: radial-gradient(circle at 50% 35%, #6d44c9, #2a1657); border: 3px solid #f4c542; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25); }
+.po-bld-name { font-weight: 700; font-size: 14px; }
+.po-bld-name em { font-style: normal; color: #f4c542; font-size: 12px; margin-left: 4px; }
+.po-bld-state { font-size: 12.5px; color: #c9b8f0; min-height: 1.2em; font-variant-numeric: tabular-nums; }
+.po-bld-bar { width: 80%; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.po-bld-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a77bff, #f4c542); transition: width 1s linear; }
+.po-bld.is-ready { border-color: #f4c542; animation: po-glow 1.6s ease-in-out infinite; }
+.po-bld.is-ready .po-bld-state { color: #f4c542; font-weight: 700; }
+.po-bld.is-ready .po-bld-art { animation: po-bob 1.2s ease-in-out infinite; }
+.po-bld.is-working .po-bld-art { animation: po-work 2.4s ease-in-out infinite; }
+.po-bld.is-locked { opacity: 0.5; cursor: default; filter: grayscale(0.4); }
+@keyframes po-glow { 50% { box-shadow: 0 6px 0 rgba(10, 4, 24, 0.9), 0 0 28px rgba(244, 197, 66, 0.65); } }
+@keyframes po-bob { 50% { transform: translateY(-5px); } }
+@keyframes po-work { 50% { transform: rotate(-6deg) scale(1.04); } }
+/* lugar de cada um na vila: templo no alto, armazém no meio, campos em volta, quartel do lado */
+.po-bld-temple { grid-column: 2; grid-row: 1; }
+.po-bld-grain { grid-column: 1; grid-row: 2; }
+.po-bld-warehouse { grid-column: 2; grid-row: 2; }
+.po-bld-wood { grid-column: 3; grid-row: 2; }
+.po-bld-marble { grid-column: 1; grid-row: 3; }
+.po-bld-barracks { grid-column: 2; grid-row: 3; }
+.po-bld-bronze { grid-column: 3; grid-row: 3; }
+
+/* painel da construção */
+.po-sheet-back { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 3, 20, 0.7); }
+.po-sheet { position: relative; width: min(100%, 460px); max-height: calc(100% - 32px); overflow-y: auto; box-sizing: border-box;
+  background: #170b31; border: 2px solid rgba(244, 197, 66, 0.6); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.po-sheet h2 { margin: 0; font-size: 20px; }
+.po-sheet h2 em { font-style: normal; color: #f4c542; font-size: 15px; }
+.po-sheet-x { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 22px; cursor: pointer; }
+.po-sub { margin: 0; color: #d6c8f5; line-height: 1.45; }
+.po-label { margin: 4px 0 0; font: 400 10px/1.4 'Press Start 2P', monospace; color: #a77bff; }
+.po-cycles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.po-cycle { display: flex; flex-direction: column; gap: 4px; align-items: center; padding: 10px 4px; border-radius: 10px; border: 2px solid #4a2a8c; background: #120826; color: #f3ecff; font: inherit; cursor: pointer; }
+.po-cycle b { font-size: 13px; }
+.po-cycle span { font-size: 12px; color: #86efac; font-variant-numeric: tabular-nums; }
+.po-cycle.is-on { border-color: #f4c542; background: #2a1657; }
+.po-run { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: rgba(91, 52, 176, 0.2); }
+.po-run p { margin: 0; }
+.po-run-bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.po-run-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a77bff, #f4c542); transition: width 1s linear; }
+.po-upgrade { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid rgba(167, 123, 255, 0.25); }
+.po-gain { margin: 0; color: #86efac; font-weight: 600; }
+.po-cost { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; font-variant-numeric: tabular-nums; }
+.po-cost span.is-short { color: #ff9db0; }
+.po-cost .po-emoji { margin-right: 3px; }
+
+.po-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 30; padding: 12px 18px; border-radius: 12px;
+  background: #f4c542; color: #2a1400; font-weight: 700; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); animation: po-in 0.25s ease-out; max-width: calc(100% - 32px); text-align: center; }
+@keyframes po-in { from { transform: translate(-50%, 12px); opacity: 0; } }
+
+@media (max-width: 640px) {
+  .po-top { gap: 8px; }
+  .po-res { order: 3; width: 100%; gap: 6px; }
+  .po-res-item { padding: 5px 7px; }
+  .po-res-bar { width: 44px; }
+  .po-scene { grid-template-columns: repeat(2, 1fr); padding: 110px 10px 12px; gap: 10px; margin: 0 8px 10px; }
+  .po-bld-temple, .po-bld-grain, .po-bld-warehouse, .po-bld-wood, .po-bld-marble, .po-bld-barracks, .po-bld-bronze { grid-column: auto; grid-row: auto; }
+  .po-bld-warehouse { grid-column: 1 / -1; }
+  .po-bld-art { width: 58px; height: 58px; font-size: 32px; }
+  .po-cycles { grid-template-columns: repeat(3, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .po-bld, .po-bld-art, .po-pulse { animation: none !important; } }

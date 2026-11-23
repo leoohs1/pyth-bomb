@@ -21,6 +21,7 @@ import PvpApp from './pvp/PvpApp.jsx'
 import PokerApp from './poker/PokerApp.jsx'
 import PokerPreview from './poker/PokerPreview.jsx'
 import DashApp from './dash/DashApp.jsx'
+import PolisApp from './polis/PolisApp.jsx'
 
 const path = window.location.pathname
 // rotas separadas, só pra testar ideias visualmente — não fazem parte do jogo
@@ -43,6 +44,7 @@ const page = path.startsWith('/arena-preview') ? <ArenaPreview />
   : path.startsWith('/poker-preview') ? <PokerPreview /> // prévia do visual do Pyth Poker (dados de mentira)
   : path.startsWith('/poker') ? <PlayGate><PokerApp /></PlayGate> // Pyth Poker (fechado como o /play)
   : path.startsWith('/dash') || path.startsWith('/odyssey') ? <PlayGate><DashApp /></PlayGate> // Pyth Odyssey (antes Pyth Dash): plataforma com os heróis; /dash continua funcionando
+  : path.startsWith('/polis') ? <PlayGate><PolisApp /></PlayGate> // Pyth Polis (nome provisório): vila grega lenta; precisa do supabase/polis/G01
   : path.startsWith('/play') ? <PlayGate><App /></PlayGate>
   : <Landing href="/play" /> // página inicial: o "Play now" leva pro /play
 
