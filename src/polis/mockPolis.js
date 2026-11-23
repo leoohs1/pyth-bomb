@@ -1,63 +1,96 @@
 // SÓ NO COMPUTADOR (npm run dev + ?mock=1): imita as funções polis_* do Supabase na memória, com as mesmas regras do
-// supabase/polis/G01_polis.sql, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo
-// passa 60x mais rápido (30 min viram 30 s). Nunca entra no site publicado.
+// supabase/polis/G01 + G02, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
+// 60x mais rápido (30 min viram 30 s). Nunca entra no site publicado.
 const QS = new URLSearchParams(window.location.search)
 const FAST = Math.max(1, Number(QS.get('fast')) || 1)
 const t0 = Date.now()
 const clock = () => t0 + (Date.now() - t0) * FAST
+export const mockNow = () => clock()
 const iso = (ms) => new Date(ms).toISOString()
 
-const rate = (l) => Math.round(40 * 1.35 ** (Math.max(1, l) - 1))
+const PLOT_KIND = ['grain', 'wood', 'bronze', 'wood', 'grain', 'marble', 'marble', 'grain', 'grain', 'wood', 'bronze', 'marble', 'bronze', 'wood']
+const KINDS = ['agora', 'storehouse', 'granary', 'cellar', 'barracks', 'market', 'temple', 'agoge', 'harbor', 'sanctuary']
+const RES = ['grain', 'wood', 'marble', 'bronze']
+const rate = (l) => (l <= 0 ? 0 : Math.round(40 * 1.35 ** (l - 1)))
 const MULT = { 1800: 2.6, 3600: 2.3, 21600: 1.6, 43200: 1.25, 86400: 1.0 }
-const cap = (l) => Math.round(1200 * 1.5 ** (Math.max(1, l) - 1))
+const cap = (l) => (l <= 0 ? 800 : Math.round(1200 * 1.5 ** (l - 1)))
 const BASE = {
-  grain: { grain: 20, wood: 70, marble: 50, bronze: 20 }, wood: { grain: 40, wood: 30, marble: 60, bronze: 30 },
-  marble: { grain: 40, wood: 70, marble: 20, bronze: 40 }, bronze: { grain: 50, wood: 60, marble: 60, bronze: 10 },
-  warehouse: { grain: 30, wood: 90, marble: 110, bronze: 40 },
+  grain: [20, 70, 50, 20], wood: [40, 30, 60, 30], marble: [40, 70, 20, 40], bronze: [50, 60, 60, 10],
+  storehouse: [30, 90, 110, 40], granary: [40, 100, 80, 30], agora: [70, 90, 120, 60], cellar: [40, 60, 90, 20],
+  barracks: [90, 120, 80, 130], market: [80, 110, 90, 60], temple: [120, 100, 200, 90],
 }
 const cost = (kind, to) => {
-  const f = 1.6 ** (Math.max(2, to) - 2), b = BASE[kind]
-  return { grain: Math.round(b.grain * f), wood: Math.round(b.wood * f), marble: Math.round(b.marble * f), bronze: Math.round(b.bronze * f), secs: Math.round(120 * 1.7 ** (Math.max(2, to) - 2)) }
+  const f = to <= 1 ? 0.5 : 1.6 ** (to - 2), b = BASE[kind] ?? [120, 150, 150, 150]
+  return { grain: Math.round(b[0] * f), wood: Math.round(b[1] * f), marble: Math.round(b[2] * f), bronze: Math.round(b[3] * f), secs: to <= 1 ? 60 : Math.round(120 * 1.7 ** (to - 2)) }
 }
-const KINDS = ['grain', 'wood', 'marble', 'bronze']
-let db = null // { user, v: {...}, fields: {kind: {...}} }
+let db = null
 let logged = false
-
+const lvl = (kind) => db.buildings.find((b) => b.kind === kind)?.level ?? 0
+const needs = (kind) => {
+  if (['agora', 'storehouse', 'granary'].includes(kind)) return null
+  if (['cellar', 'barracks'].includes(kind)) return lvl('agora') >= 3 ? null : 'Agora level 3'
+  if (kind === 'market') return lvl('agora') >= 5 ? null : 'Agora level 5'
+  if (kind === 'temple') return lvl('agora') >= 7 ? null : 'Agora level 7'
+  const own = { agoge: 'spartan', harbor: 'athenian', sanctuary: 'delphian' }[kind]
+  if (own !== db.tribe) return "Another tribe's building"
+  return lvl('barracks') >= 5 ? null : 'Barracks level 5'
+}
 function settle() {
   const v = db.v
   if (!v.build_kind || v.build_until > clock()) return
-  if (v.build_kind === 'warehouse') v.warehouse = v.build_level
-  else db.fields[v.build_kind].level = v.build_level
-  v.build_kind = v.build_level = v.build_until = null
+  const [type, n] = v.build_target.split(':')
+  if (type === 'plot') db.plots[n].level = v.build_level
+  else { const b = db.buildings.find((x) => x.pad === Number(n)); if (b) b.level = v.build_level; else db.buildings.push({ pad: Number(n), kind: v.build_kind, level: v.build_level }) }
+  Object.assign(v, { build_kind: null, build_level: null, build_until: null, build_target: null })
 }
 function state() {
   if (!logged || !db) return { logged_in: false, now: iso(clock()) }
   settle()
   const v = db.v
   return {
-    logged_in: true, now: iso(clock()), user: db.user,
+    logged_in: true, now: iso(clock()), user: db.user, tribe: db.tribe,
     village: {
       name: v.name, grain: Math.floor(v.grain), wood: Math.floor(v.wood), marble: Math.floor(v.marble), bronze: Math.floor(v.bronze),
-      warehouse: v.warehouse, capacity: cap(v.warehouse), warehouse_next: v.warehouse < 10 ? cost('warehouse', v.warehouse + 1) : null,
-      capacity_next: v.warehouse < 10 ? cap(v.warehouse + 1) : null, build_kind: v.build_kind, build_level: v.build_level, build_until: v.build_until ? iso(v.build_until) : null,
+      store_cap: cap(lvl('storehouse')), granary_cap: cap(lvl('granary')),
+      build_kind: v.build_kind, build_level: v.build_level, build_until: v.build_until ? iso(v.build_until) : null, build_target: v.build_target,
     },
-    fields: KINDS.map((k) => { const f = db.fields[k]; return { kind: k, level: f.level, rate: rate(f.level), cycle_secs: f.cycle_secs, started_at: f.started_at ? iso(f.started_at) : null, ends_at: f.ends_at ? iso(f.ends_at) : null, harvest: f.harvest, next: f.level < 10 ? cost(k, f.level + 1) : null, next_rate: f.level < 10 ? rate(f.level + 1) : null } }),
+    plots: db.plots.map((p, idx) => ({ idx, kind: p.kind, level: p.level, rate: rate(p.level), cycle_secs: p.cycle_secs, started_at: p.started_at ? iso(p.started_at) : null, ends_at: p.ends_at ? iso(p.ends_at) : null, harvest: p.harvest, next: p.level < 10 ? cost(p.kind, p.level + 1) : null, next_rate: rate(p.level + 1) })),
+    buildings: [...db.buildings].sort((a, b) => a.pad - b.pad).map((b) => ({ ...b, next: b.level < 10 ? cost(b.kind, b.level + 1) : null })),
+    catalog: KINDS.map((k) => ({ kind: k, cost: cost(k, 1), needs: needs(k), built: db.buildings.some((b) => b.kind === k) })),
     cycles: Object.entries(MULT).map(([secs, mult]) => ({ secs: Number(secs), mult })),
   }
 }
 const fail = (message) => ({ data: null, error: { message } })
 const ok = (data) => ({ data, error: null })
+function queue(target, kind, to) {
+  const v = db.v
+  if (v.build_kind) return 'Your builders are busy. Wait for the current construction'
+  if (to > 10) return 'Already at the top level'
+  const c = cost(kind, to)
+  if (RES.some((k) => v[k] < c[k])) return 'Not enough resources'
+  for (const k of RES) v[k] -= c[k]
+  const secs = Math.round(c.secs * (1 - Math.min(0.45, 0.05 * Math.max(0, (lvl('agora') || 1) - 1))))
+  Object.assign(v, { build_kind: kind, build_level: to, build_target: target, build_until: clock() + secs * 1000 })
+  return null
+}
 
 export async function mockRpc(fn, a = {}) {
-  await new Promise((r) => setTimeout(r, 120))
+  await new Promise((r) => setTimeout(r, 100))
   const now = clock()
+  if (logged && db) settle()
   switch (fn) {
     case 'polis_state': return ok(state())
     case 'polis_register': {
       if (!/^[a-z0-9_]{3,16}$/.test((a.p_username || '').trim().toLowerCase())) return fail('Username: 3 to 16 letters, numbers or _')
       if ((a.p_password || '').length < 6) return fail('Password: at least 6 characters')
       if ((a.p_village || '').trim().length < 2) return fail('Give your village a name (2 to 24 characters)')
-      db = { user: a.p_username.trim(), pass: a.p_password, v: { name: a.p_village.trim().slice(0, 24), grain: 500, wood: 500, marble: 500, bronze: 500, warehouse: 1, build_kind: null, build_level: null, build_until: null }, fields: Object.fromEntries(KINDS.map((k) => [k, { level: 1, cycle_secs: null, started_at: null, ends_at: null, harvest: 0 }])) }
+      if (!['spartan', 'athenian', 'delphian'].includes(a.p_tribe)) return fail('Pick a tribe')
+      db = {
+        user: a.p_username.trim(), pass: a.p_password, tribe: a.p_tribe,
+        v: { name: a.p_village.trim().slice(0, 24), grain: 500, wood: 500, marble: 500, bronze: 500, build_kind: null, build_level: null, build_until: null, build_target: null },
+        plots: PLOT_KIND.map((kind, i) => ({ kind, level: [0, 1, 2, 5].includes(i) ? 1 : 0, cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })),
+        buildings: [{ pad: 1, kind: 'agora', level: 1 }, { pad: 4, kind: 'storehouse', level: 1 }],
+      }
       logged = true
       return ok(state())
     }
@@ -65,43 +98,34 @@ export async function mockRpc(fn, a = {}) {
       if (!db || db.user.toLowerCase() !== (a.p_username || '').trim().toLowerCase() || db.pass !== a.p_password) return ok({ logged_in: false, error: 'Wrong username or password' })
       logged = true; return ok(state())
     case 'polis_logout': logged = false; return ok(state())
-    case 'polis_start': {
-      if (!logged) return fail('Log in first')
-      settle()
-      const f = db.fields[a.p_kind], m = MULT[a.p_secs]
-      if (!f) return fail('Unknown field'); if (!m) return fail('Pick a cycle: 30 min, 1 h, 6 h, 12 h or 24 h')
-      if (f.started_at) return fail('This field is already working')
-      Object.assign(f, { cycle_secs: a.p_secs, started_at: now, ends_at: now + a.p_secs * 1000, harvest: Math.round(rate(f.level) * (a.p_secs / 3600) * m) })
+    case 'polis_set_tribe': if (!db.tribe) db.tribe = a.p_tribe; return ok(state())
+    case 'polis_plot_start': {
+      const p = db.plots[a.p_idx], m = MULT[a.p_secs]
+      if (!p) return fail('Unknown plot'); if (!m) return fail('Pick a cycle')
+      if (p.level < 1) return fail('Build this plot first'); if (p.started_at) return fail('This plot is already working')
+      Object.assign(p, { cycle_secs: a.p_secs, started_at: now, ends_at: now + a.p_secs * 1000, harvest: Math.round(rate(p.level) * (a.p_secs / 3600) * m) })
       return ok(state())
     }
-    case 'polis_collect': {
-      if (!logged) return fail('Log in first')
-      settle()
-      const f = db.fields[a.p_kind], v = db.v
-      if (!f?.started_at) return fail('Nothing to collect here'); if (f.ends_at > now) return fail('Not ready yet')
-      const moved = Math.min(Math.max(0, cap(v.warehouse) - v[a.p_kind]), f.harvest)
-      if (moved <= 0) return fail('Your warehouse is full. Spend some or upgrade it')
-      v[a.p_kind] += moved
-      const left = f.harvest - moved
-      if (left > 0) f.harvest = left; else Object.assign(f, { cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })
-      return ok({ ...state(), collected: { kind: a.p_kind, amount: moved, left } })
+    case 'polis_plot_collect': {
+      const p = db.plots[a.p_idx], v = db.v
+      if (!p?.started_at) return fail('Nothing to collect here'); if (p.ends_at > now) return fail('Not ready yet')
+      const c = p.kind === 'grain' ? cap(lvl('granary')) : cap(lvl('storehouse'))
+      const moved = Math.min(Math.max(0, c - v[p.kind]), p.harvest)
+      if (moved <= 0) return fail(p.kind === 'grain' ? 'Your granary is full. Spend some or upgrade it' : 'Your storehouse is full. Spend some or upgrade it')
+      v[p.kind] += moved
+      const left = p.harvest - moved
+      if (left > 0) p.harvest = left; else Object.assign(p, { cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })
+      return ok({ ...state(), collected: { kind: p.kind, amount: moved, left } })
     }
-    case 'polis_upgrade': {
-      if (!logged) return fail('Log in first')
-      settle()
-      const v = db.v
-      if (v.build_kind) return fail('Your builders are busy. Wait for the current construction')
-      const lvl = a.p_kind === 'warehouse' ? v.warehouse : db.fields[a.p_kind]?.level
-      if (!lvl) return fail('Unknown building'); if (lvl >= 10) return fail('Already at the top level')
-      const c = cost(a.p_kind, lvl + 1)
-      if (KINDS.some((k) => v[k] < c[k])) return fail('Not enough resources')
-      for (const k of KINDS) v[k] -= c[k]
-      Object.assign(v, { build_kind: a.p_kind, build_level: lvl + 1, build_until: now + c.secs * 1000 })
-      return ok(state())
+    case 'polis_plot_upgrade': { const p = db.plots[a.p_idx]; const e = queue(`plot:${a.p_idx}`, p.kind, p.level + 1); return e ? fail(e) : ok(state()) }
+    case 'polis_build': {
+      const b = db.buildings.find((x) => x.pad === a.p_pad)
+      if (b) { const e = queue(`pad:${a.p_pad}`, b.kind, b.level + 1); return e ? fail(e) : ok(state()) }
+      if (!KINDS.includes(a.p_kind)) return fail('Unknown building')
+      if (db.buildings.some((x) => x.kind === a.p_kind)) return fail('You already have this building')
+      const n = needs(a.p_kind); if (n) return fail(`Needs ${n}`)
+      const e = queue(`pad:${a.p_pad}`, a.p_kind, 1); return e ? fail(e) : ok(state())
     }
     default: return fail('unknown ' + fn)
   }
 }
-
-// relógio da imitação (pra contagem regressiva da tela andar na mesma velocidade)
-export const mockNow = () => clock()

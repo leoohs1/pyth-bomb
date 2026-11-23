@@ -1,35 +1,19 @@
-// PYTH POLIS (nome provisório) — vila grega lenta pra comunidade da Pyth (ideia da Halls, 2026-11-23).
-// v1: login com usuário e senha, a vila, os 4 recursos (grão, madeira, mármore, bronze), ciclos de coleta
-// (30 min a 24 h), armazém e melhorias. Quartel e templo vêm depois.
-// Tudo é decidido no Supabase (supabase/polis/G01_polis.sql): o navegador só pede e mostra. As contagens regressivas
-// correm aqui no aparelho (sem perguntar ao servidor a cada segundo); o estado é recarregado a cada 30 s e nas ações.
+// PYTH POLIS (nome provisório) — vila grega calma pra comunidade da Pyth (Halls, 2026-11-23).
+// v2, no formato do Travian mas limpo e "Colheita Feliz": menu em cima, tela de Recursos (14 lotes em volta da
+// vilinha) e tela da Cidade (14 bases de mármore onde os prédios aparecem). As outras abas mostram "Soon".
+// Tudo é decidido no Supabase (supabase/polis/G01 + G02): o navegador só pede e mostra. As contagens regressivas
+// correm aqui no aparelho; o estado é recarregado a cada 30 s, quando algo termina e depois de cada ação.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, ensureSession } from '../supabaseClient'
 import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
-import PolisWorld, { Spot } from './PolisWorld'
+import {
+  RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
+} from './polisData'
 
 // só no computador: ?mock=1 usa a imitação na memória (mockPolis.js) em vez do Supabase
 const MOCK = import.meta.env.DEV && new URLSearchParams(window.location.search).get('mock') === '1'
 
-const RES = [
-  { id: 'grain', label: 'Grain', icon: '🌾', field: 'Grain Field', blurb: 'Feeds your people and, soon, your soldiers.' },
-  { id: 'wood', label: 'Wood', icon: '🪵', field: 'Olive Grove', blurb: 'Timber for houses, ships and walls.' },
-  { id: 'marble', label: 'Marble', icon: '🪨', field: 'Marble Quarry', blurb: 'The stone of temples and great buildings.' },
-  { id: 'bronze', label: 'Bronze', icon: '⚒️', field: 'Bronze Forge', blurb: 'Weapons and armour for the hoplites.' },
-]
-const RES_BY = Object.fromEntries(RES.map((r) => [r.id, r]))
-const CYCLE_LABEL = { 1800: '30 min', 3600: '1 h', 21600: '6 h', 43200: '12 h', 86400: '24 h' }
-const NAME = { ...Object.fromEntries(RES.map((r) => [r.id, r.field])), warehouse: 'Storehouse' }
-
-const fmtTime = (ms) => {
-  const s = Math.max(0, Math.ceil(ms / 1000))
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60
-  return h ? `${h}h ${String(m).padStart(2, '0')}m` : m ? `${m}m ${String(x).padStart(2, '0')}s` : `${x}s`
-}
-const fmtNum = (n) => Math.floor(Number(n) || 0).toLocaleString('en-US')
-
-// chama uma função polis_* do Supabase; erros viram texto pra mostrar
 async function rpc(fn, args) {
   const { data, error } = MOCK ? await mockRpc(fn, args) : await supabase.rpc(fn, args)
   if (error) throw new Error(error.message.replace(/^.*?:\s(?=[A-Z])/, ''))
@@ -40,23 +24,16 @@ async function rpc(fn, args) {
 export default function PolisApp() {
   const [state, setState] = useState(null)
   const [err, setErr] = useState('')
-  const [offset, setOffset] = useState(0) // relógio do servidor - relógio daqui
+  const [offset, setOffset] = useState(0)
   const [now, setNow] = useState(Date.now())
-
-  const take = useCallback((s) => {
-    if (!s) return
-    if (s.now) setOffset(Date.parse(s.now) - Date.now())
-    setState(s)
-  }, [])
+  const take = useCallback((s) => { if (!s) return; if (s.now) setOffset(Date.parse(s.now) - Date.now()); setState(s) }, [])
   const refresh = useCallback(async () => {
     try { take(await rpc('polis_state')); setErr('') } catch (e) { setErr(e.message) }
   }, [take])
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try { if (!MOCK) await ensureSession(); if (alive) await refresh() } catch (e) { if (alive) setErr(e.message || 'Could not connect') }
-    })()
+    ;(async () => { try { if (!MOCK) await ensureSession(); if (alive) await refresh() } catch (e) { if (alive) setErr(e.message || 'Could not connect') } })()
     const poll = setInterval(refresh, 30000)
     const vis = () => { if (document.visibilityState === 'visible') refresh() }
     document.addEventListener('visibilitychange', vis)
@@ -65,14 +42,12 @@ export default function PolisApp() {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
   useEffect(() => { const old = document.title; document.title = 'Pyth Polis · Pyth Bomb'; return () => { document.title = old } }, [])
 
-  // hora do jogo aqui no aparelho (a do servidor, acertada); na imitação, o relógio acelerado dela
   const t = MOCK ? mockNow() : now + offset
-
-  // quando um ciclo ou uma construção termina, busca o estado novo na hora
+  // quando uma colheita ou construção termina, busca o estado novo na hora
   const due = useRef(new Set())
   useEffect(() => {
     if (!state?.logged_in) return
-    const ends = [state.village.build_until, ...state.fields.map((f) => f.ends_at)].filter(Boolean)
+    const ends = [state.village.build_until, ...(state.plots ?? []).map((p) => p.ends_at)].filter(Boolean)
     for (const e of ends) if (Date.parse(e) <= t && !due.current.has(e)) { due.current.add(e); refresh() }
   }, [t, state, refresh])
 
@@ -80,34 +55,37 @@ export default function PolisApp() {
     <div className="po-page">
       {!state ? <div className="po-center"><p className="po-loading">{err || 'Opening the gates…'}</p></div>
         : !state.logged_in ? <PolisLogin onDone={take} />
-          : <PolisVillage s={state} t={t} onState={take} onLogout={async () => take(await rpc('polis_logout'))} />}
+          : !state.tribe ? <div className="po-center po-login-wrap"><TribePicker onPick={async (tr) => take(await rpc('polis_set_tribe', { p_tribe: tr }))} /></div>
+            : <PolisGame s={state} t={t} onState={take} onLogout={async () => take(await rpc('polis_logout'))} />}
     </div>
   )
 }
 
-// ---------------------------------------------------------------- login / criar conta
+// ---------------------------------------------------------------- entrar / criar conta (com a tribo)
 function PolisLogin({ onDone }) {
-  const [mode, setMode] = useState('login') // 'login' | 'create'
+  const [mode, setMode] = useState('login')
   const [user, setUser] = useState('')
   const [pass, setPass] = useState('')
   const [village, setVillage] = useState('')
+  const [tribe, setTribe] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const submit = async (e) => {
     e.preventDefault()
+    if (mode === 'create' && !tribe) { setErr('Pick your tribe'); return }
     setBusy(true); setErr('')
     try {
       onDone(mode === 'login' ? await rpc('polis_login', { p_username: user, p_password: pass })
-        : await rpc('polis_register', { p_username: user, p_password: pass, p_village: village }))
+        : await rpc('polis_register', { p_username: user, p_password: pass, p_village: village, p_tribe: tribe }))
     } catch (e2) { setErr(e2.message) } finally { setBusy(false) }
   }
   return (
     <div className="po-center po-login-wrap">
       <div className="po-hero">
         <h1 className="po-title">PYTH <span>POLIS</span></h1>
-        <p className="po-tagline">Build your village in the Purple Realm.</p>
+        <p className="po-tagline">Build your village. Take care of it.</p>
       </div>
-      <form className="po-card po-login" onSubmit={submit}>
+      <form className={`po-card po-login${mode === 'create' ? ' is-wide' : ''}`} onSubmit={submit}>
         <div className="po-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'is-on' : ''} onClick={() => { setMode('login'); setErr('') }}>Log in</button>
           <button type="button" role="tab" aria-selected={mode === 'create'} className={mode === 'create' ? 'is-on' : ''} onClick={() => { setMode('create'); setErr('') }}>Create account</button>
@@ -119,120 +97,234 @@ function PolisLogin({ onDone }) {
           <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={6} maxLength={72} placeholder="at least 6 characters" required />
         </label>
         {mode === 'create' && (
-          <label className="po-field">Village name
-            <input value={village} onChange={(e) => setVillage(e.target.value)} maxLength={24} placeholder="e.g. New Delphi" required />
-          </label>
+          <>
+            <label className="po-field">Village name
+              <input value={village} onChange={(e) => setVillage(e.target.value)} maxLength={24} placeholder="e.g. New Delphi" required />
+            </label>
+            <p className="po-label">Choose your tribe</p>
+            <TribeCards value={tribe} onChange={setTribe} />
+          </>
         )}
         {err && <p className="po-err" role="alert">{err}</p>}
         <button type="submit" className="po-btn po-btn-go" disabled={busy}>{busy ? '…' : mode === 'login' ? 'Enter the polis' : 'Found my village'}</button>
-        {mode === 'create' && <p className="po-note">Write your password down: there is no email to recover it yet.</p>}
+        {mode === 'create' && <p className="po-note">Write your password down: there is no email to recover it yet. Your tribe can&apos;t be changed later.</p>}
       </form>
     </div>
   )
 }
 
-// ---------------------------------------------------------------- a vila
-function PolisVillage({ s, t, onState, onLogout }) {
+function TribeCards({ value, onChange }) {
+  return (
+    <div className="po-tribes" role="radiogroup" aria-label="Tribe">
+      {Object.entries(TRIBES).map(([id, tr]) => (
+        <button key={id} type="button" role="radio" aria-checked={value === id} className={`po-tribe${value === id ? ' is-on' : ''}`}
+          style={{ '--tribe': tr.color }} onClick={() => onChange(id)}>
+          <span className="po-tribe-icon po-emoji" aria-hidden="true">{tr.icon}</span>
+          <b>{tr.name}</b>
+          <em>{tr.tag}</em>
+          <small>{tr.text}</small>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// conta antiga (da v1) sem tribo: escolhe uma vez
+function TribePicker({ onPick }) {
+  const [tribe, setTribe] = useState(null)
+  const [busy, setBusy] = useState(false)
+  return (
+    <div className="po-card po-login is-wide">
+      <h2 className="po-pick-title">Choose your tribe</h2>
+      <p className="po-note">Your village is safe. Pick the people you belong to (this can&apos;t be changed later).</p>
+      <TribeCards value={tribe} onChange={setTribe} />
+      <button type="button" className="po-btn po-btn-go" disabled={!tribe || busy} onClick={async () => { setBusy(true); try { await onPick(tribe) } finally { setBusy(false) } }}>Join the {tribe ? TRIBES[tribe].name : 'tribe'}</button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------- o jogo
+const NAV = [
+  { id: 'resources', icon: '🌾', label: 'Resources' },
+  { id: 'city', icon: '🏛️', label: 'City' },
+  { id: 'map', icon: '🗺️', label: 'Map', soon: true },
+  { id: 'reports', icon: '📜', label: 'Reports', soon: true },
+  { id: 'ranking', icon: '🏆', label: 'Ranking', soon: true },
+  { id: 'missions', icon: '⚡', label: 'Missions', soon: true },
+  { id: 'hero', icon: '🦸', label: 'Hero', soon: true },
+]
+
+function PolisGame({ s, t, onState, onLogout }) {
   const v = s.village
-  const [open, setOpen] = useState(null) // 'grain' | ... | 'warehouse'
-  const [cam, setCam] = useState('city') // foco da câmera: 'city' | 'fields'
+  const tribe = TRIBES[s.tribe]
+  const [tab, setTab] = useState('resources')
+  const [open, setOpen] = useState(null) // { plot: idx } | { pad: n }
+  const [soon, setSoon] = useState(null)
   const [toast, setToast] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const act = async (fn, args, msg) => {
+  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 3200); return () => clearTimeout(id) }, [toast])
+  useEffect(() => { setErr('') }, [open])
+  // celular: a cena é mais larga que a tela (arrasta pro lado); abre centralizada na vila
+  const scrollRef = useRef(null)
+  useEffect(() => { const el = scrollRef.current; if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2 }, [tab])
+
+  const act = async (fn, args, msg, close) => {
     setBusy(true); setErr('')
     try {
       const r = await rpc(fn, args)
       onState(r)
       const c = r.collected
-      if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait in the field: storehouse full)` : ''}`)
+      if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait: storage full)` : ''}`)
       else if (msg) setToast(msg)
+      if (close) setOpen(null)
       return true
     } catch (e) { setErr(e.message); return false } finally { setBusy(false) }
   }
-  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 3200); return () => clearTimeout(id) }, [toast])
-
-  const fieldState = (f) => !f.started_at ? 'idle' : Date.parse(f.ends_at) <= t ? 'ready' : 'working'
-  const building = v.build_kind ? { name: NAME[v.build_kind], level: v.build_level, left: Date.parse(v.build_until) - t } : null
-  const readyCount = s.fields.filter((f) => fieldState(f) === 'ready').length
+  const plotState = (p) => (p.level < 1 ? 'empty' : !p.started_at ? 'idle' : Date.parse(p.ends_at) <= t ? 'ready' : 'working')
+  const ready = s.plots.filter((p) => plotState(p) === 'ready')
+  const idle = s.plots.filter((p) => plotState(p) === 'idle')
+  const building = v.build_kind ? {
+    name: v.build_target?.startsWith('plot:') ? RES_BY[v.build_kind].field : BUILDINGS[v.build_kind]?.name ?? v.build_kind,
+    level: v.build_level, left: Date.parse(v.build_until) - t,
+  } : null
+  const capOf = (k) => (k === 'grain' ? v.granary_cap : v.store_cap)
 
   return (
-    <div className="po-village">
-      <header className="po-top">
-        <div className="po-top-name"><b>{v.name}</b><span>{s.user}</span></div>
-        <div className="po-res">
+    <div className="po-game" style={{ '--tribe': tribe.color }}>
+      {/* ---- menu de cima, como no Travian: brasão/vila, as abas e a barra de recursos */}
+      <header className="po-topbar">
+        <div className="po-crest" title={tribe.name}>
+          <span className="po-crest-badge po-emoji" aria-hidden="true">{tribe.icon}</span>
+          <span className="po-crest-text"><b>{v.name}</b><small>{s.user} · {tribe.name}</small></span>
+        </div>
+        <nav className="po-nav" aria-label="Sections">
+          {NAV.map((n) => (
+            <button key={n.id} type="button" className={`po-nav-btn${tab === n.id ? ' is-on' : ''}${n.soon ? ' is-soon' : ''}`}
+              onClick={() => (n.soon ? setSoon(n) : setTab(n.id))} aria-current={tab === n.id ? 'page' : undefined}>
+              <span className="po-emoji" aria-hidden="true">{n.icon}</span>
+              <span className="po-nav-label">{n.label}</span>
+            </button>
+          ))}
+        </nav>
+        <button type="button" className="po-btn po-btn-ghost po-logout" onClick={onLogout}>Log out</button>
+        <div className="po-resbar">
           {RES.map((r) => {
-            const amt = v[r.id], full = amt >= v.capacity
+            const amt = v[r.id], cap = capOf(r.id), full = amt >= cap
             return (
-              <div key={r.id} className={`po-res-item${full ? ' is-full' : ''}`} title={`${r.label}: ${fmtNum(amt)} / ${fmtNum(v.capacity)}`}>
+              <div key={r.id} className={`po-res${full ? ' is-full' : ''}`} title={`${r.label}: ${fmtNum(amt)} / ${fmtNum(cap)}`}>
                 <span className="po-emoji" aria-hidden="true">{r.icon}</span>
                 <span className="po-res-num">{fmtNum(amt)}</span>
-                <span className="po-res-bar"><i style={{ width: `${Math.min(100, (amt / v.capacity) * 100)}%` }} /></span>
+                <span className="po-res-cap">/ {fmtNum(cap)}</span>
+                <span className="po-res-bar"><i style={{ width: `${Math.min(100, (amt / cap) * 100)}%` }} /></span>
               </div>
             )
           })}
         </div>
-        <button type="button" className="po-btn po-btn-ghost" onClick={onLogout}>Log out</button>
       </header>
 
+      <div className="po-body">
+        <main className="po-stage">
+          <div className="po-scroll" ref={scrollRef}>
+            {tab === 'resources' && (
+              <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
+                <img className="po-scene-img" src="/polis/resources.webp" alt="" draggable="false" />
+                <button type="button" className="po-village-btn" style={{ left: '50%', top: '44%' }} onClick={() => setTab('city')} aria-label="Go to the city">
+                  <span>🏛️ City</span>
+                </button>
+                {s.plots.map((p) => {
+                  const st = plotState(p), pos = PLOT_POS[p.idx], r = RES_BY[p.kind]
+                  const pctDone = st === 'working' ? Math.min(100, ((t - Date.parse(p.started_at)) / (p.cycle_secs * 1000)) * 100) : st === 'ready' ? 100 : 0
+                  return (
+                    <button key={p.idx} type="button" className={`po-plot is-${st}`} style={{ left: `${pos.x}%`, top: `${pos.y}%`, '--p': `${pctDone}%` }}
+                      onClick={() => setOpen({ plot: p.idx })} aria-label={`${r.field}, level ${p.level}, ${st}`}>
+                      {st === 'ready' && <span className="po-plot-pop po-emoji" aria-hidden="true">{r.icon}</span>}
+                      <span className="po-plot-ring"><span className="po-plot-lvl">{st === 'empty' ? '+' : p.level}</span></span>
+                      {st === 'working' && <span className="po-plot-time">{fmtTime(Date.parse(p.ends_at) - t)}</span>}
+                      {st === 'idle' && <span className="po-plot-time is-idle">Start</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            {tab === 'city' && (
+              <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
+                <img className="po-scene-img" src="/polis/city.webp" alt="" draggable="false" />
+                {PAD_POS.map((pos, pad) => {
+                  const b = s.buildings.find((x) => x.pad === pad)
+                  const target = v.build_target === `pad:${pad}`
+                  return (
+                    <button key={pad} type="button" className={`po-pad${b ? ' is-built' : ' is-empty'}${target ? ' is-building' : ''}`}
+                      style={{ left: `${pos.x}%`, top: `${pos.y}%` }} onClick={() => setOpen({ pad })}
+                      aria-label={b ? `${BUILDINGS[b.kind]?.name} level ${b.level}` : 'Empty place: build here'}>
+                      {b ? (
+                        <>
+                          <img className={`po-bimg is-t${tierOf(b.level)}`} src={buildingImg(b.kind, b.level)} alt="" draggable="false" />
+                          <span className="po-pad-lvl">{b.level}</span>
+                        </>
+                      ) : target ? (
+                        <img className="po-bimg is-t1 is-ghost" src={buildingImg(v.build_kind, 1)} alt="" draggable="false" />
+                      ) : <span className="po-pad-plus">+</span>}
+                      {target && <span className="po-pad-time">🔨 {fmtTime(Date.parse(v.build_until) - t)}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </main>
 
-      <div className="po-play">
-        <PolisWorld mode={cam} onMode={setCam}>
-          {s.fields.map((f) => {
-            const r = RES_BY[f.kind], st = fieldState(f)
-            const pct = st === 'working' ? Math.min(100, ((t - Date.parse(f.started_at)) / (f.cycle_secs * 1000)) * 100) : null
-            const label = st === 'idle' ? 'Idle · tap to start' : st === 'working' ? `⏳ ${fmtTime(Date.parse(f.ends_at) - t)}` : `Collect +${fmtNum(f.harvest)}`
-            return <Spot key={f.kind} id={f.kind} mode={cam} icon={r.icon} name={r.field} level={f.level} state={label} pct={pct} ready={st === 'ready'}
-              onClick={() => (cam === 'fields' ? setOpen(f.kind) : setCam('fields'))} />
-          })}
-          <Spot id="warehouse" mode={cam} icon="🏺" name="Storehouse" level={v.warehouse} state={`${fmtNum(v.capacity)} each`}
-            onClick={() => (cam === 'city' ? setOpen('warehouse') : setCam('city'))} />
-          <Spot id="temple" mode={cam} icon="🏛️" name="Temple" state="Coming soon" locked onClick={() => setCam('city')} />
-          <Spot id="barracks" mode={cam} icon="⚔️" name="Barracks" state="Coming soon" locked onClick={() => setCam('city')} />
-        </PolisWorld>
-
-        {/* "Seu dia": tudo o que está pronto ou correndo, pra resolver rápido */}
-        <aside className="po-day" aria-label="Your day">
-          <p className="po-label">Your day</p>
-          {readyCount > 0 && (
-            <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={async () => {
-              for (const f of s.fields) if (fieldState(f) === 'ready') { if (!(await act('polis_collect', { p_kind: f.kind }))) break }
-            }}>Collect all ({readyCount})</button>
-          )}
-          <ul>
-            {s.fields.map((f) => {
-              const r = RES_BY[f.kind], st = fieldState(f)
-              return (
-                <li key={f.kind} className={`is-${st}`}>
-                  <button type="button" onClick={() => { setCam('fields'); setOpen(f.kind) }}>
-                    <span className="po-emoji" aria-hidden="true">{r.icon}</span>
-                    <span className="po-day-name">{r.label}</span>
-                    <span className="po-day-state">{st === 'idle' ? 'Idle' : st === 'working' ? fmtTime(Date.parse(f.ends_at) - t) : `Ready +${fmtNum(f.harvest)}`}</span>
-                  </button>
-                </li>
-              )
-            })}
-            <li className={building ? 'is-working' : 'is-idle'}>
-              <button type="button" onClick={() => setCam('city')}>
-                <span className="po-emoji" aria-hidden="true">🔨</span>
-                <span className="po-day-name">{building ? building.name : 'Builders'}</span>
-                <span className="po-day-state">{building ? `Lv ${building.level} · ${fmtTime(building.left)}` : 'Free'}</span>
-              </button>
-            </li>
-          </ul>
+        {/* ---- painéis do lado: a vila, a obra e o dia */}
+        <aside className="po-side">
+          <section className="po-panel">
+            <p className="po-label">Construction</p>
+            {building ? <p className="po-panel-row">🔨 <b>{building.name}</b> → Lv {building.level}<span>{fmtTime(building.left)}</span></p>
+              : <p className="po-panel-row">🔨 Builders are free</p>}
+          </section>
+          <section className="po-panel">
+            <p className="po-label">Your day</p>
+            {ready.length > 0 && (
+              <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={async () => {
+                for (const p of ready) if (!(await act('polis_plot_collect', { p_idx: p.idx }))) break
+              }}>Collect all ({ready.length})</button>
+            )}
+            <p className="po-panel-row">✨ Ready to collect<span>{ready.length}</span></p>
+            <p className="po-panel-row">⏳ Growing<span>{s.plots.filter((p) => plotState(p) === 'working').length}</span></p>
+            <p className="po-panel-row">💤 Waiting for you<span>{idle.length}</span></p>
+          </section>
+          <section className="po-panel">
+            <p className="po-label">Production per hour</p>
+            {RES.map((r) => (
+              <p key={r.id} className="po-panel-row"><span className="po-emoji" aria-hidden="true">{r.icon}</span> {r.label}
+                <span>{fmtNum(s.plots.filter((p) => p.kind === r.id).reduce((a, p) => a + Number(p.rate), 0))}</span></p>
+            ))}
+            <p className="po-note">The base rate of all your plots. Short cycles pay more per hour.</p>
+          </section>
         </aside>
       </div>
 
       {open && (
         <div className="po-sheet-back" onClick={() => setOpen(null)}>
-          <div className="po-sheet" role="dialog" aria-label={NAME[open]} onClick={(e) => e.stopPropagation()}>
+          <div className="po-sheet" role="dialog" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="po-sheet-x" aria-label="Close" onClick={() => setOpen(null)}>×</button>
-            {open === 'warehouse'
-              ? <WarehousePanel v={v} t={t} busy={busy} err={err} onUpgrade={() => act('polis_upgrade', { p_kind: 'warehouse' }, 'Construction started')} />
-              : <FieldPanel f={s.fields.find((x) => x.kind === open)} v={v} cycles={s.cycles} st={fieldState(s.fields.find((x) => x.kind === open))} t={t} busy={busy} err={err}
-                onStart={(secs) => act('polis_start', { p_kind: open, p_secs: secs }, `${RES_BY[open].field}: working for ${CYCLE_LABEL[secs]}`)}
-                onCollect={() => act('polis_collect', { p_kind: open })}
-                onUpgrade={() => act('polis_upgrade', { p_kind: open }, 'Construction started')} />}
+            {'plot' in open
+              ? <PlotPanel p={s.plots.find((x) => x.idx === open.plot)} v={v} cycles={s.cycles} st={plotState(s.plots.find((x) => x.idx === open.plot))} t={t} busy={busy} err={err}
+                cap={capOf(s.plots.find((x) => x.idx === open.plot).kind)}
+                onStart={(secs) => act('polis_plot_start', { p_idx: open.plot, p_secs: secs }, `Started: ${CYCLE_LABEL[secs]}`)}
+                onCollect={() => act('polis_plot_collect', { p_idx: open.plot })}
+                onUpgrade={() => act('polis_plot_upgrade', { p_idx: open.plot }, 'Construction started')} />
+              : <PadPanel pad={open.pad} s={s} busy={busy} err={err}
+                onBuild={(kind) => act('polis_build', { p_pad: open.pad, p_kind: kind }, 'Construction started', true)} />}
+          </div>
+        </div>
+      )}
+      {soon && (
+        <div className="po-sheet-back" onClick={() => setSoon(null)}>
+          <div className="po-sheet po-soon" role="dialog" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="po-sheet-x" aria-label="Close" onClick={() => setSoon(null)}>×</button>
+            <span className="po-soon-icon po-emoji" aria-hidden="true">{soon.icon}</span>
+            <h2>{soon.label}</h2>
+            <p className="po-sub">Coming soon. For now, take care of your fields and build your city.</p>
           </div>
         </div>
       )}
@@ -250,35 +342,24 @@ function Cost({ c, v }) {
   )
 }
 const canPay = (c, v) => RES.every((r) => v[r.id] >= c[r.id])
+const blockReason = (c, v) => (v.build_kind ? 'Builders are busy' : !canPay(c, v) ? 'Not enough resources' : '')
 
-function UpgradeBox({ title, gain, c, v, busy, onUpgrade }) {
-  if (!c) return <p className="po-note">Top level reached.</p>
-  const blocked = v.build_kind ? 'Builders are busy' : !canPay(c, v) ? 'Not enough resources' : ''
-  return (
-    <div className="po-upgrade">
-      <p className="po-label">{title}</p>
-      <p className="po-gain">{gain}</p>
-      <Cost c={c} v={v} />
-      <button type="button" className="po-btn" disabled={busy || !!blocked} onClick={onUpgrade}>{blocked || 'Upgrade'}</button>
-    </div>
-  )
-}
-
-function FieldPanel({ f, v, cycles, st, t, busy, err, onStart, onCollect, onUpgrade }) {
-  const r = RES_BY[f.kind]
+function PlotPanel({ p, v, cycles, st, t, busy, err, cap, onStart, onCollect, onUpgrade }) {
+  const r = RES_BY[p.kind]
   const [pick, setPick] = useState(3600)
+  const upgrading = v.build_target === `plot:${p.idx}`
   return (
     <>
-      <h2><span className="po-emoji" aria-hidden="true">{r.icon}</span> {r.field} <em>Lv {f.level}</em></h2>
-      <p className="po-sub">{r.blurb} Makes <b>{fmtNum(f.rate)} {r.label.toLowerCase()}/hour</b>.</p>
+      <h2><span className="po-emoji" aria-hidden="true">{r.icon}</span> {r.field} <em>{p.level ? `Lv ${p.level}` : 'empty plot'}</em></h2>
+      {st === 'empty' && <p className="po-sub">An empty plot. Build a {r.field.toLowerCase()} here to start producing {r.label.toLowerCase()}.</p>}
+      {st !== 'empty' && <p className="po-sub">Makes <b>{fmtNum(p.rate)} {r.label.toLowerCase()}/hour</b>.</p>}
       {st === 'idle' && (
         <>
           <p className="po-label">How long should it work?</p>
           <div className="po-cycles">
             {cycles.map((c) => (
               <button key={c.secs} type="button" className={`po-cycle${pick === c.secs ? ' is-on' : ''}`} onClick={() => setPick(c.secs)}>
-                <b>{CYCLE_LABEL[c.secs]}</b>
-                <span>+{fmtNum(Math.round(f.rate * (c.secs / 3600) * c.mult))}</span>
+                <b>{CYCLE_LABEL[c.secs]}</b><span>+{fmtNum(Math.round(p.rate * (c.secs / 3600) * c.mult))}</span>
               </button>
             ))}
           </div>
@@ -288,31 +369,85 @@ function FieldPanel({ f, v, cycles, st, t, busy, err, onStart, onCollect, onUpgr
       )}
       {st === 'working' && (
         <div className="po-run">
-          <p>Working ({CYCLE_LABEL[f.cycle_secs]}) · <b>+{fmtNum(f.harvest)}</b> {r.label.toLowerCase()}</p>
-          <div className="po-run-bar"><i style={{ width: `${Math.min(100, ((t - Date.parse(f.started_at)) / (f.cycle_secs * 1000)) * 100)}%` }} /></div>
-          <p className="po-note">Ready in {fmtTime(Date.parse(f.ends_at) - t)} (at {new Date(Date.parse(f.ends_at)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).</p>
+          <p>Growing ({CYCLE_LABEL[p.cycle_secs]}) · <b>+{fmtNum(p.harvest)}</b> {r.label.toLowerCase()}</p>
+          <div className="po-run-bar"><i style={{ width: `${Math.min(100, ((t - Date.parse(p.started_at)) / (p.cycle_secs * 1000)) * 100)}%` }} /></div>
+          <p className="po-note">Ready in {fmtTime(Date.parse(p.ends_at) - t)} (at {new Date(Date.parse(p.ends_at)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).</p>
         </div>
       )}
       {st === 'ready' && (
         <div className="po-run">
-          <p>Harvest ready: <b>+{fmtNum(f.harvest)}</b> {r.label.toLowerCase()}</p>
+          <p>Harvest ready: <b>+{fmtNum(p.harvest)}</b> {r.label.toLowerCase()}</p>
           <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={onCollect}>Collect</button>
-          {v[f.kind] >= v.capacity && <p className="po-err">Your storehouse is full of {r.label.toLowerCase()}. Spend some or upgrade it.</p>}
+          {v[p.kind] >= cap && <p className="po-err">Your {p.kind === 'grain' ? 'granary' : 'storehouse'} is full. Spend some or upgrade it.</p>}
         </div>
       )}
       {err && <p className="po-err" role="alert">{err}</p>}
-      <UpgradeBox title={`Upgrade to Lv ${f.level + 1}`} gain={f.next_rate ? `${fmtNum(f.rate)} → ${fmtNum(f.next_rate)} per hour` : ''} c={f.next} v={v} busy={busy} onUpgrade={onUpgrade} />
+      {p.next && (
+        <div className="po-upgrade">
+          <p className="po-label">{p.level ? `Upgrade to Lv ${p.level + 1}` : `Build a ${r.field}`}</p>
+          <p className="po-gain">{p.level ? `${fmtNum(p.rate)} → ${fmtNum(p.next_rate)} per hour` : `${fmtNum(p.next_rate)} ${r.label.toLowerCase()} per hour`}</p>
+          <Cost c={p.next} v={v} />
+          <button type="button" className="po-btn" disabled={busy || upgrading || !!blockReason(p.next, v)} onClick={onUpgrade}>
+            {upgrading ? 'Under construction…' : blockReason(p.next, v) || (p.level ? 'Upgrade' : 'Build')}
+          </button>
+        </div>
+      )}
     </>
   )
 }
 
-function WarehousePanel({ v, busy, err, onUpgrade }) {
+function PadPanel({ pad, s, busy, err, onBuild }) {
+  const v = s.village
+  const b = s.buildings.find((x) => x.pad === pad)
+  const target = v.build_target === `pad:${pad}`
+  if (b) {
+    const meta = BUILDINGS[b.kind] ?? { name: b.kind, text: '', effect: () => '' }
+    return (
+      <>
+        <div className="po-bhead">
+          <img src={buildingImg(b.kind, b.level)} alt="" />
+          <div><h2>{meta.name} <em>Lv {b.level}</em></h2><p className="po-sub">{meta.text}</p></div>
+        </div>
+        <p className="po-gain">{meta.effect(b.level)}</p>
+        {err && <p className="po-err" role="alert">{err}</p>}
+        {b.next ? (
+          <div className="po-upgrade">
+            <p className="po-label">Upgrade to Lv {b.level + 1}</p>
+            <p className="po-gain">{meta.effect(b.level + 1)}</p>
+            <Cost c={b.next} v={v} />
+            <button type="button" className="po-btn" disabled={busy || target || !!blockReason(b.next, v)} onClick={() => onBuild(b.kind)}>
+              {target ? 'Under construction…' : blockReason(b.next, v) || 'Upgrade'}
+            </button>
+          </div>
+        ) : <p className="po-note">Top level reached.</p>}
+      </>
+    )
+  }
+  if (target) return <><h2>Under construction</h2><p className="po-sub">Your builders are working here.</p></>
+  const list = s.catalog.filter((c) => !c.built && !(c.needs ?? '').startsWith('Another tribe'))
   return (
     <>
-      <h2><span className="po-emoji" aria-hidden="true">🏺</span> Storehouse <em>Lv {v.warehouse}</em></h2>
-      <p className="po-sub">Holds up to <b>{fmtNum(v.capacity)}</b> of each resource. A harvest that doesn&apos;t fit waits in its field.</p>
+      <h2>Build here</h2>
+      <p className="po-sub">Choose what to build on this place.</p>
       {err && <p className="po-err" role="alert">{err}</p>}
-      <UpgradeBox title={`Upgrade to Lv ${v.warehouse + 1}`} gain={v.capacity_next ? `${fmtNum(v.capacity)} → ${fmtNum(v.capacity_next)} of each` : ''} c={v.warehouse_next} v={v} busy={busy} onUpgrade={onUpgrade} />
+      <div className="po-buildlist">
+        {list.map((c) => {
+          const meta = BUILDINGS[c.kind]
+          const why = c.needs ? `Needs ${c.needs}` : blockReason(c.cost, v)
+          return (
+            <div key={c.kind} className={`po-buildcard${c.needs ? ' is-locked' : ''}`}>
+              <img src={buildingImg(c.kind, 1)} alt="" />
+              <div className="po-buildcard-text">
+                <b>{meta?.name ?? c.kind}</b>
+                <small>{meta?.text}</small>
+                <Cost c={c.cost} v={v} />
+              </div>
+              <button type="button" className="po-btn" disabled={busy || !!why} onClick={() => onBuild(c.kind)}>{why || 'Build'}</button>
+            </div>
+          )
+        })}
+        {list.length === 0 && <p className="po-note">You built everything available. More buildings come in the next updates.</p>}
+      </div>
     </>
   )
 }
