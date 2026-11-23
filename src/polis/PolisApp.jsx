@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, ensureSession } from '../supabaseClient'
 import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
+import PolisWorld, { Spot } from './PolisWorld'
 
 // só no computador: ?mock=1 usa a imitação na memória (mockPolis.js) em vez do Supabase
 const MOCK = import.meta.env.DEV && new URLSearchParams(window.location.search).get('mock') === '1'
@@ -134,6 +135,7 @@ function PolisLogin({ onDone }) {
 function PolisVillage({ s, t, onState, onLogout }) {
   const v = s.village
   const [open, setOpen] = useState(null) // 'grain' | ... | 'warehouse'
+  const [cam, setCam] = useState('city') // foco da câmera: 'city' | 'fields'
   const [toast, setToast] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -173,47 +175,53 @@ function PolisVillage({ s, t, onState, onLogout }) {
         <button type="button" className="po-btn po-btn-ghost" onClick={onLogout}>Log out</button>
       </header>
 
-      <div className="po-status">
-        {building ? <span>🔨 Building <b>{building.name}</b> → Lv {building.level} · {fmtTime(building.left)}</span> : <span>🔨 Builders are free</span>}
-        <span>🏺 Storehouse holds {fmtNum(v.capacity)} of each</span>
-        {readyCount > 0 && <span className="po-status-ready">✨ {readyCount} harvest{readyCount > 1 ? 's' : ''} ready</span>}
-      </div>
 
-      <main className="po-scene" aria-label="Your village">
-        <div className="po-sky" aria-hidden="true" />
-        <div className="po-ground" aria-hidden="true" />
-        {s.fields.map((f, i) => {
-          const r = RES_BY[f.kind], st = fieldState(f)
-          const pct = st === 'working' ? Math.min(100, ((t - Date.parse(f.started_at)) / (f.cycle_secs * 1000)) * 100) : st === 'ready' ? 100 : 0
-          return (
-            <button key={f.kind} type="button" className={`po-bld po-bld-${f.kind} is-${st}`} style={{ '--i': i }} onClick={() => setOpen(f.kind)}>
-              <span className="po-bld-art" aria-hidden="true"><span className="po-emoji">{r.icon}</span></span>
-              <span className="po-bld-name">{r.field} <em>Lv {f.level}</em></span>
-              <span className="po-bld-state">
-                {st === 'idle' && 'Idle · tap to start'}
-                {st === 'working' && <>⏳ {fmtTime(Date.parse(f.ends_at) - t)}</>}
-                {st === 'ready' && <>Collect +{fmtNum(f.harvest)}</>}
-              </span>
-              <span className="po-bld-bar"><i style={{ width: `${pct}%` }} /></span>
-            </button>
-          )
-        })}
-        <button type="button" className="po-bld po-bld-warehouse" onClick={() => setOpen('warehouse')}>
-          <span className="po-bld-art" aria-hidden="true"><span className="po-emoji">🏺</span></span>
-          <span className="po-bld-name">Storehouse <em>Lv {v.warehouse}</em></span>
-          <span className="po-bld-state">{fmtNum(v.capacity)} each</span>
-        </button>
-        <div className="po-bld po-bld-temple is-locked" aria-disabled="true">
-          <span className="po-bld-art" aria-hidden="true"><span className="po-emoji">🏛️</span></span>
-          <span className="po-bld-name">Temple</span>
-          <span className="po-bld-state">Coming soon</span>
-        </div>
-        <div className="po-bld po-bld-barracks is-locked" aria-disabled="true">
-          <span className="po-bld-art" aria-hidden="true"><span className="po-emoji">⚔️</span></span>
-          <span className="po-bld-name">Barracks</span>
-          <span className="po-bld-state">Coming soon</span>
-        </div>
-      </main>
+      <div className="po-play">
+        <PolisWorld mode={cam} onMode={setCam}>
+          {s.fields.map((f) => {
+            const r = RES_BY[f.kind], st = fieldState(f)
+            const pct = st === 'working' ? Math.min(100, ((t - Date.parse(f.started_at)) / (f.cycle_secs * 1000)) * 100) : null
+            const label = st === 'idle' ? 'Idle · tap to start' : st === 'working' ? `⏳ ${fmtTime(Date.parse(f.ends_at) - t)}` : `Collect +${fmtNum(f.harvest)}`
+            return <Spot key={f.kind} id={f.kind} mode={cam} icon={r.icon} name={r.field} level={f.level} state={label} pct={pct} ready={st === 'ready'}
+              onClick={() => (cam === 'fields' ? setOpen(f.kind) : setCam('fields'))} />
+          })}
+          <Spot id="warehouse" mode={cam} icon="🏺" name="Storehouse" level={v.warehouse} state={`${fmtNum(v.capacity)} each`}
+            onClick={() => (cam === 'city' ? setOpen('warehouse') : setCam('city'))} />
+          <Spot id="temple" mode={cam} icon="🏛️" name="Temple" state="Coming soon" locked onClick={() => setCam('city')} />
+          <Spot id="barracks" mode={cam} icon="⚔️" name="Barracks" state="Coming soon" locked onClick={() => setCam('city')} />
+        </PolisWorld>
+
+        {/* "Seu dia": tudo o que está pronto ou correndo, pra resolver rápido */}
+        <aside className="po-day" aria-label="Your day">
+          <p className="po-label">Your day</p>
+          {readyCount > 0 && (
+            <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={async () => {
+              for (const f of s.fields) if (fieldState(f) === 'ready') { if (!(await act('polis_collect', { p_kind: f.kind }))) break }
+            }}>Collect all ({readyCount})</button>
+          )}
+          <ul>
+            {s.fields.map((f) => {
+              const r = RES_BY[f.kind], st = fieldState(f)
+              return (
+                <li key={f.kind} className={`is-${st}`}>
+                  <button type="button" onClick={() => { setCam('fields'); setOpen(f.kind) }}>
+                    <span className="po-emoji" aria-hidden="true">{r.icon}</span>
+                    <span className="po-day-name">{r.label}</span>
+                    <span className="po-day-state">{st === 'idle' ? 'Idle' : st === 'working' ? fmtTime(Date.parse(f.ends_at) - t) : `Ready +${fmtNum(f.harvest)}`}</span>
+                  </button>
+                </li>
+              )
+            })}
+            <li className={building ? 'is-working' : 'is-idle'}>
+              <button type="button" onClick={() => setCam('city')}>
+                <span className="po-emoji" aria-hidden="true">🔨</span>
+                <span className="po-day-name">{building ? building.name : 'Builders'}</span>
+                <span className="po-day-state">{building ? `Lv ${building.level} · ${fmtTime(building.left)}` : 'Free'}</span>
+              </button>
+            </li>
+          </ul>
+        </aside>
+      </div>
 
       {open && (
         <div className="po-sheet-back" onClick={() => setOpen(null)}>

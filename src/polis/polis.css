@@ -37,7 +37,7 @@
 @keyframes po-pulse { 50% { box-shadow: 0 4px 0 #140a26, 0 0 24px rgba(244, 197, 66, 0.8); } }
 
 /* vila */
-.po-village { min-height: 100%; display: flex; flex-direction: column; }
+.po-village { height: 100%; display: flex; flex-direction: column; }
 .po-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 14px;
   background: rgba(13, 6, 32, 0.92); border-bottom: 2px solid rgba(244, 197, 66, 0.4); backdrop-filter: blur(4px); }
 .po-top-name { display: flex; flex-direction: column; min-width: 0; }
@@ -52,42 +52,6 @@
 .po-res-item.is-full { border-color: #f4c542; }
 .po-res-item.is-full .po-res-bar i { background: #f4c542; }
 
-.po-status { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 8px 14px; font-size: 13px; color: #c9b8f0; }
-.po-status b { color: #fff; }
-.po-status-ready { color: #f4c542; font-weight: 700; }
-
-/* a cena: céu de Delfos ao fundo e as construções em cima do chão */
-.po-scene { position: relative; flex: 1; min-height: 560px; margin: 0 12px 14px; border-radius: 18px; overflow: hidden; border: 2px solid rgba(167, 123, 255, 0.35);
-  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto auto; gap: 16px; padding: 150px 18px 18px; align-content: end; }
-.po-sky { position: absolute; inset: 0; background: url('/dash/art/bg-far.png') center top / cover no-repeat; filter: saturate(1.05); }
-.po-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 72%; background: linear-gradient(rgba(26, 12, 54, 0) 0%, rgba(26, 12, 54, 0.78) 22%, #1d0e3d 60%); }
-.po-bld { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px 12px; border-radius: 16px; cursor: pointer;
-  color: #f3ecff; font: inherit; text-align: center; background: rgba(20, 10, 38, 0.82); border: 2px solid rgba(167, 123, 255, 0.45);
-  box-shadow: 0 6px 0 rgba(10, 4, 24, 0.9), 0 10px 26px rgba(0, 0, 0, 0.35); transition: transform 0.12s ease; }
-.po-bld:hover:not(.is-locked) { transform: translateY(-3px); }
-.po-bld-art { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; font-size: 40px;
-  background: radial-gradient(circle at 50% 35%, #6d44c9, #2a1657); border: 3px solid #f4c542; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25); }
-.po-bld-name { font-weight: 700; font-size: 14px; }
-.po-bld-name em { font-style: normal; color: #f4c542; font-size: 12px; margin-left: 4px; }
-.po-bld-state { font-size: 12.5px; color: #c9b8f0; min-height: 1.2em; font-variant-numeric: tabular-nums; }
-.po-bld-bar { width: 80%; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
-.po-bld-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a77bff, #f4c542); transition: width 1s linear; }
-.po-bld.is-ready { border-color: #f4c542; animation: po-glow 1.6s ease-in-out infinite; }
-.po-bld.is-ready .po-bld-state { color: #f4c542; font-weight: 700; }
-.po-bld.is-ready .po-bld-art { animation: po-bob 1.2s ease-in-out infinite; }
-.po-bld.is-working .po-bld-art { animation: po-work 2.4s ease-in-out infinite; }
-.po-bld.is-locked { opacity: 0.5; cursor: default; filter: grayscale(0.4); }
-@keyframes po-glow { 50% { box-shadow: 0 6px 0 rgba(10, 4, 24, 0.9), 0 0 28px rgba(244, 197, 66, 0.65); } }
-@keyframes po-bob { 50% { transform: translateY(-5px); } }
-@keyframes po-work { 50% { transform: rotate(-6deg) scale(1.04); } }
-/* lugar de cada um na vila: templo no alto, armazém no meio, campos em volta, quartel do lado */
-.po-bld-temple { grid-column: 2; grid-row: 1; }
-.po-bld-grain { grid-column: 1; grid-row: 2; }
-.po-bld-warehouse { grid-column: 2; grid-row: 2; }
-.po-bld-wood { grid-column: 3; grid-row: 2; }
-.po-bld-marble { grid-column: 1; grid-row: 3; }
-.po-bld-barracks { grid-column: 2; grid-row: 3; }
-.po-bld-bronze { grid-column: 3; grid-row: 3; }
 
 /* painel da construção */
 .po-sheet-back { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 3, 20, 0.7); }
@@ -122,10 +86,77 @@
   .po-res { order: 3; width: 100%; gap: 6px; }
   .po-res-item { padding: 5px 7px; }
   .po-res-bar { width: 44px; }
-  .po-scene { grid-template-columns: repeat(2, 1fr); padding: 110px 10px 12px; gap: 10px; margin: 0 8px 10px; }
-  .po-bld-temple, .po-bld-grain, .po-bld-warehouse, .po-bld-wood, .po-bld-marble, .po-bld-barracks, .po-bld-bronze { grid-column: auto; grid-row: auto; }
-  .po-bld-warehouse { grid-column: 1 / -1; }
-  .po-bld-art { width: 58px; height: 58px; font-size: 32px; }
   .po-cycles { grid-template-columns: repeat(3, 1fr); }
 }
-@media (prefers-reduced-motion: reduce) { .po-bld, .po-bld-art, .po-pulse { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .po-spot-pop, .po-spot-tag, .po-pulse { animation: none !important; } .po-map { transition-duration: 0.01s; } }
+
+/* ---- o mundo: uma arte só, câmera que desliza entre Cidade e Campos (PolisWorld.jsx) */
+.po-play { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 270px; gap: 12px; padding: 12px; }
+.po-world { position: relative; overflow: hidden; min-height: 420px; border-radius: 18px; border: 2px solid rgba(167, 123, 255, 0.4); background: linear-gradient(#5a2d9a 0%, #3b1f6e 45%, #2a2a7a 60%, #1c1550 100%);
+  touch-action: none; cursor: grab; user-select: none; }
+.po-world:active { cursor: grabbing; }
+.po-map { position: absolute; left: 0; top: 0; transform-origin: 0 0; transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1); will-change: transform; }
+.po-map.is-dragging { transition: none; }
+.po-map-img { display: block; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+.po-map-spots { position: absolute; inset: 0; }
+/* desfoque de "longe": na cidade, as bordas; nos campos, a cidade no meio */
+.po-dof { position: absolute; inset: 0; pointer-events: none; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
+.po-world.is-city .po-dof { -webkit-mask-image: radial-gradient(ellipse 60% 64% at 50% 50%, transparent 58%, #000 100%); mask-image: radial-gradient(ellipse 60% 64% at 50% 50%, transparent 58%, #000 100%); }
+.po-world.is-fields .po-dof { -webkit-mask-image: radial-gradient(ellipse 21% 27% at 52% 40%, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse 21% 27% at 52% 40%, #000 35%, transparent 100%); }
+.po-world.is-moving .po-dof { opacity: 0; }
+.po-world::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 90px rgba(13, 6, 32, 0.75); }
+
+/* plaquinhas em cima dos prédios (o tamanho na tela não muda com o zoom) */
+.po-spot { position: absolute; z-index: 1; padding: 0; border: 0; background: none; cursor: pointer; color: inherit; font: inherit;
+  transform: translate(-50%, -50%) scale(var(--inv, 1)); transition: opacity 0.6s, filter 0.6s; }
+.po-spot-tag { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 11px; border-radius: 12px; white-space: nowrap;
+  background: rgba(20, 10, 38, 0.88); border: 2px solid rgba(244, 197, 66, 0.65); box-shadow: 0 4px 0 rgba(10, 4, 24, 0.85), 0 6px 18px rgba(0, 0, 0, 0.35); }
+.po-spot:hover .po-spot-tag { border-color: #f4c542; }
+.po-spot-name { font-weight: 700; font-size: 13.5px; }
+.po-spot-name em { font-style: normal; color: #f4c542; font-size: 11.5px; }
+.po-spot-state { font-size: 12px; color: #c9b8f0; font-variant-numeric: tabular-nums; }
+.po-spot-bar { width: 100%; min-width: 90px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.po-spot-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a77bff, #f4c542); transition: width 1s linear; }
+.po-spot.is-ready .po-spot-tag { border-color: #f4c542; animation: po-glow 1.6s ease-in-out infinite; }
+.po-spot.is-ready .po-spot-state { color: #f4c542; font-weight: 700; }
+.po-spot-pop { position: absolute; left: 50%; bottom: 100%; margin-bottom: 4px; font-size: 30px; transform: translateX(-50%);
+  filter: drop-shadow(0 0 8px rgba(244, 197, 66, 0.9)); animation: po-pop 1.2s ease-in-out infinite; }
+@keyframes po-pop { 50% { transform: translate(-50%, -6px); } }
+@keyframes po-glow { 50% { box-shadow: 0 4px 0 rgba(10, 4, 24, 0.85), 0 0 26px rgba(244, 197, 66, 0.7); } }
+.po-spot.is-far { opacity: 0.5; filter: saturate(0.6); }
+.po-spot.is-far:hover { opacity: 0.9; }
+.po-spot.is-far.is-ready { opacity: 0.85; } /* pronto pra coletar: dá pra ver de longe */
+.po-spot.is-locked .po-spot-tag { border-color: rgba(167, 123, 255, 0.45); }
+.po-spot.is-locked .po-spot-state { color: #a993d6; }
+
+/* botões da câmera */
+.po-camnav { position: absolute; left: 50%; bottom: 14px; z-index: 3; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; border-radius: 999px;
+  background: rgba(13, 6, 32, 0.88); border: 2px solid rgba(244, 197, 66, 0.55); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+.po-camnav button { padding: 9px 18px; border: 0; border-radius: 999px; background: transparent; color: #c9b8f0; font: 700 14px 'Inter', system-ui, sans-serif; cursor: pointer; }
+.po-camnav button.is-on { color: #2a1400; background: linear-gradient(#ffe58a, #f4c542); }
+
+/* "Seu dia" */
+.po-day { align-self: start; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px;
+  background: rgba(20, 10, 38, 0.86); border: 2px solid rgba(244, 197, 66, 0.45); }
+.po-day ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.po-day li button { width: 100%; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(167, 123, 255, 0.3); background: rgba(91, 52, 176, 0.18); color: #f3ecff; font: inherit; font-size: 14px; text-align: left; }
+.po-day li.is-ready button { border-color: #f4c542; background: rgba(244, 197, 66, 0.14); }
+.po-day-name { font-weight: 600; }
+.po-day-state { font-size: 12.5px; color: #c9b8f0; font-variant-numeric: tabular-nums; }
+.po-day li.is-ready .po-day-state { color: #f4c542; font-weight: 700; }
+
+@media (max-width: 860px) {
+  .po-play { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
+  .po-world { min-height: 0; height: 64vh; }
+  .po-day { padding: 10px; }
+  .po-day ul { display: grid; grid-template-columns: 1fr 1fr; }
+  .po-spot-name { font-size: 12.5px; }
+}
+/* celular em pé, nos Campos (mapa inteiro pequeno): plaquinhas compactas, só ícone + estado */
+.po-world.is-tall.is-fields .po-spot-tag { padding: 3px 7px; gap: 1px; border-radius: 9px; }
+.po-world.is-tall.is-fields .po-spot-label { display: none; }
+.po-world.is-tall.is-fields .po-spot-name { font-size: 15px; }
+.po-world.is-tall.is-fields .po-spot-state { font-size: 10.5px; }
+.po-world.is-tall.is-fields .po-spot-bar { min-width: 48px; }
+.po-world.is-tall.is-fields .po-spot.is-far { display: none; } /* a cidade lá no meio: sem plaquinhas, só desfocada */
