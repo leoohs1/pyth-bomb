@@ -11,7 +11,7 @@ import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
 import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
 import {
-  RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, FISHERMEN, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
+  RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
 
 // só no computador: ?mock=1 usa a imitação na memória (mockPolis.js) em vez do Supabase
@@ -491,7 +491,7 @@ function ArmyScreen({ s, onCity }) {
   const tribe = TRIBES[s.tribe]
   const barracks = s.buildings.find((b) => b.kind === 'barracks')
   const tribeHall = s.buildings.find((b) => ['agoge', 'harbor', 'sanctuary'].includes(b.kind))
-  const units = [...(UNITS[s.tribe] ?? []), FISHERMEN]
+  const units = UNITS[s.tribe] ?? [] // os pescadores são camponeses do cais (Halls, 2026-11-24), não tropa
   const needAgora = s.catalog.find((c) => c.kind === 'barracks')?.needs
   return (
     <div className="po-army">
@@ -510,9 +510,9 @@ function ArmyScreen({ s, onCity }) {
       </div>
       <div className="po-units">
         {units.map((u) => {
-          const locked = u.needs === 'Docks' || (u.needs && !tribeHall)
+          const locked = u.needs && !tribeHall
           return (
-            <div key={u.id} className={`po-unit${u.id === 'fishermen' ? ' is-fish' : ''}`}>
+            <div key={u.id} className="po-unit">
               <div className="po-unit-top">
                 <span className="po-unit-icon po-emoji" aria-hidden="true">{u.icon}</span>
                 <div><b>{u.name}</b><small>{u.role}</small></div>

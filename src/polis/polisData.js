@@ -38,8 +38,6 @@ export const UNITS = {
     { id: 'seer', icon: '🔮', name: 'Seer', role: 'Spy: sees enemy troops and warns of attacks early', atk: 0, def: 10, speed: 10, carry: 0, cost: [50, 40, 60, 20], eat: 1 },
   ],
 }
-// pescadores: de todas as tribos, treinados nas Docas (a pesca chega depois)
-export const FISHERMEN = { id: 'fishermen', icon: '🎣', name: 'Fishermen', role: 'They do not fight: they bring fish from the sea to feed your army', atk: 0, def: 5, speed: 8, carry: 80, cost: [30, 60, 10, 10], eat: 0, needs: 'Docks' }
 
 // prédios da Cidade: nome, frase curta e o que faz em cada nível
 export const BUILDINGS = {
