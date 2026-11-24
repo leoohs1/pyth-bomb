@@ -187,6 +187,24 @@
 .po-crest-tribe { position: absolute; right: -6px; bottom: -4px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 14px;
   background: #1a0d38; border: 2px solid #f4c542; }
 
+/* ---- pesca: barcos e cais */
+.po-boat { width: 6.6%; aspect-ratio: 110 / 104; transform: translate(-49%, -95%); }
+.po-boat.is-floating { animation: po-float 2.6s ease-in-out infinite; }
+@keyframes po-float { 50% { translate: 0 -4%; rotate: -2deg; } }
+.po-pier { position: absolute; transform: translate(-50%, -50%); width: 9%; height: 7%; border: 0; border-radius: 12px; background: transparent; cursor: pointer; z-index: 3; }
+.po-pier-tag { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: rgba(26, 13, 56, 0.85); color: #f4c542; border: 1px solid rgba(244, 197, 66, 0.6); }
+.po-pier.is-ready .po-pier-tag { background: #f4c542; color: #1a0d38; }
+.po-pier .po-plot-pop { left: 50%; translate: -50% 0; }
+.po-boats { display: flex; flex-direction: column; gap: 8px; }
+.po-boatrow { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 2px solid #d9c9a6; background: #fffaf0; }
+.po-boatrow.is-ready { border-color: #b8860b; background: #fff1c2; }
+.po-boatrow-pic { display: block; width: 64px; aspect-ratio: 110 / 104; }
+.po-boatrow-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; color: #3a2a14; }
+.po-boatrow-info .po-run-bar { display: block; }
+.po-boatrow .po-btn { white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .po-boat.is-floating { animation: none; } }
+
 /* ---- Exército */
 .po-army { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 18px; background: linear-gradient(#f6efe1, #eadfc8); color: #3a2a14;
   border: 3px solid #b8860b; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }

@@ -7,7 +7,10 @@ export const RES = [
   { id: 'marble', label: 'Marble', icon: '🪨', field: 'Marble Quarry' },
   { id: 'bronze', label: 'Bronze', icon: '⚒️', field: 'Bronze Mine' },
 ]
-export const RES_BY = Object.fromEntries(RES.map((r) => [r.id, r]))
+// peixe (G03): comida, guardada no celeiro; não entra nos custos de construção
+export const FISH = { id: 'fish', label: 'Fish', icon: '🐟', field: 'Fishing Pier' }
+export const BAR = [...RES, FISH] // barra de cima
+export const RES_BY = Object.fromEntries(BAR.map((r) => [r.id, r]))
 export const CYCLE_LABEL = { 1800: '30 min', 3600: '1 h', 21600: '6 h', 43200: '12 h', 86400: '24 h' }
 
 export const TRIBES = {
@@ -42,7 +45,8 @@ export const FISHERMEN = { id: 'fishermen', icon: '🎣', name: 'Fishermen', rol
 export const BUILDINGS = {
   agora: { name: 'Agora', text: 'The heart of your polis. Every level makes construction faster.', effect: (l) => `Construction ${Math.min(45, 5 * (l - 1))}% faster` },
   storehouse: { name: 'Storehouse', text: 'Keeps your wood, marble and bronze.', effect: (l) => `Holds ${cap(l).toLocaleString('en-US')} of each` },
-  granary: { name: 'Granary', text: 'Keeps your grain. Soldiers will eat from it.', effect: (l) => `Holds ${cap(l).toLocaleString('en-US')} grain` },
+  granary: { name: 'Granary', text: 'Keeps your grain and fish. Soldiers will eat from it.', effect: (l) => `Holds ${cap(l).toLocaleString('en-US')} grain and ${cap(l).toLocaleString('en-US')} fish` },
+  docks: { name: 'Docks', text: 'Where your fishermen keep their boats.', effect: (l) => `${1 + (l >= 1) + (l >= 4) + (l >= 8)} boats · +${10 * l}% fish` },
   cellar: { name: 'Hidden Cellar', text: 'Hides part of your resources from raiders.', effect: () => 'Protection arrives with the first raids' },
   barracks: { name: 'Barracks', text: 'Where your tribe trains its soldiers.', effect: () => 'Troops arrive in the next update' },
   market: { name: 'Market', text: 'Trade resources with other players.', effect: () => 'Trading arrives in a coming update' },

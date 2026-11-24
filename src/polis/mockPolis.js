@@ -1,5 +1,5 @@
 // SÓ NO COMPUTADOR (npm run dev + ?mock=1): imita as funções polis_* do Supabase na memória, com as mesmas regras do
-// supabase/polis/G01 + G02, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
+// supabase/polis/G01 + G02 + G03, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
 // 60x mais rápido (30 min viram 30 s). Nunca entra no site publicado.
 const QS = new URLSearchParams(window.location.search)
 const FAST = Math.max(1, Number(QS.get('fast')) || 1)
@@ -9,14 +9,14 @@ export const mockNow = () => clock()
 const iso = (ms) => new Date(ms).toISOString()
 
 const PLOT_KIND = ['grain', 'wood', 'bronze', 'wood', 'grain', 'marble', 'marble', 'grain', 'grain', 'wood', 'bronze', 'marble', 'bronze', 'wood']
-const KINDS = ['agora', 'storehouse', 'granary', 'cellar', 'barracks', 'market', 'temple', 'agoge', 'harbor', 'sanctuary']
+const KINDS = ['agora', 'storehouse', 'granary', 'docks', 'cellar', 'barracks', 'market', 'temple', 'agoge', 'harbor', 'sanctuary']
 const RES = ['grain', 'wood', 'marble', 'bronze']
 const rate = (l) => (l <= 0 ? 0 : Math.round(40 * 1.35 ** (l - 1)))
 const MULT = { 1800: 2.6, 3600: 2.3, 21600: 1.6, 43200: 1.25, 86400: 1.0 }
 const cap = (l) => (l <= 0 ? 800 : Math.round(1200 * 1.5 ** (l - 1)))
 const BASE = {
   grain: [20, 70, 50, 20], wood: [40, 30, 60, 30], marble: [40, 70, 20, 40], bronze: [50, 60, 60, 10],
-  storehouse: [30, 90, 110, 40], granary: [40, 100, 80, 30], agora: [70, 90, 120, 60], cellar: [40, 60, 90, 20],
+  storehouse: [30, 90, 110, 40], granary: [40, 100, 80, 30], docks: [60, 120, 60, 50], agora: [70, 90, 120, 60], cellar: [40, 60, 90, 20],
   barracks: [90, 120, 80, 130], market: [80, 110, 90, 60], temple: [120, 100, 200, 90],
 }
 const cost = (kind, to) => {
@@ -24,10 +24,13 @@ const cost = (kind, to) => {
   return { grain: Math.round(b[0] * f), wood: Math.round(b[1] * f), marble: Math.round(b[2] * f), bronze: Math.round(b[3] * f), secs: to <= 1 ? 60 : Math.round(120 * 1.7 ** (to - 2)) }
 }
 let db = null
+// pesca (G03): 1 barco sem docas, 2/3/4 com docas nível 1/4/8; 45 peixes/h por barco, +10% por nível de docas, atenienses +20%
+const boatCount = (d) => 1 + (d >= 1) + (d >= 4) + (d >= 8)
+const fishRate = (d, tribe) => Math.round(45 * (1 + 0.1 * d) * (tribe === 'athenian' ? 1.2 : 1))
 let logged = false
 const lvl = (kind) => db.buildings.find((b) => b.kind === kind)?.level ?? 0
 const needs = (kind) => {
-  if (['agora', 'storehouse', 'granary'].includes(kind)) return null
+  if (['agora', 'storehouse', 'granary', 'docks'].includes(kind)) return null
   if (['cellar', 'barracks'].includes(kind)) return lvl('agora') >= 3 ? null : 'Agora level 3'
   if (kind === 'market') return lvl('agora') >= 5 ? null : 'Agora level 5'
   if (kind === 'temple') return lvl('agora') >= 7 ? null : 'Agora level 7'
@@ -50,11 +53,13 @@ function state() {
   return {
     logged_in: true, now: iso(clock()), user: db.user, tribe: db.tribe,
     village: {
-      name: v.name, grain: Math.floor(v.grain), wood: Math.floor(v.wood), marble: Math.floor(v.marble), bronze: Math.floor(v.bronze),
+      name: v.name, grain: Math.floor(v.grain), wood: Math.floor(v.wood), marble: Math.floor(v.marble), bronze: Math.floor(v.bronze), fish: Math.floor(v.fish),
       store_cap: cap(lvl('storehouse')), granary_cap: cap(lvl('granary')),
       build_kind: v.build_kind, build_level: v.build_level, build_until: v.build_until ? iso(v.build_until) : null, build_target: v.build_target,
     },
     plots: db.plots.map((p, idx) => ({ idx, kind: p.kind, level: p.level, rate: rate(p.level), cycle_secs: p.cycle_secs, started_at: p.started_at ? iso(p.started_at) : null, ends_at: p.ends_at ? iso(p.ends_at) : null, harvest: p.harvest, next: p.level < 10 ? cost(p.kind, p.level + 1) : null, next_rate: rate(p.level + 1) })),
+    boats: Array.from({ length: boatCount(lvl('docks')) }, (_, i) => { const b = db.boats[i] ?? {}; return { boat: i, cycle_secs: b.cycle_secs ?? null, started_at: b.started_at ? iso(b.started_at) : null, ends_at: b.ends_at ? iso(b.ends_at) : null, catch: b.catch ?? 0 } }),
+    fishing: { rate: fishRate(lvl('docks'), db.tribe), docks: lvl('docks'), next_boat_at: lvl('docks') < 1 ? 1 : lvl('docks') < 4 ? 4 : lvl('docks') < 8 ? 8 : null },
     buildings: [...db.buildings].sort((a, b) => a.pad - b.pad).map((b) => ({ ...b, next: b.level < 10 ? cost(b.kind, b.level + 1) : null })),
     catalog: KINDS.map((k) => ({ kind: k, cost: cost(k, 1), needs: needs(k), built: db.buildings.some((b) => b.kind === k) })),
     cycles: Object.entries(MULT).map(([secs, mult]) => ({ secs: Number(secs), mult })),
@@ -87,9 +92,10 @@ export async function mockRpc(fn, a = {}) {
       if (!['spartan', 'athenian', 'delphian'].includes(a.p_tribe)) return fail('Pick a tribe')
       db = {
         user: a.p_username.trim(), pass: a.p_password, tribe: a.p_tribe,
-        v: { name: a.p_village.trim().slice(0, 24), grain: 500, wood: 500, marble: 500, bronze: 500, build_kind: null, build_level: null, build_until: null, build_target: null },
+        v: { name: a.p_village.trim().slice(0, 24), grain: 500, wood: 500, marble: 500, bronze: 500, fish: 0, build_kind: null, build_level: null, build_until: null, build_target: null },
         plots: PLOT_KIND.map((kind, i) => ({ kind, level: [0, 1, 2, 5].includes(i) ? 1 : 0, cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })),
         buildings: [{ pad: 1, kind: 'agora', level: 1 }, { pad: 4, kind: 'storehouse', level: 1 }],
+        boats: [],
       }
       logged = true
       return ok(state())
@@ -116,6 +122,25 @@ export async function mockRpc(fn, a = {}) {
       const left = p.harvest - moved
       if (left > 0) p.harvest = left; else Object.assign(p, { cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })
       return ok({ ...state(), collected: { kind: p.kind, amount: moved, left } })
+    }
+    case 'polis_fish_start': {
+      const m = MULT[a.p_secs]
+      if (!m) return fail('Pick a cycle: 30 min, 1 h, 6 h, 12 h or 24 h')
+      if (!(a.p_boat >= 0 && a.p_boat < boatCount(lvl('docks')))) return fail('Build the Docks to get more boats')
+      const b = (db.boats[a.p_boat] ??= {})
+      if (b.started_at) return fail('This boat is already at sea')
+      Object.assign(b, { cycle_secs: a.p_secs, started_at: now, ends_at: now + a.p_secs * 1000, catch: Math.round(fishRate(lvl('docks'), db.tribe) * (a.p_secs / 3600) * m + 1e-9) })
+      return ok(state())
+    }
+    case 'polis_fish_collect': {
+      const b = db.boats[a.p_boat], v = db.v
+      if (!b?.started_at) return fail('This boat is at the pier'); if (b.ends_at > now) return fail('Still fishing')
+      const moved = Math.min(Math.max(0, cap(lvl('granary')) - v.fish), b.catch)
+      if (moved <= 0) return fail('Your granary is full of fish. Spend some or upgrade it')
+      v.fish += moved
+      const left = b.catch - moved
+      if (left > 0) b.catch = left; else Object.assign(b, { cycle_secs: null, started_at: null, ends_at: null, catch: 0 })
+      return ok({ ...state(), collected: { kind: 'fish', amount: moved, left } })
     }
     case 'polis_plot_upgrade': { const p = db.plots[a.p_idx]; const e = queue(`plot:${a.p_idx}`, p.kind, p.level + 1); return e ? fail(e) : ok(state()) }
     case 'polis_build': {

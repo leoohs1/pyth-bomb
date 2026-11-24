@@ -9,8 +9,9 @@ import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
 import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
+import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
 import {
-  RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, FISHERMEN, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
+  RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, FISHERMEN, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
 
 // só no computador: ?mock=1 usa a imitação na memória (mockPolis.js) em vez do Supabase
@@ -197,7 +198,10 @@ function PolisGame({ s, t, onState, onLogout }) {
     name: v.build_target?.startsWith('plot:') ? RES_BY[v.build_kind].field : BUILDINGS[v.build_kind]?.name ?? v.build_kind,
     level: v.build_level, left: Date.parse(v.build_until) - t,
   } : null
-  const capOf = (k) => (k === 'grain' ? v.granary_cap : v.store_cap)
+  const capOf = (k) => (k === 'grain' || k === 'fish' ? v.granary_cap : v.store_cap)
+  const boats = s.boats ?? []
+  const fishing = s.fishing ?? { rate: 0, docks: 0 }
+  const boatsReady = boats.filter((b) => boatState(b, t) === 'ready')
 
   return (
     <div className="po-game" style={{ '--tribe': tribe.color }}>
@@ -221,8 +225,8 @@ function PolisGame({ s, t, onState, onLogout }) {
         </nav>
         <button type="button" className="po-btn po-btn-ghost po-logout" onClick={onLogout}>Log out</button>
         <div className="po-resbar">
-          {RES.map((r) => {
-            const amt = v[r.id], cap = capOf(r.id), full = amt >= cap
+          {BAR.map((r) => {
+            const amt = v[r.id] ?? 0, cap = capOf(r.id), full = amt >= cap
             return (
               <div key={r.id} className={`po-res${full ? ' is-full' : ''}`} title={`${r.label}: ${fmtNum(amt)} / ${fmtNum(cap)}`}>
                 <span className="po-emoji" aria-hidden="true">{r.icon}</span>
@@ -258,6 +262,14 @@ function PolisGame({ s, t, onState, onLogout }) {
                   )
                 })}
                 <Peasants plots={s.plots} pos={PLOT_POS} t={t} returns={returns} />
+                {s.boats && <Boats boats={boats} t={t} />}
+                {s.boats && (
+                  <button type="button" className={`po-pier${boatsReady.length ? ' is-ready' : ''}`} style={{ left: `${PIER.x}%`, top: `${PIER.y}%` }}
+                    onClick={() => setOpen({ fish: true })} aria-label="Fishing pier">
+                    {boatsReady.length > 0 && <span className="po-plot-pop po-emoji" aria-hidden="true">🐟</span>}
+                    <span className="po-pier-tag">🎣 Fishing</span>
+                  </button>
+                )}
               </div>
             )}
             {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
@@ -298,14 +310,16 @@ function PolisGame({ s, t, onState, onLogout }) {
           </section>
           <section className="po-panel">
             <p className="po-label">Your day</p>
-            {ready.length > 0 && (
+            {ready.length + boatsReady.length > 0 && (
               <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={async () => {
-                for (const p of ready) if (!(await act('polis_plot_collect', { p_idx: p.idx }))) break
-              }}>Collect all ({ready.length})</button>
+                for (const p of ready) if (!(await act('polis_plot_collect', { p_idx: p.idx }))) return
+                for (const b of boatsReady) if (!(await act('polis_fish_collect', { p_boat: b.boat }))) return
+              }}>Collect all ({ready.length + boatsReady.length})</button>
             )}
-            <p className="po-panel-row">✨ Ready to collect<span>{ready.length}</span></p>
+            <p className="po-panel-row">✨ Ready to collect<span>{ready.length + boatsReady.length}</span></p>
             <p className="po-panel-row">⏳ Growing<span>{s.plots.filter((p) => plotState(p) === 'working').length}</span></p>
-            <p className="po-panel-row">💤 Waiting for you<span>{idle.length}</span></p>
+            {s.boats && <p className="po-panel-row">⛵ Boats at sea<span>{boats.filter((b) => boatState(b, t) === 'sea').length} / {boats.length}</span></p>}
+            <p className="po-panel-row">💤 Waiting for you<span>{idle.length + boats.filter((b) => boatState(b, t) === 'pier').length}</span></p>
           </section>
           <section className="po-panel">
             <p className="po-label">Production per hour</p>
@@ -313,7 +327,8 @@ function PolisGame({ s, t, onState, onLogout }) {
               <p key={r.id} className="po-panel-row"><span className="po-emoji" aria-hidden="true">{r.icon}</span> {r.label}
                 <span>{fmtNum(s.plots.filter((p) => p.kind === r.id).reduce((a, p) => a + Number(p.rate), 0))}</span></p>
             ))}
-            <p className="po-note">The base rate of all your plots. Short cycles pay more per hour.</p>
+            {s.boats && <p className="po-panel-row"><span className="po-emoji" aria-hidden="true">🐟</span> Fish<span>{fmtNum(fishing.rate * boats.length)}</span></p>}
+            <p className="po-note">The base rate of all your plots and boats. Short cycles pay more per hour.</p>
           </section>
         </aside>
       </div>
@@ -322,7 +337,11 @@ function PolisGame({ s, t, onState, onLogout }) {
         <div className="po-sheet-back" onClick={() => setOpen(null)}>
           <div className="po-sheet" role="dialog" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="po-sheet-x" aria-label="Close" onClick={() => setOpen(null)}>×</button>
-            {'plot' in open
+            {'fish' in open
+              ? <FishPanel s={s} t={t} busy={busy} err={err}
+                onSail={(boat, secs) => act('polis_fish_start', { p_boat: boat, p_secs: secs }, `Boat ${boat + 1} sailed: ${CYCLE_LABEL[secs]}`)}
+                onCollect={(boat) => act('polis_fish_collect', { p_boat: boat })} />
+              : 'plot' in open
               ? <PlotPanel p={s.plots.find((x) => x.idx === open.plot)} v={v} cycles={s.cycles} st={plotState(s.plots.find((x) => x.idx === open.plot))} t={t} busy={busy} err={err}
                 cap={capOf(s.plots.find((x) => x.idx === open.plot).kind)}
                 onStart={(secs) => act('polis_plot_start', { p_idx: open.plot, p_secs: secs }, `Started: ${CYCLE_LABEL[secs]}`)}

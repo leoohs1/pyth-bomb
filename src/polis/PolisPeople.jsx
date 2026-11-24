@@ -15,6 +15,10 @@ export const ANIM = {
   heroWalk: { src: C + 'hero-walk.webp', n: 4, ms: 160 },
   heroIdle: { src: C + 'hero-idle.webp', n: 2, ms: 700 },
   heroWin: { src: C + 'hero-win.webp', n: 1 },
+  boatRow: { src: C + 'boat-row.webp', n: 2, ms: 380 },
+  boatFish: { src: C + 'boat-fish.webp', n: 2, ms: 1100 },
+  boatProud: { src: C + 'boat-proud.webp', n: 1 },
+  boatEmpty: { src: C + 'boat-empty.webp', n: 1 },
 }
 export const WORK_OF = { grain: 'hoe', wood: 'axe', marble: 'pick', bronze: 'pick' }
 export const GATE = { x: 50, y: 53.5 } // portão da vilinha na tela de Recursos (em % da arte)
@@ -36,7 +40,7 @@ export function Sprite({ anim, hero, flip, bob, className = '' }) {
 }
 
 // anda de "from" até "to" em "ms" (começou em startAt): posição inicial calculada pelo relógio e depois CSS transition
-function Walker({ from, to, startAt, ms, anim, now }) {
+export function Walker({ from, to, startAt, ms, anim, now, cls = 'po-person' }) {
   const ref = useRef(null)
   const p0 = Math.min(1, Math.max(0, (now - startAt) / ms))
   const left = ms - (now - startAt)
@@ -52,7 +56,7 @@ function Walker({ from, to, startAt, ms, anim, now }) {
     }))
     return () => cancelAnimationFrame(id)
   }, []) // só ao nascer (a chave muda quando começa outra caminhada)
-  return <span ref={ref} className="po-person"><Sprite anim={anim} flip={to.x < from.x} /></span>
+  return <span ref={ref} className={cls}><Sprite anim={anim} flip={to.x < from.x} /></span>
 }
 
 // os camponeses da tela de Recursos
