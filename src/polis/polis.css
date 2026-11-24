@@ -6,6 +6,12 @@
   background: radial-gradient(ellipse at 50% 0%, #3b1a6e 0%, #1a0b35 55%, #0d0620 100%);
   color: #f3ecff; font-family: 'Inter', system-ui, sans-serif;
 }
+/* fundo: a própria arte da vila, desfocada e escura, pra tela grande não ficar vazia */
+.po-game { position: relative; isolation: isolate; }
+.po-game::before { content: ''; position: fixed; inset: -40px; z-index: -1; background: url(/polis/resources.webp) center / cover no-repeat;
+  filter: blur(10px) brightness(0.62) saturate(1.2); }
+.po-game::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 35%, rgba(59, 26, 110, 0.25), rgba(13, 6, 32, 0.7) 85%); }
 .po-emoji { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; font-style: normal; }
 .po-center { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; gap: 18px; box-sizing: border-box; }
 .po-loading { color: #c9b8f0; }
@@ -52,7 +58,10 @@
 .po-topbar { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'crest nav out' 'crest res res';
   gap: 8px 14px; align-items: center; padding: 10px 14px; background: linear-gradient(#2a1657, #1a0d38); border-bottom: 3px solid #b8860b;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
-.po-crest { grid-area: crest; display: flex; align-items: center; gap: 10px; }
+.po-crest { grid-area: crest; display: flex; align-items: center; gap: 10px; position: relative; padding: 4px 10px 4px 4px; border: 0; border-radius: 40px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.po-crest:hover, .po-crest:focus-visible { background: rgba(244, 197, 66, 0.12); }
+.po-crest:hover .po-crest-badge { box-shadow: 0 0 0 3px var(--tribe), 0 0 16px rgba(244, 197, 66, 0.7); }
+.po-crest-dot { position: absolute; left: 50px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #f4c542; border: 2px solid #1a0d38; animation: po-pop 1.2s ease-in-out infinite; }
 .po-crest-badge { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 30px;
   background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--tribe) 70%, #fff 0%), #1a0d38); border: 3px solid #f4c542; box-shadow: 0 0 0 3px var(--tribe); }
 .po-crest-text { display: flex; flex-direction: column; min-width: 0; }
@@ -204,6 +213,41 @@
 .po-boatrow-info .po-run-bar { display: block; }
 .po-boatrow .po-btn { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .po-boat.is-floating { animation: none; } }
+
+/* ---- Herói */
+.po-hero { text-align: left; display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 14px; padding: 16px; border-radius: 15px;
+  background: linear-gradient(#2a1657, #1a0d38); }
+.po-hero > section { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #f6efdc; color: #3a2a14; border: 2px solid #d9c9a6; }
+.po-hero h2 { margin: 0; font-family: 'Cinzel', serif; font-size: 22px; color: #3a2a14; }
+.po-hero-stage { display: grid; place-items: end center; height: 200px; border-radius: 12px; overflow: hidden;
+  background: radial-gradient(circle at 50% 75%, color-mix(in srgb, var(--cape, #8e44ad) 45%, #fff), #2a1657 80%); }
+.po-hero-big { display: block; width: 170px; aspect-ratio: 1; margin-bottom: 6px; }
+.po-hero-big .po-sprite { filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.35)); }
+.po-hero-away { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #fff; font-weight: 700; font-size: 14px; }
+.po-hero-away .po-emoji { font-size: 46px; }
+.po-hero-lvl { margin: 0; display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.po-hero-lvl span { font-size: 12px; color: #7a6a4f; font-variant-numeric: tabular-nums; }
+.po-hero .po-label { margin-top: 6px; }
+.po-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #7a6a4f; }
+.po-field input { padding: 9px 11px; border-radius: 10px; border: 2px solid #d9c9a6; background: #fffaf0; color: #3a2a14; font: inherit; font-size: 15px; }
+.po-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.po-swatch { position: relative; padding: 3px; border-radius: 12px; border: 2px solid #d9c9a6; background: #fffaf0; cursor: pointer; }
+.po-swatch img { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; }
+.po-swatch i { position: absolute; right: 3px; bottom: 3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; }
+.po-swatch.is-on { border-color: #b8860b; background: #fff1c2; box-shadow: 0 0 0 2px #f4c542; }
+.po-adv { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; border: 2px solid #d9c9a6; background: #fffaf0; }
+.po-adv.is-on { border-color: #b8860b; background: #fff1c2; }
+.po-adv-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.po-adv-text b { font-family: 'Cinzel', serif; font-size: 16px; }
+.po-adv-text small { color: #7a6a4f; font-size: 13px; }
+.po-adv-meta { font-size: 12.5px; color: #5b4a2f; font-variant-numeric: tabular-nums; }
+.po-adv-text .po-run-bar { display: block; margin-top: 2px; }
+.po-hero-back { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; border: 2px solid #b8860b; background: #fff1c2; }
+.po-hero-back p { margin: 0; }
+.po-loot { display: flex; flex-wrap: wrap; gap: 6px 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.po-panel-link { width: 100%; border: 0; background: transparent; font: inherit; font-size: 14px; color: inherit; cursor: pointer; text-align: left; padding: 0; }
+.po-panel-link:hover { color: #b8860b; }
+@media (max-width: 760px) { .po-hero { grid-template-columns: 1fr; padding: 10px; } }
 
 /* ---- Exército */
 .po-army { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 18px; background: linear-gradient(#f6efe1, #eadfc8); color: #3a2a14;

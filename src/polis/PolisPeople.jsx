@@ -27,12 +27,13 @@ export const BACK_MS = 3500
 const spotOf = (p) => ({ x: p.x + 4.4, y: p.y + 2.2 }) // ao lado da bolinha do lote
 
 // um bonequinho: tira de quadros animada por CSS (leve: nada de JavaScript a cada quadro)
-export function Sprite({ anim, hero, flip, bob, className = '' }) {
+export function Sprite({ anim, hero, flip, bob, color, className = '' }) {
   const a = ANIM[anim]
+  const src = hero && color && color !== 'purple' ? a.src.replace('.webp', `-${color}.webp`) : a.src // capa colorida (G04)
   return (
     <span className={`po-sprite${hero ? ' is-hero' : ''}${bob ? ' is-bob' : ''} ${className}`}
       style={{
-        backgroundImage: `url(${a.src})`, backgroundSize: `${a.n * 100}% 100%`,
+        backgroundImage: `url(${src})`, backgroundSize: `${a.n * 100}% 100%`,
         animation: a.n > 1 ? `po-strip ${a.ms * a.n}ms steps(${a.n}, jump-none) infinite` : undefined,
         transform: flip ? 'scaleX(-1)' : undefined,
       }} />
@@ -85,7 +86,7 @@ export function Peasants({ plots, pos, t, returns }) {
 
 // o herói passeia pela praça da Cidade (pontos em volta da fonte); clique nele -> onClick
 const STROLL = [{ x: 50, y: 52 }, { x: 43, y: 47 }, { x: 57, y: 47 }, { x: 46, y: 58 }, { x: 55, y: 59 }, { x: 50, y: 41 }]
-export function HeroStroll({ onClick }) {
+export function HeroStroll({ onClick, color }) {
   const [at, setAt] = useState(STROLL[0])
   const [walking, setWalking] = useState(null) // { to, ms }
   const [flip, setFlip] = useState(false)
@@ -111,7 +112,7 @@ export function HeroStroll({ onClick }) {
     <button type="button" className="po-person po-hero-btn" aria-label="Your hero"
       style={{ left: `${at.x}%`, top: `${at.y}%`, transition: walking ? `left ${walking.ms}ms linear, top ${walking.ms}ms linear` : 'none' }}
       onClick={onClick}>
-      <Sprite anim={walking ? 'heroWalk' : 'heroIdle'} hero flip={flip} />
+      <Sprite anim={walking ? 'heroWalk' : 'heroIdle'} hero color={color} flip={flip} />
     </button>
   )
 }

@@ -10,6 +10,7 @@ import { mockRpc, mockNow } from './mockPolis'
 import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
 import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
+import { HeroScreen, heroFace, heroState } from './PolisHero'
 import {
   RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -157,7 +158,7 @@ const NAV = [
   { id: 'reports', icon: '📜', label: 'Reports', soon: true },
   { id: 'ranking', icon: '🏆', label: 'Ranking', soon: true },
   { id: 'missions', icon: '⚡', label: 'Missions', soon: true },
-  { id: 'hero', icon: '🦸', label: 'Hero', soon: true },
+  { id: 'hero', icon: '🦸', label: 'Hero' },
 ]
 
 function PolisGame({ s, t, onState, onLogout }) {
@@ -185,7 +186,10 @@ function PolisGame({ s, t, onState, onLogout }) {
       if (c && args?.p_idx != null && !(r.plots ?? []).find((x) => x.idx === args.p_idx)?.started_at) {
         setReturns((list) => [...list.filter((x) => Date.now() - x.at < 4000), { idx: args.p_idx, kind: c.kind, at: Date.now() }])
       }
-      if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait: storage full)` : ''}`)
+      if (c?.kind === 'hero') {
+        const n = Object.entries(c.loot).reduce((x, [, y]) => x + Number(y), 0)
+        setToast(`${c.level_up ? '⭐ Level up! ' : ''}Your hero brought +${fmtNum(n)} resources and +${c.xp} XP${c.lost > 0 ? ` (${fmtNum(c.lost)} did not fit)` : ''}`)
+      } else if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait: storage full)` : ''}`)
       else if (msg) setToast(msg)
       if (close) setOpen(null)
       return true
@@ -202,22 +206,26 @@ function PolisGame({ s, t, onState, onLogout }) {
   const boats = s.boats ?? []
   const fishing = s.fishing ?? { rate: 0, docks: 0 }
   const boatsReady = boats.filter((b) => boatState(b, t) === 'ready')
+  const hero = s.hero // null até rodar o G04
+  const heroSt = heroState(hero, t)
+  const goHero = () => (hero ? setTab('hero') : setSoon({ icon: '🦸', label: 'Hero' }))
 
   return (
     <div className="po-game" style={{ '--tribe': tribe.color }}>
       {/* ---- menu de cima, como no Travian: brasão/vila, as abas e a barra de recursos */}
       <header className="po-topbar">
-        <div className="po-crest" title={tribe.name}>
+        <button type="button" className="po-crest" title={hero ? `${hero.name} · open your hero` : tribe.name} onClick={goHero}>
           <span className="po-crest-badge po-crest-hero" aria-hidden="true">
-            <img src="/polis/c/hero-face.webp" alt="" />
+            <img src={heroFace(hero?.color)} alt="" />
             <span className="po-crest-tribe po-emoji">{tribe.icon}</span>
           </span>
           <span className="po-crest-text"><b>{v.name}</b><small>{s.user} · {tribe.name}</small></span>
-        </div>
+          {heroSt === 'back' && <span className="po-crest-dot" aria-label="Your hero is back" />}
+        </button>
         <nav className="po-nav" aria-label="Sections">
           {NAV.map((n) => (
             <button key={n.id} type="button" className={`po-nav-btn${tab === n.id ? ' is-on' : ''}${n.soon ? ' is-soon' : ''}`}
-              onClick={() => (n.soon ? setSoon(n) : setTab(n.id))} aria-current={tab === n.id ? 'page' : undefined}>
+              onClick={() => (n.soon || (n.id === 'hero' && !hero) ? setSoon(n) : setTab(n.id))} aria-current={tab === n.id ? 'page' : undefined}>
               <span className="po-emoji" aria-hidden="true">{n.icon}</span>
               <span className="po-nav-label">{n.label}</span>
             </button>
@@ -272,11 +280,15 @@ function PolisGame({ s, t, onState, onLogout }) {
                 )}
               </div>
             )}
+            {tab === 'hero' && hero && <HeroScreen s={s} t={t} busy={busy} err={err}
+              onSave={(name, color) => act('polis_hero_set', { p_name: name, p_color: color }, 'Hero saved')}
+              onGo={(kind) => act('polis_hero_go', { p_kind: kind }, 'Your hero left on an adventure')}
+              onCollect={() => act('polis_hero_collect')} />}
             {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
             {tab === 'city' && (
               <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
                 <img className="po-scene-img" src="/polis/city.webp" alt="" draggable="false" />
-                <HeroStroll onClick={() => setSoon({ icon: '🦸', label: 'Hero' })} />
+                {heroSt === 'home' && <HeroStroll onClick={goHero} color={hero?.color} />}
                 {PAD_POS.map((pos, pad) => {
                   const b = s.buildings.find((x) => x.pad === pad)
                   const target = v.build_target === `pad:${pad}`
@@ -310,16 +322,18 @@ function PolisGame({ s, t, onState, onLogout }) {
           </section>
           <section className="po-panel">
             <p className="po-label">Your day</p>
-            {ready.length + boatsReady.length > 0 && (
+            {ready.length + boatsReady.length + (heroSt === 'back' ? 1 : 0) > 0 && (
               <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={async () => {
                 for (const p of ready) if (!(await act('polis_plot_collect', { p_idx: p.idx }))) return
                 for (const b of boatsReady) if (!(await act('polis_fish_collect', { p_boat: b.boat }))) return
-              }}>Collect all ({ready.length + boatsReady.length})</button>
+                if (heroSt === 'back') await act('polis_hero_collect')
+              }}>Collect all ({ready.length + boatsReady.length + (heroSt === 'back' ? 1 : 0)})</button>
             )}
-            <p className="po-panel-row">✨ Ready to collect<span>{ready.length + boatsReady.length}</span></p>
+            <p className="po-panel-row">✨ Ready to collect<span>{ready.length + boatsReady.length + (heroSt === 'back' ? 1 : 0)}</span></p>
             <p className="po-panel-row">⏳ Growing<span>{s.plots.filter((p) => plotState(p) === 'working').length}</span></p>
             {s.boats && <p className="po-panel-row">⛵ Boats at sea<span>{boats.filter((b) => boatState(b, t) === 'sea').length} / {boats.length}</span></p>}
             <p className="po-panel-row">💤 Waiting for you<span>{idle.length + boats.filter((b) => boatState(b, t) === 'pier').length}</span></p>
+            {hero && <button type="button" className="po-panel-row po-panel-link" onClick={goHero}>🦸 {hero.name}<span>{heroSt === 'home' ? 'At home' : heroSt === 'back' ? 'Back! 🎒' : `Away · ${fmtTime(Date.parse(hero.adventure.ends_at) - t)}`}</span></button>}
           </section>
           <section className="po-panel">
             <p className="po-label">Production per hour</p>

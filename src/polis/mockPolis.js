@@ -1,5 +1,5 @@
 // SÓ NO COMPUTADOR (npm run dev + ?mock=1): imita as funções polis_* do Supabase na memória, com as mesmas regras do
-// supabase/polis/G01 + G02 + G03, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
+// supabase/polis/G01 + G02 + G03 + G04, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
 // 60x mais rápido (30 min viram 30 s). Nunca entra no site publicado.
 const QS = new URLSearchParams(window.location.search)
 const FAST = Math.max(1, Number(QS.get('fast')) || 1)
@@ -25,6 +25,15 @@ const cost = (kind, to) => {
 }
 let db = null
 // pesca (G03): 1 barco sem docas, 2/3/4 com docas nível 1/4/8; 45 peixes/h por barco, +10% por nível de docas, atenienses +20%
+// herói (G04): nível L precisa de 25·L·(L-1) XP; aventuras 30 min / 2 h / 8 h
+const ADVS = [{ kind: 0, secs: 1800, xp: 10, loot: 150 }, { kind: 1, secs: 7200, xp: 35, loot: 480 }, { kind: 2, secs: 28800, xp: 120, loot: 1500 }]
+const heroLevel = (xp) => Math.min(20, Math.floor((1 + Math.sqrt(1 + (8 * xp) / 50)) / 2))
+const xpFor = (l) => 25 * l * (l - 1)
+const heroJson = () => {
+  const h = db.hero, l = heroLevel(h.xp)
+  return { name: h.name, color: h.color, xp: h.xp, level: l, xp_level: xpFor(l), xp_next: l < 20 ? xpFor(l + 1) : null, loot_mult: Math.round((1 + 0.1 * (l - 1)) * 100) / 100,
+    adventure: h.adv ? { kind: h.adv.kind, started_at: iso(h.adv.started_at), ends_at: iso(h.adv.ends_at), loot: h.adv.loot } : null, adventures: ADVS }
+}
 const boatCount = (d) => 1 + (d >= 1) + (d >= 4) + (d >= 8)
 const fishRate = (d, tribe) => Math.round(45 * (1 + 0.1 * d) * (tribe === 'athenian' ? 1.2 : 1))
 let logged = false
@@ -59,6 +68,7 @@ function state() {
     },
     plots: db.plots.map((p, idx) => ({ idx, kind: p.kind, level: p.level, rate: rate(p.level), cycle_secs: p.cycle_secs, started_at: p.started_at ? iso(p.started_at) : null, ends_at: p.ends_at ? iso(p.ends_at) : null, harvest: p.harvest, next: p.level < 10 ? cost(p.kind, p.level + 1) : null, next_rate: rate(p.level + 1) })),
     boats: Array.from({ length: boatCount(lvl('docks')) }, (_, i) => { const b = db.boats[i] ?? {}; return { boat: i, cycle_secs: b.cycle_secs ?? null, started_at: b.started_at ? iso(b.started_at) : null, ends_at: b.ends_at ? iso(b.ends_at) : null, catch: b.catch ?? 0 } }),
+    hero: heroJson(),
     fishing: { rate: fishRate(lvl('docks'), db.tribe), docks: lvl('docks'), next_boat_at: lvl('docks') < 1 ? 1 : lvl('docks') < 4 ? 4 : lvl('docks') < 8 ? 8 : null },
     buildings: [...db.buildings].sort((a, b) => a.pad - b.pad).map((b) => ({ ...b, next: b.level < 10 ? cost(b.kind, b.level + 1) : null })),
     catalog: KINDS.map((k) => ({ kind: k, cost: cost(k, 1), needs: needs(k), built: db.buildings.some((b) => b.kind === k) })),
@@ -96,6 +106,7 @@ export async function mockRpc(fn, a = {}) {
         plots: PLOT_KIND.map((kind, i) => ({ kind, level: [0, 1, 2, 5].includes(i) ? 1 : 0, cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })),
         buildings: [{ pad: 1, kind: 'agora', level: 1 }, { pad: 4, kind: 'storehouse', level: 1 }],
         boats: [],
+        hero: { name: 'Hero', color: 'purple', xp: 0, adv: null },
       }
       logged = true
       return ok(state())
@@ -141,6 +152,27 @@ export async function mockRpc(fn, a = {}) {
       const left = b.catch - moved
       if (left > 0) b.catch = left; else Object.assign(b, { cycle_secs: null, started_at: null, ends_at: null, catch: 0 })
       return ok({ ...state(), collected: { kind: 'fish', amount: moved, left } })
+    }
+    case 'polis_hero_set': {
+      const n = (a.p_name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16)
+      if (n.length < 2) return fail('Give your hero a name (2 to 16 characters)')
+      if (!['purple', 'red', 'blue', 'green', 'gold', 'white'].includes(a.p_color)) return fail('Pick a color')
+      Object.assign(db.hero, { name: n, color: a.p_color }); return ok(state())
+    }
+    case 'polis_hero_go': {
+      const adv = ADVS[a.p_kind]; if (!adv) return fail('Unknown adventure')
+      if (db.hero.adv) return fail('Your hero is already on an adventure')
+      const total = adv.loot * (1 + 0.1 * (heroLevel(db.hero.xp) - 1)), w = RES.concat('fish').map(() => 0.4 + Math.random()), sw = w.reduce((x, y) => x + y)
+      const loot = Object.fromEntries(RES.concat('fish').map((k, i) => [k, Math.round((total * w[i]) / sw)])); loot.xp = adv.xp
+      db.hero.adv = { kind: adv.kind, started_at: now, ends_at: now + adv.secs * 1000, loot }; return ok(state())
+    }
+    case 'polis_hero_collect': {
+      const h = db.hero, v = db.v
+      if (!h.adv) return fail('Your hero is at home'); if (h.adv.ends_at > now) return fail('Your hero is still away')
+      const got = {}; let lost = 0
+      for (const k of RES.concat('fish')) { const c = k === 'grain' || k === 'fish' ? cap(lvl('granary')) : cap(lvl('storehouse')); got[k] = Math.min(h.adv.loot[k], Math.max(0, c - v[k])); v[k] += got[k]; lost += h.adv.loot[k] - got[k] }
+      const before = heroLevel(h.xp), xp = h.adv.loot.xp; h.xp += xp; h.adv = null
+      return ok({ ...state(), collected: { kind: 'hero', loot: got, xp, level_up: heroLevel(h.xp) > before, lost } })
     }
     case 'polis_plot_upgrade': { const p = db.plots[a.p_idx]; const e = queue(`plot:${a.p_idx}`, p.kind, p.level + 1); return e ? fail(e) : ok(state()) }
     case 'polis_build': {
