@@ -16,6 +16,28 @@ export const TRIBES = {
   delphian: { name: 'Delphians', tag: 'Guardians', icon: '🔮', color: '#8e44ad', text: 'Keepers of the oracle. Strong walls and the favor of the gods.' },
 }
 
+// tropas de cada tribo (o desenho do jogo, 2026-11-23): ataque, defesa, velocidade (casas/h), saque, custo (grão, madeira,
+// mármore, bronze) e quanto grão comem por hora. O treino de verdade chega numa próxima versão.
+export const UNITS = {
+  spartan: [
+    { id: 'hoplite', icon: '🛡️', name: 'Hoplite', role: 'The backbone: strong and versatile', atk: 55, def: 40, speed: 6, carry: 50, cost: [60, 80, 40, 110], eat: 1 },
+    { id: 'spartiate', icon: '⚔️', name: 'Spartiate', role: 'Elite attacker, expensive and devastating', atk: 90, def: 35, speed: 5, carry: 40, cost: [90, 120, 60, 180], eat: 2, needs: 'Agoge' },
+    { id: 'skiritai', icon: '🏃', name: 'Skiritai', role: 'Fast raiders and scouts', atk: 30, def: 15, speed: 12, carry: 90, cost: [40, 70, 20, 60], eat: 1 },
+  ],
+  athenian: [
+    { id: 'peltast', icon: '🗡️', name: 'Peltast', role: 'Cheap and good at a bit of everything', atk: 35, def: 30, speed: 7, carry: 60, cost: [40, 60, 30, 50], eat: 1 },
+    { id: 'archer', icon: '🏹', name: 'Archer', role: 'Defends the village well', atk: 20, def: 55, speed: 6, carry: 30, cost: [50, 90, 40, 60], eat: 1 },
+    { id: 'horseman', icon: '🐎', name: 'Horseman', role: 'The fastest, carries a lot of loot', atk: 50, def: 30, speed: 14, carry: 110, cost: [80, 100, 60, 120], eat: 2 },
+  ],
+  delphian: [
+    { id: 'guard', icon: '🛡️', name: 'Temple Guard', role: 'The best defense in the game', atk: 25, def: 75, speed: 5, carry: 30, cost: [70, 90, 80, 90], eat: 1 },
+    { id: 'slinger', icon: '🎯', name: 'Slinger', role: 'Cheap, attacks and defends fairly', atk: 35, def: 40, speed: 7, carry: 50, cost: [40, 60, 40, 30], eat: 1 },
+    { id: 'seer', icon: '🔮', name: 'Seer', role: 'Spy: sees enemy troops and warns of attacks early', atk: 0, def: 10, speed: 10, carry: 0, cost: [50, 40, 60, 20], eat: 1 },
+  ],
+}
+// pescadores: de todas as tribos, treinados nas Docas (a pesca chega depois)
+export const FISHERMEN = { id: 'fishermen', icon: '🎣', name: 'Fishermen', role: 'They do not fight: they bring fish from the sea to feed your army', atk: 0, def: 5, speed: 8, carry: 80, cost: [30, 60, 10, 10], eat: 0, needs: 'Docks' }
+
 // prédios da Cidade: nome, frase curta e o que faz em cada nível
 export const BUILDINGS = {
   agora: { name: 'Agora', text: 'The heart of your polis. Every level makes construction faster.', effect: (l) => `Construction ${Math.min(45, 5 * (l - 1))}% faster` },

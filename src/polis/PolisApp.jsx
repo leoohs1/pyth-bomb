@@ -9,7 +9,7 @@ import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
 import { setMusicSilenced } from '../music'
 import {
-  RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
+  RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, FISHERMEN, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
 
 // só no computador: ?mock=1 usa a imitação na memória (mockPolis.js) em vez do Supabase
@@ -150,6 +150,7 @@ function TribePicker({ onPick }) {
 const NAV = [
   { id: 'resources', icon: '🌾', label: 'Resources' },
   { id: 'city', icon: '🏛️', label: 'City' },
+  { id: 'army', icon: '⚔️', label: 'Army' },
   { id: 'map', icon: '🗺️', label: 'Map', soon: true },
   { id: 'reports', icon: '📜', label: 'Reports', soon: true },
   { id: 'ranking', icon: '🏆', label: 'Ranking', soon: true },
@@ -250,6 +251,7 @@ function PolisGame({ s, t, onState, onLogout }) {
                 })}
               </div>
             )}
+            {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
             {tab === 'city' && (
               <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
                 <img className="po-scene-img" src="/polis/city.webp" alt="" draggable="false" />
@@ -452,5 +454,55 @@ function PadPanel({ pad, s, busy, err, onBuild }) {
         {list.length === 0 && <p className="po-note">You built everything available. More buildings come in the next updates.</p>}
       </div>
     </>
+  )
+}
+
+// ---------------------------------------------------------------- Exército: as tropas da sua tribo (o treino chega depois)
+function ArmyScreen({ s, onCity }) {
+  const tribe = TRIBES[s.tribe]
+  const barracks = s.buildings.find((b) => b.kind === 'barracks')
+  const tribeHall = s.buildings.find((b) => ['agoge', 'harbor', 'sanctuary'].includes(b.kind))
+  const units = [...(UNITS[s.tribe] ?? []), FISHERMEN]
+  const needAgora = s.catalog.find((c) => c.kind === 'barracks')?.needs
+  return (
+    <div className="po-army">
+      <div className="po-army-head">
+        <span className="po-crest-badge po-emoji" aria-hidden="true">{tribe.icon}</span>
+        <div>
+          <h2>Your army</h2>
+          <p className="po-sub">{tribe.name} · {tribe.tag}</p>
+        </div>
+      </div>
+      <div className={`po-army-barracks${barracks ? ' is-ok' : ''}`}>
+        {barracks
+          ? <p>⚔️ Barracks level <b>{barracks.level}</b>. Training arrives in the next update: your soldiers are getting ready.</p>
+          : <p>⚔️ You have no Barracks yet. Build one in the City{needAgora ? ` (needs ${needAgora})` : ''} to train your soldiers.
+            <button type="button" className="po-btn po-btn-go" onClick={onCity}>Go to the City</button></p>}
+      </div>
+      <div className="po-units">
+        {units.map((u) => {
+          const locked = u.needs === 'Docks' || (u.needs && !tribeHall)
+          return (
+            <div key={u.id} className={`po-unit${u.id === 'fishermen' ? ' is-fish' : ''}`}>
+              <div className="po-unit-top">
+                <span className="po-unit-icon po-emoji" aria-hidden="true">{u.icon}</span>
+                <div><b>{u.name}</b><small>{u.role}</small></div>
+                <span className="po-unit-count" title="You have">0</span>
+              </div>
+              <div className="po-unit-stats">
+                <span title="Attack">⚔️ {u.atk}</span><span title="Defense">🛡️ {u.def}</span>
+                <span title="Speed (tiles per hour)">👟 {u.speed}</span><span title="Loot it carries">🎒 {u.carry}</span>
+                <span title="Grain eaten per hour">🌾 {u.eat}/h</span>
+              </div>
+              <div className="po-unit-cost">
+                {RES.map((r, i) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>{u.cost[i]}</span>)}
+              </div>
+              <button type="button" className="po-btn" disabled>{locked ? `Needs ${u.needs}` : 'Training soon'}</button>
+            </div>
+          )
+        })}
+      </div>
+      <p className="po-note">Season 1: you will only fight the Persians and the pirates, never other players. Fed and rested soldiers fight better.</p>
+    </div>
   )
 }
