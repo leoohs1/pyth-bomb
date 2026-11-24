@@ -10,7 +10,7 @@ import { mockRpc, mockNow } from './mockPolis'
 import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
 import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
-import { HeroScreen, heroFace, heroState } from './PolisHero'
+import { HeroScreen, HeroSide, heroFace, heroState } from './PolisHero'
 import {
   RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -208,6 +208,7 @@ function PolisGame({ s, t, onState, onLogout }) {
   const boatsReady = boats.filter((b) => boatState(b, t) === 'ready')
   const hero = s.hero // null até rodar o G04
   const heroSt = heroState(hero, t)
+  const heroGo = (kind) => act('polis_hero_go', { p_kind: kind }, 'Your hero left on an adventure')
   const goHero = () => (hero ? setTab('hero') : setSoon({ icon: '🦸', label: 'Hero' }))
 
   return (
@@ -247,7 +248,12 @@ function PolisGame({ s, t, onState, onLogout }) {
         </div>
       </header>
 
-      <div className="po-body">
+      <div className={`po-body${hero ? ' has-hero' : ''}`}>
+        {hero && (
+          <aside className="po-left">
+            <HeroSide s={s} t={t} busy={busy} onOpen={goHero} onGo={heroGo} onCollect={() => act('polis_hero_collect')} />
+          </aside>
+        )}
         <main className="po-stage">
           <div className="po-scroll" ref={scrollRef}>
             {tab === 'resources' && (
@@ -282,7 +288,7 @@ function PolisGame({ s, t, onState, onLogout }) {
             )}
             {tab === 'hero' && hero && <HeroScreen s={s} t={t} busy={busy} err={err}
               onSave={(name, color) => act('polis_hero_set', { p_name: name, p_color: color }, 'Hero saved')}
-              onGo={(kind) => act('polis_hero_go', { p_kind: kind }, 'Your hero left on an adventure')}
+              onGo={heroGo}
               onCollect={() => act('polis_hero_collect')} />}
             {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
             {tab === 'city' && (
@@ -315,6 +321,7 @@ function PolisGame({ s, t, onState, onLogout }) {
 
         {/* ---- painéis do lado: a vila, a obra e o dia */}
         <aside className="po-side">
+          {hero && <HeroSide s={s} t={t} busy={busy} onOpen={goHero} onGo={heroGo} onCollect={() => act('polis_hero_collect')} className="is-inside" />}
           <section className="po-panel">
             <p className="po-label">Construction</p>
             {building ? <p className="po-panel-row">🔨 <b>{building.name}</b> → Lv {building.level}<span>{fmtTime(building.left)}</span></p>
@@ -333,7 +340,6 @@ function PolisGame({ s, t, onState, onLogout }) {
             <p className="po-panel-row">⏳ Growing<span>{s.plots.filter((p) => plotState(p) === 'working').length}</span></p>
             {s.boats && <p className="po-panel-row">⛵ Boats at sea<span>{boats.filter((b) => boatState(b, t) === 'sea').length} / {boats.length}</span></p>}
             <p className="po-panel-row">💤 Waiting for you<span>{idle.length + boats.filter((b) => boatState(b, t) === 'pier').length}</span></p>
-            {hero && <button type="button" className="po-panel-row po-panel-link" onClick={goHero}>🦸 {hero.name}<span>{heroSt === 'home' ? 'At home' : heroSt === 'back' ? 'Back! 🎒' : `Away · ${fmtTime(Date.parse(hero.adventure.ends_at) - t)}`}</span></button>}
           </section>
           <section className="po-panel">
             <p className="po-label">Production per hour</p>

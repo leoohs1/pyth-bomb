@@ -98,3 +98,52 @@ export function HeroScreen({ s, t, busy, err, onSave, onGo, onCollect }) {
     </div>
   )
 }
+
+// painel pequeno do herói, sempre à vista (coluna da esquerda em tela grande, topo da coluna da direita nas menores):
+// acompanha a aventura enquanto você olha Recursos, Cidade etc. (Halls, 2026-11-24)
+export function HeroSide({ s, t, busy, onGo, onCollect, onOpen, className = '' }) {
+  const h = s.hero
+  const st = heroState(h, t)
+  const adv = h.adventure
+  const span = (h.xp_next ?? h.xp) - h.xp_level
+  return (
+    <section className={`po-panel po-heroside ${className}`} style={{ '--cape': HERO_COLORS.find((c) => c.id === h.color)?.css }}>
+      <p className="po-label">Your hero</p>
+      <button type="button" className="po-heroside-top" onClick={onOpen} title="Open your hero">
+        <span className="po-heroside-pic">
+          {st === 'home' ? <Sprite anim="heroIdle" hero color={h.color} /> : <span className="po-emoji" aria-hidden="true">{st === 'back' ? '🎒' : '🗺️'}</span>}
+        </span>
+        <span className="po-heroside-name"><b>{h.name}</b><small>Level {h.level} · {fmtNum(h.xp)}{h.xp_next ? ` / ${fmtNum(h.xp_next)}` : ''} XP</small>
+          <span className="po-run-bar"><i style={{ width: `${h.xp_next ? Math.min(100, ((h.xp - h.xp_level) / Math.max(1, span)) * 100) : 100}%` }} /></span>
+        </span>
+      </button>
+      {st === 'away' && (
+        <div className="po-heroside-adv">
+          <p>🗺️ <b>{storyOf(adv.kind, adv.started_at).title}</b></p>
+          <span className="po-run-bar"><i style={{ width: `${Math.min(100, ((t - Date.parse(adv.started_at)) / (Date.parse(adv.ends_at) - Date.parse(adv.started_at))) * 100)}%` }} /></span>
+          <p className="po-heroside-time">Back in <b>{fmtTime(Date.parse(adv.ends_at) - t)}</b></p>
+        </div>
+      )}
+      {st === 'back' && (
+        <div className="po-heroside-adv is-back">
+          <p>🎒 <b>Back from {storyOf(adv.kind, adv.started_at).title}!</b></p>
+          <div className="po-loot">
+            {BAR.map((r) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>+{fmtNum(adv.loot[r.id])}</span>)}
+            <span>⭐ +{adv.loot.xp}</span>
+          </div>
+          <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={onCollect}>Collect the loot</button>
+        </div>
+      )}
+      {st === 'home' && (
+        <div className="po-heroside-list">
+          {h.adventures.map((a) => (
+            <div key={a.kind} className="po-heroside-row">
+              <span><b>{storyOf(a.kind).title}</b><small>⏱ {DUR[a.secs]} · 🎒 ~{fmtNum(a.loot * h.loot_mult)} · ⭐ {a.xp}</small></span>
+              <button type="button" className="po-btn po-btn-go" disabled={busy} onClick={() => onGo(a.kind)}>Send</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
