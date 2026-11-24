@@ -17,6 +17,7 @@ import { issueResume, useResume } from './resume.js'
 import { createEntropy } from './entropy.js'
 import { startPokerDraws } from './pokerDraws.js'
 import { startDashDraws } from './dashDraws.js'
+import { startPolisPrices } from './polisPrices.js'
 import { matchInit, matchSnap } from '../src/pvp/engine/snapshot.js'
 import { STEP } from '../src/pvp/engine/constants.js'
 
@@ -44,6 +45,8 @@ const pokerDraws = startPokerDraws({ entropy }) // sorteios prontos pro Pyth Pok
 // relógio das salas do Supabase (Hot Potato, Person, Song, Price, Poker): só no Railway, ou no computador com GAME_CLOCK=1
 const gameClock = ON_RAILWAY || process.env.GAME_CLOCK === '1' ? startGameClock({ ...supabaseConfig }) : { state: { on: false, lastError: 'only on Railway' } }
 const dashDraws = startDashDraws({ entropy }) // baús do Pyth Dash (ver dashDraws.js)
+// preços reais da Pyth pro Market do Pyth Polis, 1x por minuto (ver polisPrices.js): só no Railway, ou com POLIS_PRICES=1
+const polisPrices = ON_RAILWAY || process.env.POLIS_PRICES === '1' ? startPolisPrices() : { state: { on: false, reason: 'only on Railway' } }
 const userSocket = new Map()  // id do usuário -> socket (uma conexão por pessoa)
 let now = 0                   // relógio do servidor (segundos de simulação)
 
@@ -168,9 +171,11 @@ const server = http.createServer((req, res) => {
   const ent = !e.enabled ? 'off' : e.ready ? `on (${e.chain.name}, contract ${e.contract})` : e.error ? `error: ${e.error}` : 'starting'
   const pd = pokerDraws.state
   const poker = !pd.on ? `off (${pd.reason})` : pd.lastError ? `error: ${pd.lastError}` : `${pd.ready ?? '?'} ready, ${pd.made} made`
+  const pp = polisPrices.state
+  const polis = !pp.on ? `off (${pp.reason})` : pp.lastError ? `error: ${pp.lastError}` : `${pp.kinds} feeds, ${pp.updates} updates`
   const gc = gameClock.state
   const clock = gc.on ? `on (${gc.rooms} rooms playing)` : gc.missing ? 'waiting for supabase/046' : gc.lastError ? `error: ${gc.lastError}` : 'off'
-  res.end(`Pyth Bomb PVP server ok · game clock ${clock} · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent} · poker draws ${poker} · dash draws ${dashDraws.state.on ? `${dashDraws.state.ready} ready, ${dashDraws.state.made} made, ${dashDraws.state.runs} runs` : 'server only'} · loop lag ${lagShown} ms\n`)
+  res.end(`Pyth Bomb PVP server ok · game clock ${clock} · ${tournaments.size} tournaments · ${wss.clients.size} connected · Entropy ${ent} · poker draws ${poker} · dash draws ${dashDraws.state.on ? `${dashDraws.state.ready} ready, ${dashDraws.state.made} made, ${dashDraws.state.runs} runs` : 'server only'} · polis prices ${polis} · loop lag ${lagShown} ms\n`)
 })
 
 const wss = new WebSocketServer({

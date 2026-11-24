@@ -11,6 +11,7 @@ import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
 import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
 import { HeroScreen, HeroSide, heroFace, heroState } from './PolisHero'
+import { MarketScreen } from './PolisMarket'
 import {
   RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -154,6 +155,7 @@ const NAV = [
   { id: 'resources', icon: '🌾', label: 'Resources' },
   { id: 'city', icon: '🏛️', label: 'City' },
   { id: 'army', icon: '⚔️', label: 'Army' },
+  { id: 'market', icon: '⚖️', label: 'Market' },
   { id: 'map', icon: '🗺️', label: 'Map', soon: true },
   { id: 'reports', icon: '📜', label: 'Reports', soon: true },
   { id: 'ranking', icon: '🏆', label: 'Ranking', soon: true },
@@ -186,7 +188,8 @@ function PolisGame({ s, t, onState, onLogout }) {
       if (c && args?.p_idx != null && !(r.plots ?? []).find((x) => x.idx === args.p_idx)?.started_at) {
         setReturns((list) => [...list.filter((x) => Date.now() - x.at < 4000), { idx: args.p_idx, kind: c.kind, at: Date.now() }])
       }
-      if (c?.kind === 'hero') {
+      if (r.sold) setToast(`Sold ${fmtNum(r.sold.amount)} ${RES_BY[r.sold.kind].label.toLowerCase()} for 🪙 ${fmtNum(r.sold.gold)} gold`)
+      else if (c?.kind === 'hero') {
         const n = Object.entries(c.loot).reduce((x, [, y]) => x + Number(y), 0)
         setToast(`${c.level_up ? '⭐ Level up! ' : ''}Your hero brought +${fmtNum(n)} resources and +${c.xp} XP${c.lost > 0 ? ` (${fmtNum(c.lost)} did not fit)` : ''}`)
       } else if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait: storage full)` : ''}`)
@@ -226,7 +229,7 @@ function PolisGame({ s, t, onState, onLogout }) {
         <nav className="po-nav" aria-label="Sections">
           {NAV.map((n) => (
             <button key={n.id} type="button" className={`po-nav-btn${tab === n.id ? ' is-on' : ''}${n.soon ? ' is-soon' : ''}`}
-              onClick={() => (n.soon || (n.id === 'hero' && !hero) ? setSoon(n) : setTab(n.id))} aria-current={tab === n.id ? 'page' : undefined}>
+              onClick={() => (n.soon || (n.id === 'hero' && !hero) || (n.id === 'market' && !s.market) ? setSoon(n) : setTab(n.id))} aria-current={tab === n.id ? 'page' : undefined}>
               <span className="po-emoji" aria-hidden="true">{n.icon}</span>
               <span className="po-nav-label">{n.label}</span>
             </button>
@@ -235,7 +238,15 @@ function PolisGame({ s, t, onState, onLogout }) {
         <button type="button" className="po-btn po-btn-ghost po-logout" onClick={onLogout}>Log out</button>
         <div className="po-resbar">
           {BAR.map((r) => {
-            const amt = v[r.id] ?? 0, cap = capOf(r.id), full = amt >= cap
+            const amt = v[r.id] ?? 0
+            if (r.id === 'gold') return (
+              <button key="gold" type="button" className="po-res po-res-gold" title="Gold: the money of the polis. Get more at the Market" onClick={() => s.market && setTab('market')}>
+                <span className="po-emoji" aria-hidden="true">{r.icon}</span>
+                <span className="po-res-num">{fmtNum(amt)}</span>
+                <span className="po-res-cap">gold</span>
+              </button>
+            )
+            const cap = capOf(r.id), full = amt >= cap
             return (
               <div key={r.id} className={`po-res${full ? ' is-full' : ''}`} title={`${r.label}: ${fmtNum(amt)} / ${fmtNum(cap)}`}>
                 <span className="po-emoji" aria-hidden="true">{r.icon}</span>
@@ -290,6 +301,8 @@ function PolisGame({ s, t, onState, onLogout }) {
               onSave={(name, color) => act('polis_hero_set', { p_name: name, p_color: color }, 'Hero saved')}
               onGo={heroGo}
               onCollect={() => act('polis_hero_collect')} />}
+            {tab === 'market' && s.market && <MarketScreen s={s} busy={busy} err={err}
+              onSell={(kind, amount) => act('polis_sell', { p_kind: kind, p_amount: amount })} />}
             {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
             {tab === 'city' && (
               <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
@@ -390,13 +403,15 @@ function PolisGame({ s, t, onState, onLogout }) {
 function Cost({ c, v }) {
   return (
     <span className="po-cost">
-      {RES.map((r) => <span key={r.id} className={v[r.id] < c[r.id] ? 'is-short' : ''}><span className="po-emoji" aria-hidden="true">{r.icon}</span>{fmtNum(c[r.id])}</span>)}
+      {c.gold != null
+        ? <span className={(v.gold ?? 0) < c.gold ? 'is-short' : ''}><span className="po-emoji" aria-hidden="true">🪙</span>{fmtNum(c.gold)} gold</span>
+        : RES.map((r) => <span key={r.id} className={v[r.id] < c[r.id] ? 'is-short' : ''}><span className="po-emoji" aria-hidden="true">{r.icon}</span>{fmtNum(c[r.id])}</span>)}
       <span>⏱ {fmtTime(c.secs * 1000)}</span>
     </span>
   )
 }
-const canPay = (c, v) => RES.every((r) => v[r.id] >= c[r.id])
-const blockReason = (c, v) => (v.build_kind ? 'Builders are busy' : !canPay(c, v) ? 'Not enough resources' : '')
+const canPay = (c, v) => (c.gold != null ? (v.gold ?? 0) >= c.gold : RES.every((r) => v[r.id] >= c[r.id]))
+const blockReason = (c, v) => (v.build_kind ? 'Builders are busy' : !canPay(c, v) ? (c.gold != null ? 'Not enough gold' : 'Not enough resources') : '')
 
 function PlotPanel({ p, v, cycles, st, t, busy, err, cap, onStart, onCollect, onUpgrade }) {
   const r = RES_BY[p.kind]
@@ -544,7 +559,7 @@ function ArmyScreen({ s, onCity }) {
                 <span title="Grain eaten per hour">🌾 {u.eat}/h</span>
               </div>
               <div className="po-unit-cost">
-                {RES.map((r, i) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>{u.cost[i]}</span>)}
+                <span><span className="po-emoji" aria-hidden="true">🪙</span>{u.cost.reduce((a, b) => a + b, 0)} gold</span>
               </div>
               <button type="button" className="po-btn" disabled>{locked ? `Needs ${u.needs}` : 'Training soon'}</button>
             </div>

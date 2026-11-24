@@ -9,7 +9,9 @@ export const RES = [
 ]
 // peixe (G03): comida, guardada no celeiro; não entra nos custos de construção
 export const FISH = { id: 'fish', label: 'Fish', icon: '🐟', field: 'Fishing Pier' }
-export const BAR = [...RES, FISH] // barra de cima
+// ouro (G05): a moeda do jogo; tudo se constrói com ouro e as mercadorias se vendem no Market
+export const GOLD = { id: 'gold', label: 'Gold', icon: '🪙' }
+export const BAR = [GOLD, ...RES, FISH] // barra de cima
 export const RES_BY = Object.fromEntries(BAR.map((r) => [r.id, r]))
 export const CYCLE_LABEL = { 1800: '30 min', 3600: '1 h', 21600: '6 h', 43200: '12 h', 86400: '24 h' }
 
@@ -47,7 +49,7 @@ export const BUILDINGS = {
   docks: { name: 'Docks', text: 'Where your fishermen keep their boats.', effect: (l) => `${1 + (l >= 1) + (l >= 4) + (l >= 8)} boats · +${10 * l}% fish` },
   cellar: { name: 'Hidden Cellar', text: 'Hides part of your resources from raiders.', effect: () => 'Protection arrives with the first raids' },
   barracks: { name: 'Barracks', text: 'Where your tribe trains its soldiers.', effect: () => 'Troops arrive in the next update' },
-  market: { name: 'Market', text: 'Trade resources with other players.', effect: () => 'Trading arrives in a coming update' },
+  market: { name: 'Market', text: 'A bigger market square for your traders.', effect: () => 'Trading with other players arrives in a coming update' },
   temple: { name: 'Temple of Apollo', text: 'The oracle does not create the truth. It carries it.', effect: () => 'Divine Favor arrives in a coming update' },
   agoge: { name: 'Agoge', text: 'The Spartan school of war.', effect: () => 'Faster training, unlocks the Spartiate' },
   harbor: { name: 'Piraeus Harbor', text: 'The Athenian gateway to the sea.', effect: () => 'Cheaper trade and more production' },

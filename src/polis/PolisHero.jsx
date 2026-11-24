@@ -66,7 +66,7 @@ export function HeroScreen({ s, t, busy, err, onSave, onGo, onCollect }) {
           <div className="po-hero-back">
             <p><b>{h.name} is back from “{storyOf(adv.kind, adv.started_at).title}”!</b></p>
             <div className="po-loot">
-              {BAR.map((r) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>+{fmtNum(adv.loot[r.id])}</span>)}
+              {BAR.filter((r) => r.id in adv.loot).map((r) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>+{fmtNum(adv.loot[r.id])}</span>)}
               <span>⭐ +{adv.loot.xp} XP</span>
             </div>
             <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={onCollect}>Collect the loot</button>
@@ -128,7 +128,7 @@ export function HeroSide({ s, t, busy, onGo, onCollect, onOpen, className = '' }
         <div className="po-heroside-adv is-back">
           <p>🎒 <b>Back from {storyOf(adv.kind, adv.started_at).title}!</b></p>
           <div className="po-loot">
-            {BAR.map((r) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>+{fmtNum(adv.loot[r.id])}</span>)}
+            {BAR.filter((r) => r.id in adv.loot).map((r) => <span key={r.id}><span className="po-emoji" aria-hidden="true">{r.icon}</span>+{fmtNum(adv.loot[r.id])}</span>)}
             <span>⭐ +{adv.loot.xp}</span>
           </div>
           <button type="button" className="po-btn po-btn-go po-pulse" disabled={busy} onClick={onCollect}>Collect the loot</button>

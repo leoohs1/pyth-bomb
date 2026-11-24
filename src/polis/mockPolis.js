@@ -1,5 +1,5 @@
 // SÓ NO COMPUTADOR (npm run dev + ?mock=1): imita as funções polis_* do Supabase na memória, com as mesmas regras do
-// supabase/polis/G01 + G02 + G03 + G04, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
+// supabase/polis/G01 + G02 + G03 + G04 + G05, pra testar as telas sem criar nada no banco de verdade. ?mock=1&fast=60 = o tempo passa
 // 60x mais rápido (30 min viram 30 s). Nunca entra no site publicado.
 const QS = new URLSearchParams(window.location.search)
 const FAST = Math.max(1, Number(QS.get('fast')) || 1)
@@ -19,10 +19,16 @@ const BASE = {
   storehouse: [30, 90, 110, 40], granary: [40, 100, 80, 30], docks: [60, 120, 60, 50], agora: [70, 90, 120, 60], cellar: [40, 60, 90, 20],
   barracks: [90, 120, 80, 130], market: [80, 110, 90, 60], temple: [120, 100, 200, 90],
 }
+// G05: tudo custa OURO = a soma dos materiais antigos (mesma curva)
 const cost = (kind, to) => {
   const f = to <= 1 ? 0.5 : 1.6 ** (to - 2), b = BASE[kind] ?? [120, 150, 150, 150]
-  return { grain: Math.round(b[0] * f), wood: Math.round(b[1] * f), marble: Math.round(b[2] * f), bronze: Math.round(b[3] * f), secs: to <= 1 ? 60 : Math.round(120 * 1.7 ** (to - 2)) }
+  return { gold: Math.round(b.reduce((x, y) => x + y, 0) * f), secs: to <= 1 ? 60 : Math.round(120 * 1.7 ** (to - 2)) }
 }
+// Market (G05): preço base de cada mercadoria + um passeio aleatório pra imitar o preço ao vivo da Pyth
+const MKT = [['grain', 'Wheat', 0.8], ['wood', 'Cotton', 0.9], ['marble', 'Aluminium', 1.0], ['bronze', 'Copper', 1.2], ['fish', 'Live cattle', 1.1]]
+const drift = Object.fromEntries(MKT.map(([k]) => [k, 1]))
+setInterval(() => { for (const k in drift) drift[k] = Math.min(1.3, Math.max(0.75, drift[k] * (1 + (Math.random() - 0.5) * 0.01))) }, 3000)
+const priceOf = (k) => Math.round(MKT.find((m) => m[0] === k)[2] * drift[k] * 1000) / 1000
 let db = null
 // pesca (G03): 1 barco sem docas, 2/3/4 com docas nível 1/4/8; 45 peixes/h por barco, +10% por nível de docas, atenienses +20%
 // herói (G04): nível L precisa de 25·L·(L-1) XP; aventuras 30 min / 2 h / 8 h
@@ -62,13 +68,14 @@ function state() {
   return {
     logged_in: true, now: iso(clock()), user: db.user, tribe: db.tribe,
     village: {
-      name: v.name, grain: Math.floor(v.grain), wood: Math.floor(v.wood), marble: Math.floor(v.marble), bronze: Math.floor(v.bronze), fish: Math.floor(v.fish),
+      name: v.name, grain: Math.floor(v.grain), wood: Math.floor(v.wood), marble: Math.floor(v.marble), bronze: Math.floor(v.bronze), fish: Math.floor(v.fish), gold: Math.floor(v.gold),
       store_cap: cap(lvl('storehouse')), granary_cap: cap(lvl('granary')),
       build_kind: v.build_kind, build_level: v.build_level, build_until: v.build_until ? iso(v.build_until) : null, build_target: v.build_target,
     },
     plots: db.plots.map((p, idx) => ({ idx, kind: p.kind, level: p.level, rate: rate(p.level), cycle_secs: p.cycle_secs, started_at: p.started_at ? iso(p.started_at) : null, ends_at: p.ends_at ? iso(p.ends_at) : null, harvest: p.harvest, next: p.level < 10 ? cost(p.kind, p.level + 1) : null, next_rate: rate(p.level + 1) })),
     boats: Array.from({ length: boatCount(lvl('docks')) }, (_, i) => { const b = db.boats[i] ?? {}; return { boat: i, cycle_secs: b.cycle_secs ?? null, started_at: b.started_at ? iso(b.started_at) : null, ends_at: b.ends_at ? iso(b.ends_at) : null, catch: b.catch ?? 0 } }),
     hero: heroJson(),
+    market: MKT.map(([kind, label, base]) => ({ kind, label, base, price: priceOf(kind), change: Math.round((drift[kind] - 1) * 10000) / 100, live: true })),
     fishing: { rate: fishRate(lvl('docks'), db.tribe), docks: lvl('docks'), next_boat_at: lvl('docks') < 1 ? 1 : lvl('docks') < 4 ? 4 : lvl('docks') < 8 ? 8 : null },
     buildings: [...db.buildings].sort((a, b) => a.pad - b.pad).map((b) => ({ ...b, next: b.level < 10 ? cost(b.kind, b.level + 1) : null })),
     catalog: KINDS.map((k) => ({ kind: k, cost: cost(k, 1), needs: needs(k), built: db.buildings.some((b) => b.kind === k) })),
@@ -82,8 +89,8 @@ function queue(target, kind, to) {
   if (v.build_kind) return 'Your builders are busy. Wait for the current construction'
   if (to > 10) return 'Already at the top level'
   const c = cost(kind, to)
-  if (RES.some((k) => v[k] < c[k])) return 'Not enough resources'
-  for (const k of RES) v[k] -= c[k]
+  if (v.gold < c.gold) return 'Not enough gold. Sell goods at the Market'
+  v.gold -= c.gold
   const secs = Math.round(c.secs * (1 - Math.min(0.45, 0.05 * Math.max(0, (lvl('agora') || 1) - 1))))
   Object.assign(v, { build_kind: kind, build_level: to, build_target: target, build_until: clock() + secs * 1000 })
   return null
@@ -102,7 +109,7 @@ export async function mockRpc(fn, a = {}) {
       if (!['spartan', 'athenian', 'delphian'].includes(a.p_tribe)) return fail('Pick a tribe')
       db = {
         user: a.p_username.trim(), pass: a.p_password, tribe: a.p_tribe,
-        v: { name: a.p_village.trim().slice(0, 24), grain: 500, wood: 500, marble: 500, bronze: 500, fish: 0, build_kind: null, build_level: null, build_until: null, build_target: null },
+        v: { name: a.p_village.trim().slice(0, 24), grain: 100, wood: 100, marble: 100, bronze: 100, fish: 0, gold: 500, build_kind: null, build_level: null, build_until: null, build_target: null },
         plots: PLOT_KIND.map((kind, i) => ({ kind, level: [0, 1, 2, 5].includes(i) ? 1 : 0, cycle_secs: null, started_at: null, ends_at: null, harvest: 0 })),
         buildings: [{ pad: 1, kind: 'agora', level: 1 }, { pad: 4, kind: 'storehouse', level: 1 }],
         boats: [],
@@ -152,6 +159,15 @@ export async function mockRpc(fn, a = {}) {
       const left = b.catch - moved
       if (left > 0) b.catch = left; else Object.assign(b, { cycle_secs: null, started_at: null, ends_at: null, catch: 0 })
       return ok({ ...state(), collected: { kind: 'fish', amount: moved, left } })
+    }
+    case 'polis_sell': {
+      if (!['grain', 'wood', 'marble', 'bronze', 'fish'].includes(a.p_kind)) return fail('You cannot sell that')
+      const have = Math.floor(db.v[a.p_kind]), n = Math.floor(a.p_amount || 0)
+      if (n < 1) return fail('Choose how much to sell'); if (n > have) return fail(`You only have ${have} of that`)
+      const price = priceOf(a.p_kind), got = Math.floor(n * price)
+      if (got < 1) return fail('Sell a bit more: that is worth less than 1 gold')
+      db.v[a.p_kind] -= n; db.v.gold += got
+      return ok({ ...state(), sold: { kind: a.p_kind, amount: n, gold: got, price } })
     }
     case 'polis_hero_set': {
       const n = (a.p_name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16)
