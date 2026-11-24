@@ -1,5 +1,5 @@
-// Pyth Polis: o Market paga preços REAIS da Pyth. Uma vez por minuto este servidor pega o último preço de 6 feeds no
-// Hermes (ouro, trigo, algodão, alumínio, cobre, boi gordo) e grava no Supabase com polis_set_prices
+// Pyth Polis: o Market paga preços REAIS da Pyth. Uma vez por minuto este servidor pega o último preço de 7 feeds no
+// Hermes (ouro, trigo, algodão, alumínio, cobre, boi gordo + Brent pra oliva) e grava no Supabase com polis_set_prices
 // (supabase/polis/G05_gold_market.sql). UMA chamada por minuto pro servidor inteiro, não importa quantos jogadores.
 //
 // Variáveis (painel do Railway; NUNCA no chat nem no GitHub):
@@ -16,6 +16,7 @@ export const POLIS_FEEDS = {
   marble: '9397ba38556359e78a52853b5db5e350e86b9e9a6c01094698130112f3d10cb6', // Metal.AL3M/USD
   bronze: 'b2b238aeb6ef5a722c5cf278595bf40434e174cac4f88c8ad5b6f5009b548c59', // Commodities.Index.CU/USD
   fish: '15a3e4116a15e60b1b4a168348a16ebdadc476f5a6f5cb962bd5724f42727d23', // Commodities.Index.RLIVECATTLE/USc
+  olive: 'f33ce961935076ef4dc98be75cf2126046eac1bffdcd7a0fa05ccf18b746fda6', // Commodities.Index.BRENT/USD (faixa de preços)
 }
 
 // resposta do Hermes (parsed) -> { gold: { usd, t }, ... }

@@ -28,8 +28,8 @@ const cost = (kind, to) => {
 const MKT = [['grain', 'Wheat', 0.8], ['wood', 'Cotton', 0.9], ['marble', 'Aluminium', 1.0], ['bronze', 'Copper', 1.2], ['fish', 'Live cattle', 1.1]]
 const drift = Object.fromEntries(MKT.map(([k]) => [k, 1]))
 setInterval(() => { for (const k in drift) drift[k] = Math.min(1.3, Math.max(0.75, drift[k] * (1 + (Math.random() - 0.5) * 0.01))) }, 3000)
-let goldUsd = 4100, goldOpen = 4100
-setInterval(() => { goldUsd = Math.round(goldUsd * (1 + (Math.random() - 0.5) * 0.002) * 100) / 100 }, 3000)
+let goldUsd = 4100, goldOpen = 4100, oilUsd = 63.4, oilOpen = 63.4
+setInterval(() => { goldUsd = Math.round(goldUsd * (1 + (Math.random() - 0.5) * 0.002) * 100) / 100; oilUsd = Math.round(oilUsd * (1 + (Math.random() - 0.5) * 0.004) * 100) / 100 }, 3000)
 const priceOf = (k) => Math.round(MKT.find((m) => m[0] === k)[2] * drift[k] * 1000) / 1000
 let db = null
 // pesca (G03): 1 barco sem docas, 2/3/4 com docas nível 1/4/8; 45 peixes/h por barco, +10% por nível de docas, atenienses +20%
@@ -77,7 +77,8 @@ function state() {
     plots: db.plots.map((p, idx) => ({ idx, kind: p.kind, level: p.level, rate: rate(p.level), cycle_secs: p.cycle_secs, started_at: p.started_at ? iso(p.started_at) : null, ends_at: p.ends_at ? iso(p.ends_at) : null, harvest: p.harvest, next: p.level < 10 ? cost(p.kind, p.level + 1) : null, next_rate: rate(p.level + 1) })),
     boats: Array.from({ length: boatCount(lvl('docks')) }, (_, i) => { const b = db.boats[i] ?? {}; return { boat: i, cycle_secs: b.cycle_secs ?? null, started_at: b.started_at ? iso(b.started_at) : null, ends_at: b.ends_at ? iso(b.ends_at) : null, catch: b.catch ?? 0 } }),
     hero: heroJson(),
-    ticker: [{ kind: 'gold', label: 'Gold', symbol: 'Metal.Index.GOLD/USD', usd: QS.get('noprice') ? null : goldUsd, change: QS.get('noprice') ? null : Math.round((goldUsd / goldOpen - 1) * 10000) / 100, live: !QS.get('noprice') }],
+    ticker: [{ kind: 'gold', label: 'Gold', symbol: 'Metal.Index.GOLD/USD', usd: QS.get('noprice') ? null : goldUsd, change: QS.get('noprice') ? null : Math.round((goldUsd / goldOpen - 1) * 10000) / 100, live: !QS.get('noprice') },
+      { kind: 'olive', label: 'Brent oil', symbol: 'Commodities.Index.BRENT/USD', usd: QS.get('noprice') ? null : oilUsd, change: QS.get('noprice') ? null : Math.round((oilUsd / oilOpen - 1) * 10000) / 100, live: !QS.get('noprice') }],
     market: MKT.map(([kind, label, base]) => ({ kind, label, base, price: priceOf(kind), change: Math.round((drift[kind] - 1) * 10000) / 100, live: true })),
     fishing: { rate: fishRate(lvl('docks'), db.tribe), docks: lvl('docks'), next_boat_at: lvl('docks') < 1 ? 1 : lvl('docks') < 4 ? 4 : lvl('docks') < 8 ? 8 : null },
     buildings: [...db.buildings].sort((a, b) => a.pad - b.pad).map((b) => ({ ...b, next: b.level < 10 ? cost(b.kind, b.level + 1) : null })),

@@ -320,6 +320,7 @@
 .po-tick-usd { font-weight: 700; font-size: 15px; }
 .po-tick .is-up { color: #6ee787; font-weight: 700; }
 .po-tick .is-down { color: #ff7a6b; font-weight: 700; }
+.po-tick-pair { color: #a993d6; font-size: 12px; }
 .po-tick-soon { color: #a993d6; font-style: italic; font-size: 13px; }
 .po-tick-note { color: #c9b8f0; font-size: 13px; }
 .po-tick-brand { color: #a77bff; font-weight: 700; font-size: 12.5px; }

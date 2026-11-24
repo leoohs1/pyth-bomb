@@ -1,17 +1,36 @@
 -- PYTH POLIS · step G06: the PRICE STRIP at the bottom of the screen (Halls, 2026-11-24: "por enquanto gold")
 -- Run in Supabase SQL Editor AFTER G05. Safe to run more than once. Changes nothing in the villages.
 --
---  · polis_state now also sends 'ticker': the real Pyth price of gold in US dollars and how much it moved today.
+--  · polis_state now also sends 'ticker': real Pyth prices in US dollars and how much they moved today:
+--      GOLD (gold) and OLIVE (follows Brent oil, Halls: "Olive vai ser pareado com OIL").
 --  · The price comes from the same table the Market uses (polis_prices), written once a minute by the Railway
 --    server. Until the server has a Pyth API key, the strip says "live price soon".
+
+-- olive joins the price table (only for the strip for now; it is not sold at the Market yet)
+alter table public.polis_prices drop constraint if exists polis_prices_kind_check;
+alter table public.polis_prices add constraint polis_prices_kind_check check (kind in ('gold', 'grain', 'wood', 'marble', 'bronze', 'fish', 'olive'));
+insert into polis_prices (kind, label, symbol, feed_id, base) values
+  ('olive', 'Brent oil', 'Commodities.Index.BRENT/USD', 'f33ce961935076ef4dc98be75cf2126046eac1bffdcd7a0fa05ccf18b746fda6', 1.0)
+on conflict (kind) do update set label = excluded.label, symbol = excluded.symbol, feed_id = excluded.feed_id;
+
+-- the Market keeps only the 5 goods you can sell
+create or replace function public.polis_market_json() returns jsonb language sql stable security definer set search_path to 'public' as $$
+  select jsonb_agg(jsonb_build_object(
+      'kind', p.kind, 'label', p.label, 'symbol', p.symbol, 'price', polis_price(p.kind), 'base', p.base,
+      'change', case when p.open_usd > 0 and g.open_usd > 0 and p.usd is not null and g.usd > 0
+                     then round(((p.usd / g.usd) / (p.open_usd / g.open_usd) - 1) * 100, 2) end,
+      'live', p.usd is not null and p.updated_at > now() - interval '10 minutes' and coalesce(p.publish_time, 'epoch') > now() - interval '30 minutes',
+      'publish_time', p.publish_time) order by array_position(array['grain', 'wood', 'marble', 'bronze', 'fish'], p.kind))
+  from polis_prices p, polis_prices g where g.kind = 'gold' and p.kind in ('grain', 'wood', 'marble', 'bronze', 'fish')
+$$;
 
 create or replace function public.polis_ticker_json() returns jsonb language sql stable security definer set search_path to 'public' as $$
   select coalesce(jsonb_agg(jsonb_build_object(
       'kind', p.kind, 'label', p.label, 'symbol', p.symbol, 'usd', p.usd,
       'change', case when p.open_usd > 0 and p.usd is not null then round((p.usd / p.open_usd - 1) * 100, 2) end,
       'live', p.usd is not null and p.updated_at > now() - interval '10 minutes',
-      'publish_time', p.publish_time)), '[]'::jsonb)
-  from polis_prices p where p.kind in ('gold')
+      'publish_time', p.publish_time) order by array_position(array['gold', 'olive'], p.kind)), '[]'::jsonb)
+  from polis_prices p where p.kind in ('gold', 'olive')
 $$;
 
 -- ---------------------------------------------------------------- state (G05 shape + ticker)
@@ -64,8 +83,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.polis_ticker_json() from public, anon, authenticated;
+revoke execute on function public.polis_ticker_json(), public.polis_market_json() from public, anon, authenticated;
 grant execute on function public.polis_state() to authenticated;
 
 -- check: should say true
-select (public.polis_ticker_json() -> 0 ->> 'kind') = 'gold' as ticker_ready;
+select (public.polis_ticker_json() -> 0 ->> 'kind') = 'gold' and (public.polis_ticker_json() -> 1 ->> 'kind') = 'olive' as ticker_ready;
