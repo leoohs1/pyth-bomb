@@ -8,6 +8,7 @@ import { supabase, ensureSession } from '../supabaseClient'
 import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
 import { setMusicSilenced } from '../music'
+import { Peasants, HeroStroll } from './PolisPeople'
 import {
   RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, FISHERMEN, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -167,6 +168,7 @@ function PolisGame({ s, t, onState, onLogout }) {
   const [toast, setToast] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [returns, setReturns] = useState([]) // camponeses voltando pra vila com a colheita
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 3200); return () => clearTimeout(id) }, [toast])
   useEffect(() => { setErr('') }, [open])
   // celular: a cena é mais larga que a tela (arrasta pro lado); abre centralizada na vila
@@ -179,6 +181,9 @@ function PolisGame({ s, t, onState, onLogout }) {
       const r = await rpc(fn, args)
       onState(r)
       const c = r.collected
+      if (c && args?.p_idx != null && !(r.plots ?? []).find((x) => x.idx === args.p_idx)?.started_at) {
+        setReturns((list) => [...list.filter((x) => Date.now() - x.at < 4000), { idx: args.p_idx, kind: c.kind, at: Date.now() }])
+      }
       if (c) setToast(`+${fmtNum(c.amount)} ${RES_BY[c.kind].label.toLowerCase()}${c.left > 0 ? ` (${fmtNum(c.left)} wait: storage full)` : ''}`)
       else if (msg) setToast(msg)
       if (close) setOpen(null)
@@ -199,7 +204,10 @@ function PolisGame({ s, t, onState, onLogout }) {
       {/* ---- menu de cima, como no Travian: brasão/vila, as abas e a barra de recursos */}
       <header className="po-topbar">
         <div className="po-crest" title={tribe.name}>
-          <span className="po-crest-badge po-emoji" aria-hidden="true">{tribe.icon}</span>
+          <span className="po-crest-badge po-crest-hero" aria-hidden="true">
+            <img src="/polis/c/hero-face.webp" alt="" />
+            <span className="po-crest-tribe po-emoji">{tribe.icon}</span>
+          </span>
           <span className="po-crest-text"><b>{v.name}</b><small>{s.user} · {tribe.name}</small></span>
         </div>
         <nav className="po-nav" aria-label="Sections">
@@ -249,12 +257,14 @@ function PolisGame({ s, t, onState, onLogout }) {
                     </button>
                   )
                 })}
+                <Peasants plots={s.plots} pos={PLOT_POS} t={t} returns={returns} />
               </div>
             )}
             {tab === 'army' && <ArmyScreen s={s} onCity={() => setTab('city')} />}
             {tab === 'city' && (
               <div className="po-scene" style={{ aspectRatio: SCENE_RATIO }}>
                 <img className="po-scene-img" src="/polis/city.webp" alt="" draggable="false" />
+                <HeroStroll onClick={() => setSoon({ icon: '🦸', label: 'Hero' })} />
                 {PAD_POS.map((pos, pad) => {
                   const b = s.buildings.find((x) => x.pad === pad)
                   const target = v.build_target === `pad:${pad}`
