@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, ensureSession } from '../supabaseClient'
 import './polis.css'
 import { mockRpc, mockNow } from './mockPolis'
+import { setMusicSilenced } from '../music'
 import {
   RES, RES_BY, CYCLE_LABEL, TRIBES, BUILDINGS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -41,6 +42,8 @@ export default function PolisApp() {
   }, [refresh])
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
   useEffect(() => { const old = document.title; document.title = 'Pyth Polis · Pyth Bomb'; return () => { document.title = old } }, [])
+  // sem a música de fundo do site por enquanto (Halls, 2026-11-24); o Polis vai ter a dele depois
+  useEffect(() => { setMusicSilenced(true); return () => setMusicSilenced(false) }, [])
 
   const t = MOCK ? mockNow() : now + offset
   // quando uma colheita ou construção termina, busca o estado novo na hora
