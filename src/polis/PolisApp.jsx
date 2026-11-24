@@ -11,7 +11,7 @@ import { setMusicSilenced } from '../music'
 import { Peasants, HeroStroll } from './PolisPeople'
 import { Boats, FishPanel, PIER, boatState } from './PolisFishing'
 import { HeroScreen, HeroSide, heroFace, heroState } from './PolisHero'
-import { MarketScreen } from './PolisMarket'
+import { MarketScreen, PolisTicker } from './PolisMarket'
 import {
   RES, RES_BY, BAR, CYCLE_LABEL, TRIBES, BUILDINGS, UNITS, buildingImg, tierOf, PLOT_POS, PAD_POS, SCENE_RATIO, fmtTime, fmtNum,
 } from './polisData'
@@ -396,6 +396,7 @@ function PolisGame({ s, t, onState, onLogout }) {
         </div>
       )}
       {toast && <div className="po-toast" role="status">{toast}</div>}
+      <PolisTicker ticker={s.ticker} />
     </div>
   )
 }

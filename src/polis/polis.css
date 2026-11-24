@@ -308,6 +308,24 @@
 .po-good-sell .po-btn { white-space: nowrap; }
 .po-market > .po-note { color: #c9b8f0; }
 
+/* ---- faixa de preços da Pyth embaixo */
+.po-ticker { position: sticky; bottom: 0; z-index: 4; margin-top: auto; overflow: hidden; height: 36px; display: flex; align-items: center;
+  background: linear-gradient(#1a0d38, #0f0724); border-top: 2px solid #b8860b; box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35); }
+.po-ticker-track { display: flex; width: max-content; animation: po-ticker 40s linear infinite; }
+.po-ticker:hover .po-ticker-track { animation-play-state: paused; }
+.po-ticker-row { display: flex; flex: none; }
+.po-tick { display: inline-flex; align-items: center; gap: 8px; padding: 0 28px; white-space: nowrap; font-size: 14px; color: #f3ecff; font-variant-numeric: tabular-nums;
+  border-right: 1px solid rgba(244, 197, 66, 0.25); }
+.po-tick b { font: 400 11px/1 'Press Start 2P', monospace; color: #f4c542; letter-spacing: 0.5px; }
+.po-tick-usd { font-weight: 700; font-size: 15px; }
+.po-tick .is-up { color: #6ee787; font-weight: 700; }
+.po-tick .is-down { color: #ff7a6b; font-weight: 700; }
+.po-tick-soon { color: #a993d6; font-style: italic; font-size: 13px; }
+.po-tick-note { color: #c9b8f0; font-size: 13px; }
+.po-tick-brand { color: #a77bff; font-weight: 700; font-size: 12.5px; }
+@keyframes po-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .po-ticker-track { animation: none; } }
+
 /* ---- Exército */
 .po-army { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 18px; background: linear-gradient(#f6efe1, #eadfc8); color: #3a2a14;
   border: 3px solid #b8860b; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }

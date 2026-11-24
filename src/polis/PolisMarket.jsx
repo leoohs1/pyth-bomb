@@ -64,3 +64,34 @@ function Good({ m, have, busy, onSell }) {
     </div>
   )
 }
+
+// faixa de preços embaixo da tela (G06): preço REAL da Pyth em dólar, rolando como letreiro de bolsa.
+// Por enquanto só o ouro (Halls); mais ativos entram depois. Sem preço ao vivo, avisa "live price soon".
+const ICON = { gold: '🪙' }
+const usd = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+export function PolisTicker({ ticker }) {
+  if (!ticker?.length) return null
+  const items = ticker.map((x) => {
+    const up = x.change > 0, down = x.change < 0
+    return (
+      <span key={x.kind} className="po-tick">
+        <span className="po-emoji" aria-hidden="true">{ICON[x.kind] ?? '•'}</span>
+        <b>{x.label.toUpperCase()}</b>
+        {x.usd != null ? <span className="po-tick-usd">{usd(x.usd)}</span> : <span className="po-tick-soon">live price soon</span>}
+        {x.change != null && <span className={up ? 'is-up' : down ? 'is-down' : ''}>{up ? '▲' : down ? '▼' : '•'} {Math.abs(x.change).toFixed(2)}%</span>}
+        {x.usd != null && !x.live && <span className="po-tick-soon">last price</span>}
+      </span>
+    )
+  })
+  const note = <span className="po-tick po-tick-note">Market prices in the polis follow the real price of gold</span>
+  const brand = <span className="po-tick po-tick-brand">● Prices by Pyth Network</span>
+  const row = <>{items}{note}{brand}</>
+  return (
+    <div className="po-ticker" role="marquee" aria-label="Real prices from Pyth">
+      <div className="po-ticker-track">
+        <div className="po-ticker-row">{row}{row}</div>
+        <div className="po-ticker-row" aria-hidden="true">{row}{row}</div>
+      </div>
+    </div>
+  )
+}
